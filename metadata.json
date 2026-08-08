@@ -1,0 +1,6 @@
+{
+  "name": "Fitzone - Premium Fitness & Gym Club",
+  "description": "A luxury modern fitness and gym web application featuring class schedules, trainer profiles, BMI calculator, interactive booking, services, and membership plans.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
