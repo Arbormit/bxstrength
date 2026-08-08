@@ -231,22 +231,27 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const name = sanitizeInput(rawName);
     const email = sanitizeInput(rawEmail).toLowerCase();
     const phone = sanitizeInput(rawPhone || '');
-
-    const userRole = requestedRole === 'admin' ? 'client' : (requestedRole || 'client');
+    // Strict Security: Prevent self-assignment of 'admin' role via public registration.
+    // Admin role can ONLY be assigned manually in the database or by existing verified Admins.
+    const userRole = (requestedRole === 'coach' || requestedRole === 'user') ? requestedRole : 'client';
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(rawPassword, salt);
     const userId = `user-${Date.now()}`;
 
     if (dbPool) {
-      const result = await dbPool.query(
-        `INSERT INTO users (id, name, email, password_hash, role, phone, avatar_url, is_verified, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, true, 'active')
-         RETURNING id, name, email, role, phone, avatar_url, is_verified, status, created_at`,
-        [userId, name, email, passwordHash, userRole, phone, `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`]
-      );
-      const user = result.rows[0];
-      const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-      return res.status(201).json({ user, token });
+      try {
+        const result = await dbPool.query(
+          `INSERT INTO users (id, name, email, password_hash, role, phone, avatar_url, is_verified, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, true, 'active')
+           RETURNING id, name, email, role, phone, avatar_url, is_verified, status, created_at`,
+          [userId, name, email, passwordHash, userRole, phone, `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`]
+        );
+        const user = result.rows[0];
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+        return res.status(201).json({ user, token });
+      } catch (e: any) {
+        console.warn('ℹ️ NeonDB register query notice:', e.message);
+      }
     }
 
     const token = jwt.sign({ id: userId, email, role: userRole, name }, JWT_SECRET, { expiresIn: '7d' });
@@ -286,20 +291,22 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     const email = sanitizeInput(rawEmail).toLowerCase();
 
     if (dbPool) {
-      const result = await dbPool.query('SELECT * FROM users WHERE email = $1', [email]);
-      if (result.rows.length === 0) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
+      try {
+        const result = await dbPool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (result.rows.length > 0) {
+          const user = result.rows[0];
+          const valid = await bcrypt.compare(rawPassword, user.password_hash);
+          if (!valid) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+          }
 
-      const user = result.rows[0];
-      const valid = await bcrypt.compare(rawPassword, user.password_hash);
-      if (!valid) {
-        return res.status(401).json({ error: 'Invalid credentials' });
+          delete user.password_hash;
+          const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+          return res.json({ user, token });
+        }
+      } catch (e: any) {
+        console.warn('ℹ️ NeonDB login query notice:', e.message);
       }
-
-      delete user.password_hash;
-      const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-      return res.json({ user, token });
     }
 
     const token = jwt.sign({ id: 'user-demo', email, role: 'client', name: 'Demo Athlete' }, JWT_SECRET, { expiresIn: '7d' });
@@ -496,9 +503,13 @@ app.get('/api/users', async (req, res) => {
         const result = await dbPool.query('SELECT * FROM users ORDER BY created_at DESC');
         return res.json(result.rows);
       } catch (err: any) {
-        console.warn('NeonDB users ordered fetch note:', err.message);
-        const fallback = await dbPool.query('SELECT * FROM users');
-        return res.json(fallback.rows);
+        console.warn('NeonDB users fetch notice:', err.message);
+        try {
+          const fallback = await dbPool.query('SELECT * FROM users');
+          return res.json(fallback.rows);
+        } catch {
+          return res.json([]);
+        }
       }
     }
     res.json([]);
@@ -508,7 +519,7 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-app.post('/api/users', async (req, res) => {
+app.post('/api/users', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
   try {
     const { name, email, phone, role, coachPosition } = req.body;
     if (!name || !email) {
@@ -540,7 +551,7 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-app.patch('/api/users/:id', async (req, res) => {
+app.patch('/api/users/:id', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const { name, email, phone, role, coachPosition } = req.body;
@@ -563,7 +574,7 @@ app.patch('/api/users/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/users/:id', async (req, res) => {
+app.delete('/api/users/:id', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
   try {
     const { id } = req.params;
     if (dbPool) {

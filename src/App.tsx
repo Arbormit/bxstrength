@@ -5,6 +5,7 @@ import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { TrustBar } from './components/TrustBar';
 import { TransformationJourney } from './components/TransformationJourney';
+import { BeforeAfterShowcase } from './components/BeforeAfterShowcase';
 import { ServicesSection } from './components/ServicesSection';
 import { TrainersSection } from './components/TrainersSection';
 import { FaqSection } from './components/FaqSection';
@@ -203,6 +204,11 @@ function AppContent() {
             />
 
             <TrustBar />
+
+            <BeforeAfterShowcase
+              onOpenAssessment={() => setAssessmentModalOpen(true)}
+              onOpenConsultation={() => setBookingModalOpen(true)}
+            />
 
             <TransformationJourney
               onOpenAssessment={() => setAssessmentModalOpen(true)}

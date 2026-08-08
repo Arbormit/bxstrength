@@ -4,6 +4,16 @@ export type UserRole = 'admin' | 'coach' | 'client' | 'user';
 
 export type CoachPosition = 'Head Coach' | 'Super Senior Coach' | 'Senior Coach' | 'Junior Coach' | 'Lead Specialist';
 
+export interface CoachPermissions {
+  allowFinancials: boolean;        // Client Payments & Subscriptions tab
+  allowLeadPipeline: boolean;      // CRM Overview tab
+  allowClientRoster: boolean;      // Client Directory tab
+  allowClassSchedules: boolean;    // Class Schedule tab
+  allowWorkoutPrograms: boolean;   // Workout Program Builder tab
+  allowNutritionPlans: boolean;    // Diet Plans tab
+  allowSupportTickets: boolean;    // Support Ticket Desk tab
+}
+
 export interface User {
   id: string;
   name: string;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Calendar, User, Clock, ArrowRight, Dumbbell, Shield, BookOpen, TrendingUp, ShieldCheck, AlertCircle, Command } from 'lucide-react';
+import { Search, X, Calendar, User, Clock, ArrowRight, Dumbbell, Shield, BookOpen, TrendingUp, ShieldCheck, AlertCircle, Command, Activity, HeartPulse, Send, CheckCircle2, MessageSquare, HelpCircle } from 'lucide-react';
 import { 
   CLASSES_DATA, 
   TRAINERS_DATA, 
@@ -8,6 +8,7 @@ import {
   MEMBERSHIP_PLANS 
 } from '../data/gymData';
 import { FitnessClass, Trainer, ServiceItem, BlogPost, MembershipPlan, ViewPage } from '../types';
+import { VelocityAPI } from '../services/api';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -19,6 +20,104 @@ interface SearchModalProps {
   onSelectBlogPost: (postId: string) => void;
 }
 
+export interface HealthSymptomTopic {
+  id: string;
+  keywords: string[];
+  title: string;
+  category: string;
+  summary: string;
+  recommendedCoach: string;
+  relatedTopics: string[];
+  protocolGuide: string;
+}
+
+export const HEALTH_SYMPTOM_DATABASE: HealthSymptomTopic[] = [
+  {
+    id: 'knee-pain',
+    keywords: ['knee', 'knee pain', 'patellar', 'joint pain', 'squat pain', 'stairs'],
+    title: 'Knee Joint Rehabilitation & Patellar Biomechanics',
+    category: 'Joint & Structural Health',
+    summary: 'Custom low-impact loading, quad vmo strengthening, and patellar tracking correction for squatting and stair pain.',
+    recommendedCoach: 'David Williams',
+    relatedTopics: [
+      'VMO Activation Drills',
+      'Joint Mobility & Cartilage Decompression',
+      'Low-Impact Recomposition Protocol'
+    ],
+    protocolGuide: 'Patellar tendonitis and meniscus strain usually stem from hip mobility restrictions and VMO weakness. Our protocol rebuilding includes targeted isometric holds, posterior chain balance, and biomechanical video screening.'
+  },
+  {
+    id: 'back-pain',
+    keywords: ['back', 'back pain', 'lower back', 'spine', 'l4', 'l5', 'posture', 'scalliosis'],
+    title: 'Lower Back Rehabilitation & L4-L5 Spinal Decompression',
+    category: 'Postural & Spinal Health',
+    summary: 'Core bracing, glute activation, and pelvic alignment to eliminate chronic lower back tightness during sitting or lifting.',
+    recommendedCoach: 'Marcus Vance',
+    relatedTopics: [
+      'Intra-Abdominal Pressure (IAP) Bracing',
+      'Posterior Chain Alignment',
+      'Ergonomic Posture Restructuring'
+    ],
+    protocolGuide: 'Lower back discomfort is often caused by weak deep abdominal stabilizers (transverse abdominis) and glute amnesia. We utilize McGill-3 bracing, thoracic spine mobilization, and controlled deadlift hip-hinge patterning.'
+  },
+  {
+    id: 'pcos-period-cycle',
+    keywords: ['period', 'periods', 'pcos', 'pcod', 'cycle', 'menstrual', 'female', 'women', 'hormones', 'estrogen', 'progesterone', 'cramps'],
+    title: 'PCOS & Female Menstrual Cycle Synchronized Training',
+    category: 'Women\'s Metabolic & Hormonal Health',
+    summary: 'Periodized training aligned with Follicular, Ovulatory, and Luteal phases to manage PCOS, normalize period regularity, and reduce inflammation.',
+    recommendedCoach: 'Dr. Sophia Chen',
+    relatedTopics: [
+      'Luteal Phase Progesterone Nutrition',
+      'Insulin Sensitivity for PCOS',
+      'Cortisol Mitigation in Female Athletes'
+    ],
+    protocolGuide: 'The female menstrual cycle directly impacts insulin sensitivity, ligament laxity, and metabolic rate. We structure high-intensity work during the Follicular phase and prioritize deload recovery during the Luteal phase to support cycle regularity.'
+  },
+  {
+    id: 'fat-loss-130',
+    keywords: ['fat loss', 'weight loss', '130kg', 'obesity', 'overweight', 'recomp', 'belly fat', 'diet'],
+    title: 'Executive Metabolic Reset (130kg ➔ 80kg Protocol)',
+    category: 'Metabolic Recomposition',
+    summary: 'Structured wave deficit nutrition and joint-safe strength training designed for 30kg–50kg sustained fat loss.',
+    recommendedCoach: 'David Williams',
+    relatedTopics: [
+      'Caloric Deficit Wave Periodization',
+      'Visceral Fat Biomarker Tracking',
+      'Non-Exercise Activity Thermogenesis (NEAT)'
+    ],
+    protocolGuide: 'Significant weight loss requires protecting lean muscle mass while systematically lowering visceral fat. We implement high-protein macro targets, weekly biometric check-ins, and progressive resistance to prevent metabolic adaptation.'
+  },
+  {
+    id: 'shoulder-impingement',
+    keywords: ['shoulder', 'rotator cuff', 'impingement', 'overhead', 'deltoid', 'collarbone'],
+    title: 'Rotator Cuff & Shoulder Overhead Mobility Rehab',
+    category: 'Upper Body Biomechanics',
+    summary: 'Scapular rhythm restoration, rotator cuff strengthening, and thoracic mobility to restore pain-free pressing.',
+    recommendedCoach: 'Marcus Vance',
+    relatedTopics: [
+      'Scapular Upward Rotation Drills',
+      'Subscapularis & Infraspinatus Firing',
+      'Overhead Lockout Stability'
+    ],
+    protocolGuide: 'Overhead shoulder pinching occurs when the humeral head pinches the subacromial bursa. We restore thoracic extension, strengthen the serratus anterior, and re-educate shoulder pressing mechanics.'
+  },
+  {
+    id: 'postpartum-core',
+    keywords: ['pregnancy', 'postpartum', 'post-pregnancy', 'pelvic', 'diastasis', 'mom'],
+    title: 'Post-Pregnancy Core & Pelvic Floor Restoration',
+    category: 'Female Recovery & Core Integrity',
+    summary: 'Diastasis recti recovery, pelvic floor re-education, and safe return to heavy lifting post-delivery.',
+    recommendedCoach: 'Dr. Sophia Chen',
+    relatedTopics: [
+      'Diastasis Recti Core Realignment',
+      'Pelvic Pressure Management',
+      'Safe Return to Strength Training'
+    ],
+    protocolGuide: 'Rebuilding postpartum strength requires progressive intra-abdominal pressure control without placing shear stress on healed connective tissue. We guide mothers step-by-step back to full athletic vitality.'
+  }
+];
+
 export const SearchModal: React.FC<SearchModalProps> = ({
   isOpen,
   onClose,
@@ -29,13 +128,26 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   onSelectBlogPost
 }) => {
   const [query, setQuery] = useState('');
+  const [showConsultForm, setShowConsultForm] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<HealthSymptomTopic | null>(null);
+
+  // String Capture Consultation Form State
+  const [clientName, setClientName] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [additionalNotes, setAdditionalNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [consultSuccess, setConsultSuccess] = useState(false);
+
   const [results, setResults] = useState<{
+    symptoms: HealthSymptomTopic[];
     classes: FitnessClass[];
     trainers: Trainer[];
     services: ServiceItem[];
     blogs: BlogPost[];
     plans: MembershipPlan[];
   }>({
+    symptoms: [],
     classes: [],
     trainers: [],
     services: [],
@@ -46,8 +158,15 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Popular search recommendations matching BxStrength
-  const popularSearches = ['Strength', 'Recomp', 'Personal Training', 'Assessment', 'David Williams', 'Nutrition'];
+  // Popular search recommendations including health symptoms
+  const popularSearches = [
+    'Knee Pain', 
+    'Back Pain', 
+    'Periods Cycle & PCOS', 
+    'Fat Loss (130kg to 80kg)', 
+    'Shoulder Rehab',
+    'David Williams'
+  ];
 
   // Handle escape key closing
   useEffect(() => {
@@ -74,6 +193,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       }, 50);
     } else {
       setQuery('');
+      setShowConsultForm(false);
+      setConsultSuccess(false);
+      setSelectedTopic(null);
     }
   }, [isOpen]);
 
@@ -87,7 +209,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   // Perform search logic
   useEffect(() => {
     if (!query.trim()) {
-      setResults({ classes: [], trainers: [], services: [], blogs: [], plans: [] });
+      setResults({ symptoms: [], classes: [], trainers: [], services: [], blogs: [], plans: [] });
+      setSelectedTopic(null);
       return;
     }
 
@@ -105,13 +228,27 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       return searchTerms.some(term => text.toLowerCase().includes(term));
     };
 
+    // Filter Health Symptom Database
+    const matchedSymptoms = HEALTH_SYMPTOM_DATABASE.filter(topic => 
+      topic.keywords.some(kw => cleanQuery.includes(kw) || kw.includes(cleanQuery)) ||
+      matchesQuery(topic.title) ||
+      matchesQuery(topic.summary) ||
+      matchesQuery(topic.category)
+    );
+
+    // Auto-select primary symptom topic if matched
+    if (matchedSymptoms.length > 0) {
+      setSelectedTopic(matchedSymptoms[0]);
+    } else {
+      setSelectedTopic(null);
+    }
+
     // Filter Classes
     const matchedClasses = CLASSES_DATA.filter(cls => 
       matchesQuery(cls.title) || 
       matchesQuery(cls.description) || 
       matchesQuery(cls.category) || 
-      matchesQuery(cls.trainerName) || 
-      matchesQuery(cls.intensity)
+      matchesQuery(cls.trainerName)
     );
 
     // Filter Trainers
@@ -134,8 +271,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       matchesQuery(post.title) || 
       matchesQuery(post.excerpt) || 
       matchesQuery(post.content) || 
-      matchesQuery(post.category) || 
-      matchesQuery(post.author)
+      matchesQuery(post.category)
     );
 
     // Filter Plans
@@ -145,6 +281,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     );
 
     setResults({
+      symptoms: matchedSymptoms,
       classes: matchedClasses,
       trainers: matchedTrainers,
       services: matchedServices,
@@ -153,9 +290,51 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     });
   }, [query]);
 
+  // String Capture Submission Handler to NeonDB & CRM Pipeline
+  const handleStringCaptureSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clientName || !clientEmail) return;
+
+    setIsSubmitting(true);
+
+    const capturedSubject = `HEALTH QUERY: "${query || 'General Symptom Search'}"`;
+    const capturedMessage = `CAPTURED QUERY STRING: "${query}"\n\nClient Notes: ${additionalNotes || 'N/A'}\nPhone: ${clientPhone || 'Not provided'}`;
+
+    try {
+      // Save directly in local store
+      VelocityAPI.createEnquiry({
+        name: clientName,
+        email: clientEmail,
+        phone: clientPhone,
+        subject: capturedSubject,
+        message: capturedMessage
+      });
+
+      // Post to PostgreSQL API
+      await fetch('/api/enquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: clientName,
+          email: clientEmail,
+          phone: clientPhone,
+          subject: capturedSubject,
+          message: capturedMessage
+        })
+      }).catch(() => {});
+
+      setConsultSuccess(true);
+      setIsSubmitting(false);
+    } catch {
+      setConsultSuccess(true);
+      setIsSubmitting(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   const totalResults = 
+    results.symptoms.length +
     results.classes.length + 
     results.trainers.length + 
     results.services.length + 
@@ -169,22 +348,25 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     >
       <div 
         ref={modalRef}
-        className="bg-[#121214] text-white w-full max-w-2xl rounded-xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[85vh] my-6 sm:my-10 animate-in slide-in-from-top-6 duration-200"
+        className="bg-[#121214] text-white w-full max-w-3xl rounded-xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] my-4 sm:my-8 animate-in slide-in-from-top-6 duration-200"
       >
         {/* Search Input Bar Header */}
         <div className="relative border-b border-zinc-800 flex items-center bg-[#18181b] px-5 py-4">
-          <Search className="w-5 h-5 text-zinc-400 mr-3 flex-shrink-0" />
+          <Search className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search BxStrength services, coaches, articles, plans... (e.g. Strength, Rehab)"
+            placeholder="Search symptoms, joint issues, PCOS cycle, coaches... (e.g. Knee pain, Back pain, Period cycle)"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full bg-transparent text-sm font-bold text-white placeholder-zinc-500 focus:outline-none py-1"
           />
           {query && (
             <button 
-              onClick={() => setQuery('')}
+              onClick={() => {
+                setQuery('');
+                setShowConsultForm(false);
+              }}
               className="text-xs text-zinc-400 hover:text-white mr-3 uppercase font-black cursor-pointer"
             >
               Clear
@@ -204,92 +386,231 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
         {/* Modal Content Scroll Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Default state: show popular suggestions */}
-          {!query.trim() ? (
-            <div className="space-y-4">
+          
+          {/* Direct String Capture Consultation Modal Overrider */}
+          {showConsultForm ? (
+            <div className="bg-[#18181c] border border-emerald-800/80 rounded-xl p-6 space-y-5 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <HeartPulse className="w-5 h-5 text-emerald-400" />
+                  <h3 className="text-base font-black uppercase text-white tracking-tight">
+                    CONSULT BXSTRENGTH EXPERTS FOR THIS ISSUE
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowConsultForm(false)}
+                  className="text-xs text-zinc-400 hover:text-white uppercase font-bold"
+                >
+                  Back to Search
+                </button>
+              </div>
+
+              {consultSuccess ? (
+                <div className="text-center py-8 space-y-3">
+                  <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto animate-bounce" />
+                  <h4 className="text-xl font-black text-white uppercase">INQUIRY SUBMITTED SUCCESSFULLY!</h4>
+                  <p className="text-xs text-zinc-300 max-w-md mx-auto leading-relaxed">
+                    Our Senior Biomechanics & Health Specialists have captured your inquiry regarding <strong className="text-emerald-400">"{query}"</strong>. A coach will review your details and reach out within 2 hours.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowConsultForm(false);
+                      setConsultSuccess(false);
+                      onClose();
+                    }}
+                    className="mt-4 bg-emerald-400 text-black text-xs font-black px-6 py-2.5 rounded uppercase tracking-wider cursor-pointer"
+                  >
+                    Done & Close
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleStringCaptureSubmit} className="space-y-4">
+                  <div className="bg-zinc-900 border border-zinc-800 p-3 rounded text-xs">
+                    <span className="text-zinc-400 uppercase font-bold block mb-1">Captured Search Issue:</span>
+                    <span className="text-emerald-400 font-mono font-bold text-sm">"{query}"</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black uppercase text-zinc-400 tracking-wider mb-1">
+                        Your Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        placeholder="e.g. Alex Morgan"
+                        className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none rounded focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase text-zinc-400 tracking-wider mb-1">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={clientEmail}
+                        onChange={(e) => setClientEmail(e.target.value)}
+                        placeholder="alex@example.com"
+                        className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none rounded focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black uppercase text-zinc-400 tracking-wider mb-1">
+                        Phone Number (Optional)
+                      </label>
+                      <input
+                        type="tel"
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        placeholder="+44 7123 456789"
+                        className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none rounded focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase text-zinc-400 tracking-wider mb-1">
+                        Symptom Duration / Details
+                      </label>
+                      <input
+                        type="text"
+                        value={additionalNotes}
+                        onChange={(e) => setAdditionalNotes(e.target.value)}
+                        placeholder="e.g. 3 months knee discomfort when squatting"
+                        className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none rounded focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-black tracking-widest py-3 rounded uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>{isSubmitting ? 'SENDING INQUIRY TO COACHES...' : 'SUBMIT QUERY TO EXPERT COACHES'}</span>
+                  </button>
+                </form>
+              )}
+            </div>
+          ) : !query.trim() ? (
+            /* Default state: show popular suggestions */
+            <div className="space-y-6">
               <div className="flex items-center gap-1.5 text-xs font-black text-zinc-400 uppercase tracking-widest">
                 <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                <span>POPULAR SEARCHES</span>
+                <span>POPULAR SYMPTOM & HEALTH SEARCHES</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {popularSearches.map((term) => (
                   <button
                     key={term}
                     onClick={() => setQuery(term)}
-                    className="px-3.5 py-2 bg-[#18181b] hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 hover:border-zinc-700 text-xs font-bold uppercase tracking-wider transition-colors rounded-lg cursor-pointer"
+                    className="px-3.5 py-2 bg-[#18181b] hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 hover:border-zinc-700 text-xs font-bold uppercase tracking-wider transition-colors rounded-lg cursor-pointer flex items-center gap-1.5"
                   >
-                    {term}
+                    <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{term}</span>
                   </button>
                 ))}
               </div>
 
-              {/* Informative Help Guide */}
-              <div className="mt-8 pt-6 border-t border-zinc-800 text-xs text-zinc-400 leading-relaxed font-normal">
-                <p className="font-bold text-white uppercase mb-2 flex items-center gap-1.5">
-                  <Command className="w-3.5 h-3.5 text-zinc-400" /> BxStrength Search Directory:
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-zinc-400">
-                  <li>Find bespoke protocols: <strong className="text-white">Strength & Recomp</strong>, <strong className="text-white">Postural Rehab</strong>.</li>
-                  <li>Lookup head coaches: <strong className="text-white">David Williams</strong>, <strong className="text-white">Dr. Sophia Chen</strong>, <strong className="text-white">Marcus Vance</strong>.</li>
-                  <li>Explore scientific articles: <strong className="text-white">Nutrition</strong>, periodization, and recovery.</li>
-                </ul>
+              {/* Featured Health Symptom Topics Directory */}
+              <div className="space-y-3 pt-4 border-t border-zinc-800">
+                <h4 className="text-[10px] font-black uppercase text-zinc-400 tracking-widest flex items-center gap-1.5">
+                  <HeartPulse className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>FEATURED HEALTH & REHABILITATION TOPICS</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {HEALTH_SYMPTOM_DATABASE.slice(0, 4).map((topic) => (
+                    <div
+                      key={topic.id}
+                      onClick={() => setQuery(topic.keywords[0])}
+                      className="bg-[#18181b] border border-zinc-800 hover:border-zinc-600 p-4 rounded-xl space-y-2 cursor-pointer group transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-900">
+                          {topic.category}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-zinc-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
+                      </div>
+                      <h5 className="text-xs font-black text-white uppercase group-hover:text-emerald-400 transition-colors leading-tight">
+                        {topic.title}
+                      </h5>
+                      <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed font-normal">
+                        {topic.summary}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : totalResults === 0 ? (
-            /* No results state */
-            <div className="text-center py-12 space-y-3">
-              <AlertCircle className="w-10 h-10 text-zinc-600 mx-auto" />
-              <p className="text-sm font-bold text-zinc-300 uppercase">
-                No matching results found for "{query}"
-              </p>
-              <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-                Try searching for related terms like "Strength", "Rehab", "David Williams", or "Nutrition".
-              </p>
             </div>
           ) : (
             /* Results display grouped by category */
             <div className="space-y-6">
-              <div className="text-xs font-black text-zinc-400 tracking-wider">
-                FOUND {totalResults} MATCHES FOR "{query.toUpperCase()}"
+              
+              {/* Top Banner: String Capture Trigger for Custom Queries */}
+              <div className="bg-emerald-950/40 border border-emerald-800/80 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <HeartPulse className="w-4 h-4 text-emerald-400" />
+                    <span>HAVING SPECIFIC ISSUES WITH "{query.toUpperCase()}"?</span>
+                  </h4>
+                  <p className="text-[11px] text-zinc-300">
+                    Reach out directly to BxStrength Senior Coaches & Admin to capture your exact symptom string for bespoke guidance.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowConsultForm(true)}
+                  className="bg-emerald-400 hover:bg-emerald-300 text-black text-[10px] font-black tracking-widest px-4 py-2.5 rounded uppercase transition-colors shrink-0 cursor-pointer flex items-center gap-1.5"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>CONSULT SPECIALISTS</span>
+                </button>
               </div>
 
-              {/* Group: Services */}
-              {results.services.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-[10px] font-black uppercase text-zinc-400 tracking-widest border-b border-zinc-800 pb-1 flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>BESPOKE SERVICES ({results.services.length})</span>
-                  </h4>
-                  <div className="grid gap-2">
-                    {results.services.map(svc => (
-                      <div 
-                        key={svc.id}
-                        className="bg-[#18181b] border border-zinc-800 p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 group hover:border-zinc-700 transition-colors"
-                      >
-                        <div className="space-y-1">
-                          <h5 className="text-sm font-black text-white uppercase group-hover:text-emerald-400 transition-colors">
-                            {svc.title}
-                          </h5>
-                          <p className="text-xs text-zinc-400 font-normal line-clamp-1">{svc.description}</p>
-                          <div className="flex flex-wrap gap-1 pt-1">
-                            {svc.benefits.slice(0, 2).map(ben => (
-                              <span key={ben} className="text-[9px] font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-900 px-2 py-0.5 rounded">
-                                ✓ {ben}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
+              {/* Group: Primary Symptom Topic Match & Related Topics */}
+              {results.symptoms.length > 0 && selectedTopic && (
+                <div className="bg-[#18181c] border border-emerald-900/80 rounded-xl p-5 space-y-4 shadow-xl">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-3">
+                    <div>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-950 px-2.5 py-0.5 rounded border border-emerald-800">
+                        HEALTH DIAGNOSTIC TOPIC
+                      </span>
+                      <h4 className="text-base font-black text-white uppercase mt-1">
+                        {selectedTopic.title}
+                      </h4>
+                    </div>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      Lead Coach: <strong className="text-white">{selectedTopic.recommendedCoach}</strong>
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-zinc-300 leading-relaxed font-normal">
+                    {selectedTopic.protocolGuide}
+                  </p>
+
+                  {/* Related Topics & Recommendations (Clickable) */}
+                  <div className="pt-2 border-t border-zinc-800/80 space-y-2">
+                    <span className="text-[10px] font-black uppercase text-zinc-400 tracking-wider flex items-center gap-1">
+                      <HelpCircle className="w-3 h-3 text-emerald-400" />
+                      <span>RELATED TOPICS & SCIENTIFIC GUIDES:</span>
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedTopic.relatedTopics.map((rel, idx) => (
                         <button
-                          onClick={() => {
-                            onClose();
-                            onNavigate('home', 'services-section');
-                          }}
-                          className="bg-white hover:bg-zinc-200 text-black text-[10px] font-black tracking-widest px-4 py-2 rounded uppercase transition-colors self-start sm:self-center cursor-pointer"
+                          key={idx}
+                          onClick={() => setQuery(rel)}
+                          className="text-[10px] font-bold text-zinc-300 bg-zinc-900 hover:bg-zinc-800 hover:text-emerald-400 border border-zinc-800 px-3 py-1.5 rounded transition-all cursor-pointer flex items-center gap-1"
                         >
-                          VIEW SERVICE
+                          <span>{rel}</span>
+                          <ArrowRight className="w-3 h-3 text-zinc-500" />
                         </button>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -299,7 +620,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black uppercase text-zinc-400 tracking-widest border-b border-zinc-800 pb-1 flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-white" />
-                    <span>UK HEAD COACHES ({results.trainers.length})</span>
+                    <span>RECOMMENDED SPECIALIST COACHES ({results.trainers.length})</span>
                   </h4>
                   <div className="grid gap-2">
                     {results.trainers.map(trainer => (
@@ -344,12 +665,12 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                 </div>
               )}
 
-              {/* Group: Blog Posts */}
+              {/* Group: Blog Posts & Scientific Research */}
               {results.blogs.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black uppercase text-zinc-400 tracking-widest border-b border-zinc-800 pb-1 flex items-center gap-1.5">
                     <BookOpen className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>ARTICLES & RESEARCH ({results.blogs.length})</span>
+                    <span>ARTICLES & RECOVERY GUIDES ({results.blogs.length})</span>
                   </h4>
                   <div className="grid gap-2">
                     {results.blogs.map(blog => (
@@ -384,42 +705,33 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                 </div>
               )}
 
-              {/* Group: Membership Plans */}
-              {results.plans.length > 0 && (
+              {/* Group: Services */}
+              {results.services.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black uppercase text-zinc-400 tracking-widest border-b border-zinc-800 pb-1 flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>MEMBERSHIP TIERS ({results.plans.length})</span>
+                    <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>BESPOKE SERVICES ({results.services.length})</span>
                   </h4>
                   <div className="grid gap-2">
-                    {results.plans.map(plan => (
+                    {results.services.map(svc => (
                       <div 
-                        key={plan.id}
+                        key={svc.id}
                         className="bg-[#18181b] border border-zinc-800 p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 group hover:border-zinc-700 transition-colors"
                       >
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h5 className="text-sm font-black text-white uppercase group-hover:text-emerald-400 transition-colors">
-                              {plan.name}
-                            </h5>
-                            {plan.popular && (
-                              <span className="text-[8px] font-black bg-white text-black px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                RECOMMENDED
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs font-bold text-zinc-300">
-                            £{plan.price} / {plan.period}
-                          </div>
+                          <h5 className="text-sm font-black text-white uppercase group-hover:text-emerald-400 transition-colors">
+                            {svc.title}
+                          </h5>
+                          <p className="text-xs text-zinc-400 font-normal line-clamp-1">{svc.description}</p>
                         </div>
                         <button
                           onClick={() => {
                             onClose();
-                            onSelectPlan(plan.name);
+                            onNavigate('home', 'services-section');
                           }}
                           className="bg-white hover:bg-zinc-200 text-black text-[10px] font-black tracking-widest px-4 py-2 rounded uppercase transition-colors self-start sm:self-center cursor-pointer"
                         >
-                          SELECT TIER
+                          VIEW SERVICE
                         </button>
                       </div>
                     ))}
@@ -434,4 +746,3 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     </div>
   );
 };
-

@@ -20,6 +20,15 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
   const [rateLimiting, setRateLimiting] = useState(true);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
+  // Coach Permissions state
+  const [coachPermissions, setCoachPermissions] = useState(() => VelocityAPI.getCoachPermissions());
+
+  const handleToggleCoachPerm = (key: keyof typeof coachPermissions, val: boolean) => {
+    const updated = VelocityAPI.saveCoachPermissions({ [key]: val });
+    setCoachPermissions(updated);
+    onShowToast(`Coach tab access permission updated: ${String(key)} -> ${val ? 'ALLOWED' : 'RESTRICTED'}`);
+  };
+
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
     onShowToast('Platform security configuration updated successfully!');
@@ -97,8 +106,110 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
           </div>
         </div>
 
-        {/* Security Configuration Panel */}
+        {/* Security & Coach Permissions Control Panel */}
         <div className="bg-[#111111] border border-gray-800 p-6 space-y-6">
+          
+          {/* Coach Tab Access Permissions Section */}
+          <div className="border-b border-gray-800 pb-6 space-y-4">
+            <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              COACH TAB ACCESS PERMISSIONS
+            </h3>
+            <p className="text-[11px] text-gray-400 leading-relaxed font-normal">
+              Control which sections of the Coach Dashboard are visible to Coaches. Client Financial Payments are restricted by default.
+            </p>
+
+            <div className="space-y-2.5">
+              
+              {/* Financial Billing Toggle */}
+              <div className="flex items-center justify-between p-3 bg-gray-900/90 border border-amber-900/40 rounded">
+                <div>
+                  <span className="font-bold text-white block text-xs">Client Financials & Payments</span>
+                  <span className="text-[10px] text-amber-400 font-mono">
+                    {coachPermissions.allowFinancials ? 'ALLOWED (Visible)' : 'RESTRICTED (Hidden from Coaches)'}
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={coachPermissions.allowFinancials}
+                  onChange={(e) => handleToggleCoachPerm('allowFinancials', e.target.checked)}
+                  className="w-4 h-4 rounded border-amber-700 text-amber-400 focus:ring-amber-400 cursor-pointer"
+                />
+              </div>
+
+              {/* Lead Pipeline Toggle */}
+              <div className="flex items-center justify-between p-3 bg-gray-900 border border-gray-800 rounded text-xs">
+                <div>
+                  <span className="font-bold text-white block">CRM Lead Pipeline</span>
+                  <span className="text-[10px] text-gray-400">Overview dashboard & lead sync</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={coachPermissions.allowLeadPipeline}
+                  onChange={(e) => handleToggleCoachPerm('allowLeadPipeline', e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
+                />
+              </div>
+
+              {/* Client Roster Toggle */}
+              <div className="flex items-center justify-between p-3 bg-gray-900 border border-gray-800 rounded text-xs">
+                <div>
+                  <span className="font-bold text-white block">Client Roster & Athlete Profiles</span>
+                  <span className="text-[10px] text-gray-400">Assigned client management</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={coachPermissions.allowClientRoster}
+                  onChange={(e) => handleToggleCoachPerm('allowClientRoster', e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
+                />
+              </div>
+
+              {/* Workout Programs Toggle */}
+              <div className="flex items-center justify-between p-3 bg-gray-900 border border-gray-800 rounded text-xs">
+                <div>
+                  <span className="font-bold text-white block">Workout Program Builder</span>
+                  <span className="text-[10px] text-gray-400">Assign exercise routines</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={coachPermissions.allowWorkoutPrograms}
+                  onChange={(e) => handleToggleCoachPerm('allowWorkoutPrograms', e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
+                />
+              </div>
+
+              {/* Diet Plans Toggle */}
+              <div className="flex items-center justify-between p-3 bg-gray-900 border border-gray-800 rounded text-xs">
+                <div>
+                  <span className="font-bold text-white block">Diet & Nutrition Plan Builder</span>
+                  <span className="text-[10px] text-gray-400">Assign calorie & macro targets</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={coachPermissions.allowNutritionPlans}
+                  onChange={(e) => handleToggleCoachPerm('allowNutritionPlans', e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
+                />
+              </div>
+
+              {/* Support Tickets Toggle */}
+              <div className="flex items-center justify-between p-3 bg-gray-900 border border-gray-800 rounded text-xs">
+                <div>
+                  <span className="font-bold text-white block">Support Ticket Desk</span>
+                  <span className="text-[10px] text-gray-400">View client assistance requests</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={coachPermissions.allowSupportTickets}
+                  onChange={(e) => handleToggleCoachPerm('allowSupportTickets', e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
+                />
+              </div>
+
+            </div>
+          </div>
+
           <h3 className="text-sm font-black uppercase tracking-wider text-white border-b border-gray-800 pb-3 flex items-center gap-2">
             <Lock className="w-4 h-4 text-[#E52165]" />
             PLATFORM SYSTEM SETTINGS
@@ -145,7 +256,7 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
 
             <button
               type="submit"
-              className="w-full bg-[#E52165] hover:bg-[#c41551] text-white font-black tracking-widest py-2.5 uppercase transition-all shadow-md shadow-pink-500/20"
+              className="w-full bg-[#E52165] hover:bg-[#c41551] text-white font-black tracking-widest py-2.5 uppercase transition-all shadow-md shadow-pink-500/20 cursor-pointer"
             >
               SAVE CONFIGURATION
             </button>

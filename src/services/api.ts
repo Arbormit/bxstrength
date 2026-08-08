@@ -1,5 +1,5 @@
 import {
-  User, UserRole, BodyStat, WorkoutProgram, NutritionPlan,
+  User, UserRole, CoachPosition, CoachPermissions, BodyStat, WorkoutProgram, NutritionPlan,
   ClassSchedule, Booking, AttendanceRecord, Subscription,
   Enquiry, AuditLog, Announcement, BlogPost, Testimonial,
   SupportTicket, TicketStatus, TicketCategory, TicketPriority
@@ -22,7 +22,18 @@ const STORAGE_KEYS = {
   ANNOUNCEMENTS: 'velocity_announcements',
   BLOG_POSTS: 'bxstrength_blog_posts',
   REVIEWS: 'bxstrength_client_reviews',
-  TICKETS: 'bxstrength_support_tickets'
+  TICKETS: 'bxstrength_support_tickets',
+  COACH_PERMISSIONS: 'bxstrength_coach_permissions'
+};
+
+export const DEFAULT_COACH_PERMISSIONS: CoachPermissions = {
+  allowFinancials: false,        // Strict Default: Client Payments & Financials hidden from Coaches
+  allowLeadPipeline: true,
+  allowClientRoster: true,
+  allowClassSchedules: true,
+  allowWorkoutPrograms: true,
+  allowNutritionPlans: true,
+  allowSupportTickets: true
 };
 
 // Seed initial data (Only essential system admin for initial setup)
@@ -214,8 +225,8 @@ export const VelocityAPI = {
   },
 
   async register(data: { name: string; email: string; phone?: string; role?: UserRole; password?: string }): Promise<{ user: User; token: string }> {
-    initStore();
-    const assignedRole = (data.role === 'admin') ? 'client' : (data.role || 'client');
+    // Strict Security: Prevent self-assignment of 'admin' role
+    const assignedRole = (data.role === 'coach' || data.role === 'user') ? data.role : 'client';
 
     try {
       const res = await fetch('/api/auth/register', {
@@ -1118,5 +1129,30 @@ export const VelocityAPI = {
       return tickets[idx];
     }
     return null;
+  },
+
+  // --- COACH PERMISSIONS MANAGEMENT ---
+  getCoachPermissions(): CoachPermissions {
+    initStore();
+    return getItem<CoachPermissions>(STORAGE_KEYS.COACH_PERMISSIONS, DEFAULT_COACH_PERMISSIONS);
+  },
+
+  saveCoachPermissions(newPerms: Partial<CoachPermissions>): CoachPermissions {
+    initStore();
+    const currentPerms = this.getCoachPermissions();
+    const updated = { ...currentPerms, ...newPerms };
+    setItem(STORAGE_KEYS.COACH_PERMISSIONS, updated);
+
+    const currentUser = this.getCurrentUser();
+    if (currentUser) {
+      this.addAuditLog(
+        currentUser.id,
+        currentUser.name,
+        currentUser.role,
+        'UPDATE_COACH_PERMISSIONS',
+        `Admin updated Coach Tab Access: Financials: ${updated.allowFinancials ? 'ALLOWED' : 'RESTRICTED'}`
+      );
+    }
+    return updated;
   }
 };

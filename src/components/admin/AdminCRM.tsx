@@ -94,6 +94,17 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
   const isCoach = user.role === 'coach';
   const isAdmin = user.role === 'admin';
 
+  // Dynamic Coach Tab Access Control configured by Admin
+  const coachPerms = VelocityAPI.getCoachPermissions();
+  const allowedCoachTabs: string[] = [];
+  if (coachPerms.allowLeadPipeline) allowedCoachTabs.push('overview');
+  if (coachPerms.allowClientRoster) allowedCoachTabs.push('users');
+  if (coachPerms.allowClassSchedules) allowedCoachTabs.push('schedule');
+  if (coachPerms.allowWorkoutPrograms) allowedCoachTabs.push('programs');
+  if (coachPerms.allowNutritionPlans) allowedCoachTabs.push('nutrition');
+  if (coachPerms.allowFinancials) allowedCoachTabs.push('subscriptions'); // Only visible if Admin explicitly enables it!
+  if (coachPerms.allowSupportTickets) allowedCoachTabs.push('tickets');
+
   const allNavItems = [
     { id: 'overview', label: isCoach ? 'COACH DASHBOARD' : 'CRM OVERVIEW', icon: LayoutDashboard },
     { id: 'users', label: isCoach ? 'CLIENT ROSTER' : 'USER DIRECTORY', icon: Users },
@@ -104,12 +115,21 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
     { id: 'enquiries', label: 'WEBSITE ENQUIRIES', icon: Mail },
     { id: 'tickets', label: 'SUPPORT TICKETS', icon: LifeBuoy },
     { id: 'announcements', label: 'ANNOUNCEMENTS', icon: ShieldAlert },
-    { id: 'audit', label: 'AUDIT LOGS & CONFIG', icon: ShieldCheck }
+    { id: 'audit', label: 'AUDIT LOGS & PERMISSIONS', icon: ShieldCheck }
   ];
 
   const navItems = isCoach
-    ? allNavItems.filter((item) => ['overview', 'users', 'schedule', 'programs', 'nutrition', 'subscriptions', 'tickets'].includes(item.id))
+    ? allNavItems.filter((item) => allowedCoachTabs.includes(item.id))
     : allNavItems;
+
+  // Auto-redirect coach if currently on a restricted tab (e.g., Financial Billing)
+  useEffect(() => {
+    if (isCoach && !allowedCoachTabs.includes(activeTab)) {
+      const fallbackTab = allowedCoachTabs[0] || 'overview';
+      setActiveTab(fallbackTab);
+      showToast('Tab access restricted by System Administrator.');
+    }
+  }, [isCoach, activeTab, allowedCoachTabs]);
 
   const coaches = users.filter((u) => u.role === 'coach' || u.role === 'admin');
   const clients = users.filter((u) => u.role === 'client');
