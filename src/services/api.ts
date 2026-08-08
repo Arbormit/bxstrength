@@ -405,26 +405,65 @@ export const VelocityAPI = {
     return newUser;
   },
 
-  updateUser(id: string, updates: Partial<User>): User {
+  async updateUser(id: string, updates: Partial<User>): Promise<User> {
+    initStore();
     const users = this.getUsers();
-    const idx = users.findIndex((u) => u.id === id);
-    if (idx === -1) throw new Error('User not found');
+    const current = this.getCurrentUser();
 
-    const updated = { ...users[idx], ...updates };
-    users[idx] = updated;
+    // Match by ID or by current email
+    let idx = users.findIndex((u) => u.id === id || (current && u.email.toLowerCase() === current.email.toLowerCase()));
+
+    let targetUser: User;
+
+    if (idx !== -1) {
+      targetUser = { ...users[idx], ...updates };
+      users[idx] = targetUser;
+    } else {
+      // If user came from NeonDB or Google OAuth, create entry in users list
+      targetUser = {
+        id: id,
+        name: updates.name || current?.name || 'User',
+        email: updates.email || current?.email || '',
+        role: updates.role || current?.role || 'client',
+        isVerified: true,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        ...updates
+      };
+      users.push(targetUser);
+    }
+
     setItem(STORAGE_KEYS.USERS, users);
 
-    // If current logged-in user updated their own profile
-    const current = this.getCurrentUser();
-    if (current && current.id === id) {
-      setItem(STORAGE_KEYS.CURRENT_USER, updated);
+    // If logged-in user updated their own profile
+    if (current && (current.id === id || current.email.toLowerCase() === targetUser.email.toLowerCase())) {
+      setItem(STORAGE_KEYS.CURRENT_USER, targetUser);
     }
 
-    if (current) {
-      this.addAuditLog(current.id, current.name, current.role, 'UPDATE_USER_PROFILE', `Updated user details for ${updated.name}`);
+    // Real-Time NeonDB Database Sync via REST API
+    try {
+      const token = getItem<string>(STORAGE_KEYS.TOKEN, '');
+      await fetch(`/api/users/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(updates)
+      });
+    } catch (err: any) {
+      console.warn('NeonDB real-time profile update note:', err.message);
     }
 
-    return updated;
+    this.addAuditLog(
+      current?.id || targetUser.id, 
+      current?.name || targetUser.name, 
+      current?.role || targetUser.role, 
+      'UPDATE_USER_PROFILE', 
+      `Updated user profile details for ${targetUser.name}`
+    );
+
+    return targetUser;
   },
 
   resetPassword(email: string, newPassword: string): boolean {
@@ -451,10 +490,10 @@ export const VelocityAPI = {
     }
   },
 
-  toggleVerifyUser(id: string): User {
+  async toggleVerifyUser(id: string): Promise<User> {
     const user = this.getUsers().find((u) => u.id === id);
-    if (!user) throw new Error('User not found');
-    return this.updateUser(id, { isVerified: !user.isVerified });
+    const isVerified = user ? !user.isVerified : true;
+    return await this.updateUser(id, { isVerified });
   },
 
   // --- BODY STATS & BMI ---

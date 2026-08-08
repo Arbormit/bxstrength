@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AuditLog } from '../../types';
 import { VelocityAPI } from '../../services/api';
-import { ShieldCheck, Activity, Lock, Database, Trash2 } from 'lucide-react';
+import { ShieldCheck, Activity, Lock, Trash2 } from 'lucide-react';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface AuditLogsAndSettingsProps {
@@ -261,16 +261,6 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
               SAVE CONFIGURATION
             </button>
           </form>
-
-          {/* Database Integration Info Box */}
-          <div className="p-4 bg-gray-900/90 border border-gray-800 space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-200 flex items-center gap-1.5">
-              <Database className="w-4 h-4 text-emerald-400" /> NeonDB Sync Status
-            </h4>
-            <p className="text-[11px] text-gray-400">
-              Backend PostgreSQL schema ready. Connects directly via <code className="text-pink-400 font-mono">DATABASE_URL</code> in environment variables with client fallback.
-            </p>
-          </div>
         </div>
       </div>
 

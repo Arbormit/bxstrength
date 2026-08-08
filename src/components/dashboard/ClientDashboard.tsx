@@ -222,17 +222,16 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
           />
         )}
 
-        {activeTab === 'achievements' && <AchievementsView />}
+        {activeTab === 'achievements' && (
+          <AchievementsView user={user} onShowToast={showToast} />
+        )}
 
         {activeTab === 'tickets' && (
           <SupportTicketsView user={user} onShowToast={showToast} />
         )}
 
         {activeTab === 'subscription' && (
-          <SubscriptionView
-            subscription={subscriptions.find(s => s.userId === user.id || s.userEmail.toLowerCase() === user.email.toLowerCase())}
-            onShowToast={showToast}
-          />
+          <SubscriptionView user={user} onShowToast={showToast} />
         )}
 
         {activeTab === 'profile' && (

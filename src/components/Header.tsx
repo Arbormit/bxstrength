@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ViewPage } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { Dumbbell, Menu, X, Calendar, Phone, Search, LogIn, UserPlus, LayoutDashboard, ClipboardList } from 'lucide-react';
+import { Dumbbell, Menu, X, Calendar, Phone, Search, LogIn, UserPlus, LayoutDashboard } from 'lucide-react';
 
 interface HeaderProps {
   currentPage: ViewPage;
@@ -25,17 +25,39 @@ export const Header: React.FC<HeaderProps> = ({
   const { user, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 40) {
+    let ticking = false;
+
+    const updateScrollProgress = () => {
+      const totalHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const currentScroll = window.scrollY;
+      if (totalHeight > 0) {
+        setScrollProgress(Math.min(Math.max(currentScroll / totalHeight, 0), 1));
+      } else {
+        setScrollProgress(0);
+      }
+
+      if (currentScroll > 40) {
         setScrolled(true);
       } else {
         setScrolled(false);
       }
+      ticking = false;
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateScrollProgress);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    updateScrollProgress();
+
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   const navItems: { label: string; page: ViewPage }[] = [
@@ -65,6 +87,17 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-50 bg-[#0a0a0a] transition-all duration-300">
+      {/* Precision UK Executive Scroll Hairline */}
+      <div className="fixed top-0 left-0 right-0 h-[2.5px] bg-zinc-950/80 z-[100] pointer-events-none overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-amber-300 shadow-[0_0_8px_rgba(16,185,129,0.7)] transition-transform duration-75 ease-out will-change-transform"
+          style={{
+            transform: `scaleX(${scrollProgress})`,
+            transformOrigin: 'left'
+          }}
+        />
+      </div>
+
       {/* 1. TOP ANNOUNCEMENT & CONTACT BAR */}
       <div className="hidden md:block bg-[#121214] text-zinc-400 text-xs py-1.5 px-6 border-b border-zinc-800/80">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -131,18 +164,11 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="hidden sm:flex items-center gap-3">
             <button
               onClick={onOpenSearch}
-              className="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800/80 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-zinc-700"
-              title="Search Platform"
+              className="bg-[#141416] hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-xs tracking-wider px-3.5 py-2.5 rounded-lg border border-zinc-800 hover:border-zinc-700 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+              title="Search BxStrength Health & Symptom Database"
             >
-              <Search className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={onOpenAssessment}
-              className="border border-zinc-700 hover:border-white text-zinc-300 hover:text-white font-bold text-xs tracking-wider uppercase px-4 py-2.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer bg-zinc-900/60"
-            >
-              <ClipboardList className="w-4 h-4 text-emerald-400" />
-              SELF ASSESSMENT
+              <Search className="w-4 h-4 text-emerald-400" />
+              <span className="hidden md:inline text-xs font-bold uppercase tracking-wider text-zinc-300">SEARCH</span>
             </button>
 
             <button
@@ -185,8 +211,17 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Mobile menu toggle button */}
-          <div className="flex items-center gap-2 lg:hidden">
+          {/* Mobile menu toggle & quick search button */}
+          <div className="flex items-center gap-2 sm:hidden">
+            <button
+              onClick={onOpenSearch}
+              className="p-2 text-emerald-400 hover:text-white bg-[#141416] border border-zinc-800 rounded-lg cursor-pointer flex items-center justify-center"
+              aria-label="Search Platform"
+              title="Search"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+
             <button
               onClick={onOpenBooking}
               className="bg-white text-black text-[10px] font-black tracking-wider px-3 py-1.5 rounded uppercase cursor-pointer"
@@ -280,15 +315,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               ) : null}
 
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenAssessment();
-                }}
-                className="w-full border border-zinc-700 text-white text-xs font-black tracking-widest py-3 rounded-lg uppercase text-center flex items-center justify-center gap-2 bg-zinc-900"
-              >
-                <ClipboardList className="w-4 h-4 text-emerald-400" /> TAKE SELF ASSESSMENT
-              </button>
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);

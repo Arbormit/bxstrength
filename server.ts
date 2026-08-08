@@ -145,6 +145,11 @@ if (dbPool) {
           );
 
           ALTER TABLE users ADD COLUMN IF NOT EXISTS coach_position VARCHAR(100) DEFAULT 'Senior Coach';
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS height_cm INTEGER DEFAULT 175;
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS age INTEGER DEFAULT 25;
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(50) DEFAULT 'Other';
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(100) DEFAULT 'Normal User';
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_statements TEXT DEFAULT '[]';
         `);
       } catch {
         // Table initialization complete
@@ -519,9 +524,9 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-app.post('/api/users', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
+app.post('/api/users', authenticateToken, async (req: any, res: any) => {
   try {
-    const { name, email, phone, role, coachPosition } = req.body;
+    const { name, email, phone, role, coachPosition, heightCm, age, gender, fitnessGoals } = req.body;
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and email are required' });
     }
@@ -529,15 +534,16 @@ app.post('/api/users', authenticateToken, authorizeRoles('admin'), async (req: a
     const cleanName = sanitizeInput(name);
     const cleanEmail = sanitizeInput(email).toLowerCase();
     const cleanPhone = sanitizeInput(phone || '');
-    const cleanRole = sanitizeInput(role || 'client');
+    const cleanRole = req.user.role === 'admin' ? sanitizeInput(role || 'client') : 'client';
     const cleanPos = sanitizeInput(coachPosition || 'Senior Coach');
+    const height = Number(heightCm) || 175;
 
     if (dbPool) {
       try {
         await dbPool.query(
-          `INSERT INTO users (id, name, email, password_hash, role, coach_position, phone, is_verified, created_at)
-           VALUES ($1, $2, $3, 'HASHED_PASS', $4, $5, $6, true, NOW())`,
-          [userId, cleanName, cleanEmail, cleanRole, cleanPos, cleanPhone]
+          `INSERT INTO users (id, name, email, password_hash, role, coach_position, phone, height_cm, age, gender, fitness_goals, is_verified, created_at)
+           VALUES ($1, $2, $3, 'HASHED_PASS', $4, $5, $6, $7, $8, $9, $10, true, NOW())`,
+          [userId, cleanName, cleanEmail, cleanRole, cleanPos, cleanPhone, height, Number(age) || 25, sanitizeInput(gender || 'Other'), sanitizeInput(fitnessGoals || '')]
         );
       } catch (e: any) {
         console.warn('NeonDB user insert note:', e.message);
@@ -551,23 +557,57 @@ app.post('/api/users', authenticateToken, authorizeRoles('admin'), async (req: a
   }
 });
 
-app.patch('/api/users/:id', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
+app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, role, coachPosition } = req.body;
+    const { name, email, phone, role, coachPosition, heightCm, age, gender, fitnessGoals, subscriptionTier, billingStatements } = req.body;
+
+    // Authorization check: User can update their own profile OR must be admin/coach
+    if (req.user.id !== id && req.user.role !== 'admin' && req.user.role !== 'coach') {
+      return res.status(403).json({ error: 'Forbidden: You can only update your own profile.' });
+    }
+
+    const cleanRole = req.user.role === 'admin' ? (role || null) : null;
+    const parsedHeight = heightCm !== undefined && heightCm !== null && !isNaN(Number(heightCm)) ? Number(heightCm) : null;
+    const statementsJson = billingStatements !== undefined ? JSON.stringify(billingStatements) : null;
 
     if (dbPool) {
       try {
         await dbPool.query(
-          `UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email), phone = COALESCE($3, phone), role = COALESCE($4, role), coach_position = COALESCE($5, coach_position) WHERE id = $6`,
-          [name || null, email || null, phone || null, role || null, coachPosition || null, id]
+          `UPDATE users SET 
+            name = COALESCE($1, name), 
+            email = COALESCE($2, email), 
+            phone = COALESCE($3, phone), 
+            role = COALESCE($4, role), 
+            coach_position = COALESCE($5, coach_position),
+            height_cm = CASE WHEN $6::integer IS NOT NULL THEN $6::integer ELSE height_cm END,
+            age = COALESCE($7, age),
+            gender = COALESCE($8, gender),
+            fitness_goals = COALESCE($9, fitness_goals),
+            subscription_tier = COALESCE($10, subscription_tier),
+            billing_statements = COALESCE($11, billing_statements)
+           WHERE id = $12`,
+          [
+            name ? sanitizeInput(name) : null, 
+            email ? sanitizeInput(email).toLowerCase() : null, 
+            phone ? sanitizeInput(phone) : null, 
+            cleanRole, 
+            coachPosition ? sanitizeInput(coachPosition) : null, 
+            parsedHeight,
+            age ? Number(age) : null,
+            gender ? sanitizeInput(gender) : null,
+            fitnessGoals ? sanitizeInput(fitnessGoals) : null,
+            subscriptionTier ? sanitizeInput(subscriptionTier) : null,
+            statementsJson,
+            id
+          ]
         );
       } catch (e: any) {
         console.warn('NeonDB user update note:', e.message);
       }
     }
 
-    res.json({ message: `User ${id} updated in database!` });
+    res.json({ message: `User profile ${id} updated in NeonDB database!` });
   } catch (err: any) {
     console.error('Update user error:', err.message);
     res.status(500).json({ error: 'Failed to update user' });

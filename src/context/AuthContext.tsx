@@ -79,14 +79,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfile = async (updates: Partial<User>): Promise<User> => {
     if (!user) throw new Error('Not authenticated');
-    const updated = VelocityAPI.updateUser(user.id, updates);
+    const updated = await VelocityAPI.updateUser(user.id, updates);
     setUser(updated);
     return updated;
   };
 
-  const verifyEmail = () => {
+  const verifyEmail = async () => {
     if (user && !user.isVerified) {
-      const updated = VelocityAPI.updateUser(user.id, { isVerified: true });
+      const updated = await VelocityAPI.updateUser(user.id, { isVerified: true });
       setUser(updated);
     }
   };

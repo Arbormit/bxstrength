@@ -13,6 +13,7 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
   const [name, setName] = useState(user.name);
   const [phone, setPhone] = useState(user.phone || '');
   const [age, setAge] = useState<number | ''>(user.age || '');
+  const [heightCm, setHeightCm] = useState<number | ''>(user.heightCm || 175);
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | 'Prefer not to say'>(user.gender || 'Male');
   const [emergencyContact, setEmergencyContact] = useState(user.emergencyContact || '');
   const [fitnessGoals, setFitnessGoals] = useState(user.fitnessGoals || '');
@@ -50,6 +51,7 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
         name,
         phone,
         age: Number(age) || undefined,
+        heightCm: Number(heightCm) || undefined,
         gender,
         emergencyContact,
         fitnessGoals,
@@ -237,7 +239,7 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
                       Age
@@ -247,7 +249,20 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
                       value={age}
                       onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')}
                       placeholder="e.g. 30"
-                      className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white px-3.5 py-2.5 text-sm rounded-none outline-none"
+                      className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white px-3 py-2.5 text-sm rounded-none outline-none font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">
+                      Height (cm)
+                    </label>
+                    <input
+                      type="number"
+                      value={heightCm}
+                      onChange={(e) => setHeightCm(e.target.value ? Number(e.target.value) : '')}
+                      placeholder="e.g. 175"
+                      className="w-full bg-gray-900 border border-emerald-800 focus:border-emerald-400 text-white px-3 py-2.5 text-sm rounded-none outline-none font-mono"
                     />
                   </div>
 
@@ -258,7 +273,7 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
                     <select
                       value={gender}
                       onChange={(e) => setGender(e.target.value as any)}
-                      className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white px-2 py-2.5 text-sm rounded-none outline-none"
+                      className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white px-2 py-2.5 text-xs rounded-none outline-none"
                     >
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
@@ -271,7 +286,7 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                  Emergency Contact Contact Info
+                  Emergency Contact Info
                 </label>
                 <input
                   type="text"

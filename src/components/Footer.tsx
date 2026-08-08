@@ -105,9 +105,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   <Shield className="w-3.5 h-3.5 text-zinc-500" /> Privacy Policy
                 </button>
               </li>
-              <li className="text-zinc-400 flex items-center gap-1.5 font-bold">
-                <Lock className="w-3.5 h-3.5 text-zinc-500" /> Cookie Consent & Preferences
-              </li>
             </ul>
             <div className="pt-2 text-[10px] text-zinc-400 leading-relaxed border-t border-zinc-900">
               Fully compliant with UK GDPR Considerations, SSL 256-bit encryption, and secure client data protocols.
@@ -154,7 +151,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         {/* Bottom copyright */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-400">
           <p className="text-center sm:text-left">
-            © 2026 BxStrength UK Digital Coaching Platform. All rights reserved.
+            © 2026 BxStrength UK Digital Coaching Platform. All rights reserved. | Design & Developed by : <a href="https://www.arbormit.com">Arbormit</a>
           </p>
 
           <div className="flex items-center gap-4 text-xs">

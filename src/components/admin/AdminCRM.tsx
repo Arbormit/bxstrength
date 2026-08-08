@@ -46,21 +46,36 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
       if (res.ok) {
         const rawUsers = await res.json();
         if (Array.isArray(rawUsers)) {
-          const formattedUsers: User[] = rawUsers.map((u: any) => ({
-            id: String(u.id || `user-${Date.now()}`),
-            name: String(u.name || u.email || 'User'),
-            email: String(u.email || ''),
-            role: (u.role || 'client') as UserRole,
-            coachPosition: u.coach_position || u.coachPosition || (u.role === 'coach' ? 'Senior Coach' : undefined),
-            phone: u.phone || '',
-            age: u.age || 25,
-            gender: u.gender || 'Other',
-            avatarUrl: u.avatar_url || u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.email || 'User')}`,
-            fitnessGoals: u.fitness_goals || u.fitnessGoals || '',
-            isVerified: u.is_verified !== undefined ? Boolean(u.is_verified) : (u.isVerified !== undefined ? Boolean(u.isVerified) : true),
-            status: u.status || 'active',
-            createdAt: u.created_at || u.createdAt || new Date().toISOString()
-          }));
+          const formattedUsers: User[] = rawUsers.map((u: any) => {
+            let statements: any[] = [];
+            if (u.billing_statements) {
+              if (Array.isArray(u.billing_statements)) statements = u.billing_statements;
+              else if (typeof u.billing_statements === 'string') {
+                try { statements = JSON.parse(u.billing_statements); } catch { statements = []; }
+              }
+            } else if (u.billingStatements) {
+              statements = Array.isArray(u.billingStatements) ? u.billingStatements : [];
+            }
+
+            return {
+              id: String(u.id || `user-${Date.now()}`),
+              name: String(u.name || u.email || 'User'),
+              email: String(u.email || ''),
+              role: (u.role || 'client') as UserRole,
+              coachPosition: u.coach_position || u.coachPosition || (u.role === 'coach' ? 'Senior Coach' : undefined),
+              phone: u.phone || '',
+              age: u.age || 25,
+              heightCm: (u.height_cm !== undefined && u.height_cm !== null && !isNaN(Number(u.height_cm))) ? Number(u.height_cm) : (u.heightCm || 175),
+              gender: u.gender || 'Other',
+              subscriptionTier: u.subscription_tier || u.subscriptionTier || 'Normal User',
+              billingStatements: statements,
+              avatarUrl: u.avatar_url || u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.email || 'User')}`,
+              fitnessGoals: u.fitness_goals || u.fitnessGoals || '',
+              isVerified: u.is_verified !== undefined ? Boolean(u.is_verified) : (u.isVerified !== undefined ? Boolean(u.isVerified) : true),
+              status: u.status || 'active',
+              createdAt: u.created_at || u.createdAt || new Date().toISOString()
+            };
+          });
           setUsers(formattedUsers);
         } else {
           setUsers(VelocityAPI.getUsers());

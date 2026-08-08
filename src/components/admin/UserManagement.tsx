@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, UserRole } from '../../types';
+import { User, UserRole, SubscriptionTier, BillingStatement } from '../../types';
 import { VelocityAPI } from '../../services/api';
 import { Users, Search, Plus, Edit2, Trash2, CheckCircle2, Filter, X } from 'lucide-react';
 import { ConfirmModal } from '../ui/ConfirmModal';
@@ -26,8 +26,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [heightCm, setHeightCm] = useState<number | ''>(175);
   const [role, setRole] = useState<UserRole>('client');
   const [coachPosition, setCoachPosition] = useState<string>('Senior Coach');
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>('Normal User');
+  const [billingStatements, setBillingStatements] = useState<BillingStatement[]>([]);
   const [fitnessGoals, setFitnessGoals] = useState('');
 
   // If coach, filter strictly to clients
@@ -46,8 +49,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setName('');
     setEmail('');
     setPhone('');
+    setHeightCm(175);
     setRole('client');
     setCoachPosition('Senior Coach');
+    setSubscriptionTier('Normal User');
+    setBillingStatements([]);
     setFitnessGoals('');
     setShowModal(true);
   };
@@ -57,8 +63,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setName('');
     setEmail('');
     setPhone('');
+    setHeightCm(175);
     setRole('coach');
     setCoachPosition('Head Coach');
+    setSubscriptionTier('Premium Elite User');
+    setBillingStatements([]);
     setFitnessGoals('UK Certified Fitness & Strength Master Coach');
     setShowModal(true);
   };
@@ -68,10 +77,50 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setName(user.name);
     setEmail(user.email);
     setPhone(user.phone || '');
+    setHeightCm(user.heightCm || 175);
     setRole(user.role);
     setCoachPosition(user.coachPosition || 'Senior Coach');
+    setSubscriptionTier(user.subscriptionTier || 'Normal User');
+    setBillingStatements(user.billingStatements || []);
     setFitnessGoals(user.fitnessGoals || '');
     setShowModal(true);
+  };
+
+  const handleAddInvoice = () => {
+    const invNum = `INV-${new Date().getFullYear()}-${String(Math.floor(100 + Math.random() * 900))}`;
+    const amount = subscriptionTier === 'Premium Elite User' ? 89 : (subscriptionTier === 'Premium User' ? 49 : 0);
+    const newInv: BillingStatement = {
+      id: `inv-${Date.now()}`,
+      invoiceNumber: invNum,
+      amount: amount,
+      currency: 'GBP (£)',
+      date: new Date().toISOString().split('T')[0],
+      status: 'Paid',
+      description: `${subscriptionTier} Monthly Billing`
+    };
+    setBillingStatements(prev => [newInv, ...prev]);
+  };
+
+  const handleReceiptFileUpload = (invId: string, file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      onShowToast('Receipt document size should be under 5MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setBillingStatements(prev => prev.map(inv => inv.id === invId ? {
+        ...inv,
+        receiptFileUrl: base64,
+        fileName: file.name
+      } : inv));
+      onShowToast(`Attached payment slip / receipt "${file.name}"!`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveInvoice = (invId: string) => {
+    setBillingStatements(prev => prev.filter(i => i.id !== invId));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,24 +132,21 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
     const targetRole = isCoach ? 'client' : role;
     const finalCoachPos = targetRole === 'coach' ? coachPosition : undefined;
+    const numHeight = Number(heightCm) || 175;
 
     try {
       if (editingUser) {
-        VelocityAPI.updateUser(editingUser.id, {
+        await VelocityAPI.updateUser(editingUser.id, {
           name,
           email,
           phone,
+          heightCm: numHeight,
           role: targetRole,
           coachPosition: finalCoachPos,
+          subscriptionTier,
+          billingStatements,
           fitnessGoals
         });
-
-        // Sync with PostgreSQL database via API
-        fetch(`/api/users/${editingUser.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, phone, role: targetRole, coachPosition: finalCoachPos })
-        }).catch(() => {});
 
         onShowToast(`Updated ${targetRole.toUpperCase()} profile for ${name}`);
       } else {
@@ -108,6 +154,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           name,
           email,
           phone,
+          heightCm: numHeight,
           role: targetRole,
           coachPosition: finalCoachPos,
           fitnessGoals
@@ -117,7 +164,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
         fetch('/api/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, phone, role: targetRole, coachPosition: finalCoachPos, fitnessGoals })
+          body: JSON.stringify({ name, email, phone, heightCm: numHeight, role: targetRole, coachPosition: finalCoachPos, fitnessGoals })
         }).catch(() => {});
 
         onShowToast(`Created new ${targetRole.toUpperCase()} account for ${name}`);
@@ -146,8 +193,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     }
   };
 
-  const handleToggleVerify = (id: string, userName: string) => {
-    VelocityAPI.toggleVerifyUser(id);
+  const handleToggleVerify = async (id: string, userName: string) => {
+    await VelocityAPI.toggleVerifyUser(id);
     onShowToast(`Toggled verification status for ${userName}`);
     onUsersUpdated();
   };
@@ -246,7 +293,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                     <div>
                       <span className="font-bold text-white block text-sm">{u.name}</span>
                       <span className="text-gray-400 text-xs">{u.email}</span>
-                      {u.phone && <span className="block text-[10px] text-gray-500 font-mono">{u.phone}</span>}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {u.phone && <span className="text-[10px] text-gray-500 font-mono">{u.phone}</span>}
+                        <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800">
+                          {u.heightCm || 175} cm
+                        </span>
+                      </div>
                     </div>
                   </td>
                   <td className="py-3.5 px-4">
@@ -381,24 +433,120 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                   />
                 </div>
 
-                {!isCoach && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">
+                    Height (cm)
+                  </label>
+                  <input
+                    type="number"
+                    value={heightCm}
+                    onChange={(e) => setHeightCm(e.target.value ? Number(e.target.value) : '')}
+                    placeholder="175"
+                    className="w-full bg-gray-900 border border-emerald-800 text-white px-3.5 py-2 text-sm outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              {!isCoach && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
+                    Assign Role
+                  </label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as UserRole)}
+                    className="w-full bg-gray-900 border border-gray-800 text-white px-2 py-2 text-sm outline-none"
+                  >
+                    <option value="client">Client / Athlete</option>
+                    <option value="user">Member / User</option>
+                    <option value="coach">Fitness Coach</option>
+                    <option value="admin">System Admin</option>
+                  </select>
+                </div>
+              )}
+
+              {role !== 'coach' && role !== 'admin' && (
+                <div className="space-y-3 p-3.5 bg-gray-900 border border-gray-800 rounded">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                      Assign Role
+                    <label className="block text-xs font-bold uppercase tracking-wider text-pink-400 mb-1">
+                      Subscription Tier Level (Admin Only) *
                     </label>
                     <select
-                      value={role}
-                      onChange={(e) => setRole(e.target.value as UserRole)}
-                      className="w-full bg-gray-900 border border-gray-800 text-white px-2 py-2 text-sm outline-none"
+                      value={subscriptionTier}
+                      onChange={(e) => setSubscriptionTier(e.target.value as SubscriptionTier)}
+                      className="w-full bg-black border border-pink-950 text-white px-3 py-2 text-xs font-bold uppercase outline-none"
                     >
-                      <option value="client">Client / Athlete</option>
-                      <option value="user">Member / User</option>
-                      <option value="coach">Fitness Coach</option>
-                      <option value="admin">System Admin</option>
+                      <option value="Normal User">Normal User (Free / Basic Membership)</option>
+                      <option value="Premium User">Premium User (£49/mo - Coaching Tier)</option>
+                      <option value="Premium Elite User">Premium Elite User (£89/mo - All Access Tier)</option>
                     </select>
                   </div>
-                )}
-              </div>
+
+                  {/* Billing Statements Manager */}
+                  <div className="pt-2 border-t border-gray-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-300">
+                        Client Billing Invoices ({billingStatements.length})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleAddInvoice}
+                        className="bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-800 text-[10px] font-bold px-2 py-1 uppercase rounded transition-colors"
+                      >
+                        + Issue Invoice
+                      </button>
+                    </div>
+
+                    {billingStatements.length === 0 ? (
+                      <p className="text-[10px] text-gray-500 italic">No billing statements issued yet for this user.</p>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {billingStatements.map((inv) => (
+                          <div key={inv.id} className="bg-black p-2.5 border border-gray-800 rounded space-y-1.5 text-[11px]">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="font-mono font-bold text-white block">{inv.invoiceNumber} • £{inv.amount}.00</span>
+                                <span className="text-[9px] text-gray-400">{inv.date} • {inv.status}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveInvoice(inv.id)}
+                                className="text-red-400 hover:text-red-300 text-[10px] font-bold px-1.5 py-0.5"
+                              >
+                                ✕ Remove
+                              </button>
+                            </div>
+
+                            {/* Receipt File Upload Control */}
+                            <div className="pt-1 border-t border-gray-900 flex items-center justify-between gap-2 text-[10px]">
+                              {inv.fileName ? (
+                                <span className="text-emerald-400 font-mono font-bold truncate max-w-[200px]" title={inv.fileName}>
+                                  📄 Attached: {inv.fileName}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500 italic">No document attached</span>
+                              )}
+
+                              <label className="cursor-pointer bg-gray-800 hover:bg-gray-700 text-gray-200 text-[9px] font-bold px-2 py-1 rounded uppercase transition-colors shrink-0">
+                                <span>{inv.fileName ? 'Change File' : '+ Attach Receipt File'}</span>
+                                <input
+                                  type="file"
+                                  accept="image/*,.pdf,.doc,.docx"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleReceiptFileUpload(inv.id, file);
+                                  }}
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {role === 'coach' && (
                 <div>

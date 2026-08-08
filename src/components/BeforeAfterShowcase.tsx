@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowRight, ShieldCheck, Dumbbell, Activity, Calendar, Trophy, ChevronRight, CheckCircle2, AlertTriangle, Sparkles, User, HeartPulse } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowRight, AlertCircle, CheckCircle, Award, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 
 interface BeforeAfterShowcaseProps {
   onOpenConsultation: () => void;
@@ -19,8 +19,8 @@ export interface TransformationItem {
   weightLoss: string;
   beforeImg: string;
   afterImg: string;
-  beforeTraits: string[];
-  afterTraits: string[];
+  beforeBadges: string[];
+  afterBadges: string[];
   quote: string;
   focusArea: string;
 }
@@ -34,25 +34,15 @@ export const TRANSFORMATIONS: TransformationItem[] = [
     coach: 'David Williams',
     coachTitle: 'Head of Strength & Conditioning',
     duration: '10 Months (8–12 Mo Protocol)',
-    beforeWeight: '130 kg (286 lbs)',
-    afterWeight: '80 kg (176 lbs)',
-    weightLoss: '-50 kg (110 lbs)',
+    beforeWeight: '130 KG',
+    afterWeight: '80 KG FIT',
+    weightLoss: '-50 KG FAT LOSS',
     beforeImg: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&q=80&w=800',
     afterImg: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=80&w=800',
-    beforeTraits: [
-      'Body Weight: 130 kg with High Visceral Fat',
-      'Severe Knee Discomfort & Lower Back Fatigue',
-      'Chronic Sluggishness & Poor Metabolic Markers',
-      'Struggled with Unstructured Crash Diets'
-    ],
-    afterTraits: [
-      'Fit Weight: 80 kg (50 kg Sustained Fat Loss)',
-      'Zero Joint Pain & Peak Athletic Mobility',
-      'Restored Blood Sugar & High Daily Energy',
-      'Supervised Biomechanical Strength Protocol'
-    ],
-    quote: "Joining BxStrength changed my life. I went from 130kg with joint pain to 80kg of lean muscle under Coach David's direct supervision.",
-    focusArea: 'Executive Recomposition & Joint Health'
+    beforeBadges: ['130 kg Body Weight', 'Severe Knee Pain', 'High Visceral Fat', 'Poor Energy'],
+    afterBadges: ['80 kg Fit Weight', 'Zero Joint Pain', 'Lean Muscle Build', 'Peak Energy'],
+    quote: "I went from 130kg with constant joint pain to 80kg of lean muscle in 10 months under Head Coach David's direct supervision.",
+    focusArea: 'Executive Recomposition & Joint Rehab'
   },
   {
     id: 'elena-pcos-cycle',
@@ -60,26 +50,16 @@ export const TRANSFORMATIONS: TransformationItem[] = [
     age: 29,
     location: 'Manchester, UK',
     coach: 'Dr. Sophia Chen',
-    coachTitle: 'Lead Metabolic & Women\'s Health Specialist',
+    coachTitle: 'Lead Women\'s Health Specialist',
     duration: '8 Months Protocol',
-    beforeWeight: '92 kg (202 lbs)',
-    afterWeight: '64 kg (141 lbs)',
-    weightLoss: '-28 kg (61 lbs)',
+    beforeWeight: '92 KG',
+    afterWeight: '64 KG FIT',
+    weightLoss: '-28 KG FAT LOSS',
     beforeImg: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=800',
     afterImg: 'https://images.unsplash.com/photo-1548690312-e3b507d8c110?auto=format&fit=crop&q=80&w=800',
-    beforeTraits: [
-      'Body Weight: 92 kg with PCOS Symptoms',
-      'Irregular Period Cycles (2–3 Month Gaps)',
-      'Severe Water Retention & Knee Joint Strain',
-      'Insulin Resistance & Mood Fluctuations'
-    ],
-    afterTraits: [
-      'Fit Weight: 64 kg (28 kg Fat Loss)',
-      'Regular 28-Day Period Cycle Synchronization',
-      'Restored Hormonal Balance & Clear Skin',
-      'Cycle-Synced Strength & Resistance Training'
-    ],
-    quote: "Dr. Sophia adapted my training to my menstrual cycle and PCOS. My period cycle normalized for the first time in 5 years while losing 28kg!",
+    beforeBadges: ['92 kg Weight', 'PCOS Symptoms', 'Irregular Cycles', 'Water Retention'],
+    afterBadges: ['64 kg Fit Weight', '28-Day Cycle Synced', 'Hormonal Balance', 'High Vitality'],
+    quote: "My period cycle normalized for the first time in 5 years while losing 28kg with Dr. Sophia's female cycle-synced coaching.",
     focusArea: 'PCOS & Female Cycle Syncing'
   },
   {
@@ -88,26 +68,16 @@ export const TRANSFORMATIONS: TransformationItem[] = [
     age: 41,
     location: 'Birmingham, UK',
     coach: 'Marcus Vance',
-    coachTitle: 'Senior Biomechanics & Rehabilitation Coach',
+    coachTitle: 'Senior Biomechanics Specialist',
     duration: '9 Months Protocol',
-    beforeWeight: '115 kg (253 lbs)',
-    afterWeight: '82 kg (180 lbs)',
-    weightLoss: '-33 kg (73 lbs)',
+    beforeWeight: '115 KG',
+    afterWeight: '82 KG FIT',
+    weightLoss: '-33 KG FAT LOSS',
     beforeImg: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800',
     afterImg: 'https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?auto=format&fit=crop&q=80&w=800',
-    beforeTraits: [
-      'Body Weight: 115 kg with L4-L5 Back Discomfort',
-      'Sedentary Desk Posture & Weak Core Stability',
-      'Knee Pain on Stairs & Inability to Squat',
-      'High Stress & Restless Sleep Patterns'
-    ],
-    afterTraits: [
-      'Fit Weight: 82 kg (33 kg Fat Loss)',
-      'Pain-Free 180kg Deadlift & Reinforced Core',
-      'Corrected Postural Alignment & Spinal Health',
-      'Restorative Sleep & Elevated Testosterone'
-    ],
-    quote: "I thought chronic back pain was permanent. BxStrength fixed my biomechanics first, then transformed my body completely.",
+    beforeBadges: ['115 kg Weight', 'L4-L5 Back Pain', 'Weak Core', 'Knee Discomfort'],
+    afterBadges: ['82 kg Fit Weight', 'Pain-Free Back', '180kg Deadlift', 'Strong Core'],
+    quote: "BxStrength fixed my biomechanics and back pain first, then transformed my body completely.",
     focusArea: 'Postural Rehab & Back Health'
   }
 ];
@@ -116,211 +86,268 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({
   onOpenConsultation,
   onOpenAssessment,
 }) => {
-  const [activeTab, setActiveTab] = useState<string>(TRANSFORMATIONS[0].id);
-  const [viewMode, setViewMode] = useState<'after' | 'before'>('after');
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
 
-  const activeItem = TRANSFORMATIONS.find((t) => t.id === activeTab) || TRANSFORMATIONS[0];
+  const activeItem = TRANSFORMATIONS[currentIndex] || TRANSFORMATIONS[0];
+
+  // Auto-advancing slideshow timer
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % TRANSFORMATIONS.length);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % TRANSFORMATIONS.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + TRANSFORMATIONS.length) % TRANSFORMATIONS.length);
+  };
+
+  // Touch Swipe Gesture Handlers for Mobile & Tablet
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    if (distance > 50) {
+      handleNext(); // Swiped left -> Next slide
+    } else if (distance < -50) {
+      handlePrev(); // Swiped right -> Prev slide
+    }
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
 
   return (
-    <section className="w-full bg-[#0a0a0c] py-20 text-white border-b border-zinc-800 relative overflow-hidden">
-      {/* Subtle Background Glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
+    <section 
+      className="w-full bg-[#0a0a0c] py-12 sm:py-16 text-white border-b border-zinc-800 relative overflow-hidden select-none"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Background Ambient Glow */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[600px] h-[250px] sm:h-[350px] bg-emerald-500/10 blur-[100px] sm:blur-[130px] rounded-full pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-8 sm:space-y-10">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-800/80 text-emerald-400 text-[11px] font-black tracking-widest uppercase mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>REAL RESULTS • EXPERT SUPERVISION</span>
-          </div>
-          <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
-            BEFORE & AFTER <span className="text-emerald-400">TRANSFORMATIONS</span>
+        <div className="text-center max-w-3xl mx-auto">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-white">
+            BEFORE & AFTER <span className="text-emerald-400">RESULTS</span>
           </h2>
-          <p className="text-zinc-400 text-sm sm:text-base mt-4 font-normal leading-relaxed">
-            Real clients who transformed their lives under the direct supervision of BxStrength Expert Coaches. From 130kg to 80kg fit weight, joint rehabilitation, and metabolic health.
+          <p className="text-zinc-400 text-xs sm:text-sm mt-2 sm:mt-3 font-medium px-2">
+            Visual proof of clients who achieved sustained weight loss and athletic health under BxStrength Expert Coaches.
           </p>
         </div>
 
-        {/* Transformation Case Selector Tabs */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-10">
-          {TRANSFORMATIONS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                setViewMode('after');
-              }}
-              className={`px-4 sm:px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 border ${
-                activeTab === item.id
-                  ? 'bg-emerald-500 text-black border-emerald-400 shadow-lg shadow-emerald-500/20 scale-105'
-                  : 'bg-[#121214] text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white'
-              }`}
-            >
-              <span>{item.name}</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
-                activeTab === item.id ? 'bg-black/30 text-black font-bold' : 'bg-zinc-800 text-zinc-300'
-              }`}>
-                {item.weightLoss}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Featured Transformation Main Card */}
-        <div className="bg-[#121216] border border-zinc-800/90 rounded-2xl p-6 sm:p-8 lg:p-10 shadow-2xl">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        {/* Sliding Carousel Card Container */}
+        <div className="relative bg-[#121216] border border-zinc-800/90 rounded-2xl p-4 sm:p-8 lg:p-10 shadow-2xl space-y-6 sm:space-y-8">
+          
+          {/* Top Carousel Controller & Slide Indicators Bar */}
+          <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
             
-            {/* Left 5 Cols: Before / After Visual Card with Toggle */}
-            <div className="lg:col-span-5 space-y-4">
-              <div className="relative rounded-xl overflow-hidden aspect-[4/5] bg-zinc-900 border border-zinc-800 shadow-2xl group">
-                <img
-                  src={viewMode === 'after' ? activeItem.afterImg : activeItem.beforeImg}
-                  alt={activeItem.name}
-                  className="w-full h-full object-cover filter contrast-105 transition-all duration-500"
-                />
-                
-                {/* Vignette */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-
-                {/* Top Badge */}
-                <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-                  <span className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${
-                    viewMode === 'after'
-                      ? 'bg-emerald-950/90 text-emerald-300 border-emerald-800'
-                      : 'bg-red-950/90 text-red-300 border-red-800'
-                  }`}>
-                    {viewMode === 'after' ? 'AFTER: FIT & ENERGIZED' : 'BEFORE: INITIAL TRAITS'}
-                  </span>
-
-                  <span className="bg-black/80 backdrop-blur-md text-zinc-300 text-[10px] font-bold px-2.5 py-1 rounded border border-zinc-800">
-                    {activeItem.duration}
-                  </span>
-                </div>
-
-                {/* Bottom Overlay Stats */}
-                <div className="absolute bottom-6 left-6 right-6 z-10 space-y-2">
-                  <div className="flex items-center justify-between text-white">
-                    <div>
-                      <h4 className="text-2xl font-black uppercase tracking-tight">{activeItem.name}</h4>
-                      <p className="text-xs text-zinc-400 font-medium">{activeItem.focusArea}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-2xl font-black text-emerald-400 block">{activeItem.afterWeight}</span>
-                      <span className="text-[10px] text-zinc-400 uppercase font-bold">Was {activeItem.beforeWeight}</span>
-                    </div>
-                  </div>
-
-                  {/* Toggle Mode Switcher */}
-                  <div className="pt-2 flex gap-2">
-                    <button
-                      onClick={() => setViewMode('before')}
-                      className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all cursor-pointer ${
-                        viewMode === 'before'
-                          ? 'bg-red-500 text-black border-red-400 font-extrabold'
-                          : 'bg-black/60 text-zinc-400 border-zinc-800 hover:text-white'
-                      }`}
-                    >
-                      View Before ({activeItem.beforeWeight.split(' ')[0]})
-                    </button>
-                    <button
-                      onClick={() => setViewMode('after')}
-                      className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded border transition-all cursor-pointer ${
-                        viewMode === 'after'
-                          ? 'bg-emerald-400 text-black border-emerald-300 font-extrabold'
-                          : 'bg-black/60 text-zinc-400 border-zinc-800 hover:text-white'
-                      }`}
-                    >
-                      View After ({activeItem.afterWeight.split(' ')[0]} Fit)
-                    </button>
-                  </div>
-                </div>
+            {/* Active Case Info */}
+            <div className="flex items-center gap-3">
+              <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-950 text-emerald-400 font-mono font-black text-xs sm:text-sm flex items-center justify-center border border-emerald-800">
+                0{currentIndex + 1}
+              </span>
+              <div>
+                <h3 className="text-sm sm:text-lg font-black text-white uppercase tracking-tight leading-none">
+                  {activeItem.name}
+                </h3>
+                <span className="text-[10px] sm:text-xs text-zinc-400 font-medium">
+                  {activeItem.focusArea}
+                </span>
               </div>
             </div>
 
-            {/* Right 7 Cols: Detailed Metrics & Traits Breakdown */}
-            <div className="lg:col-span-7 space-y-6">
+            {/* Carousel Navigation Buttons & Dots */}
+            <div className="flex items-center gap-2 sm:gap-4">
               
-              {/* Header Info */}
-              <div className="border-b border-zinc-800/80 pb-5">
-                <div className="flex flex-wrap items-center gap-3 mb-2">
-                  <span className="text-[10px] font-mono font-bold bg-zinc-800 text-emerald-400 px-3 py-1 rounded border border-zinc-700 uppercase">
-                    BxStrength Verified Case Study
-                  </span>
-                  <span className="text-[10px] font-mono text-zinc-400 uppercase">
-                    Supervised by <strong className="text-white">{activeItem.coach}</strong> ({activeItem.coachTitle})
-                  </span>
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
-                  {activeItem.weightLoss} TRANSFORMATION IN {activeItem.duration.toUpperCase()}
-                </h3>
+              {/* Dots */}
+              <div className="hidden sm:flex items-center gap-1.5">
+                {TRANSFORMATIONS.map((item, idx) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setCurrentIndex(idx)}
+                    className={`h-2 rounded-full transition-all cursor-pointer ${
+                      currentIndex === idx ? 'w-6 bg-emerald-400' : 'w-2 bg-zinc-800 hover:bg-zinc-700'
+                    }`}
+                    title={`Go to ${item.name}'s transformation`}
+                  />
+                ))}
               </div>
 
-              {/* Traits Side-by-Side Comparison */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* Before Traits Box */}
-                <div className="bg-[#18181c] border border-red-950/60 p-4 rounded-xl space-y-3">
-                  <div className="flex items-center gap-2 text-red-400 font-black text-xs uppercase tracking-wider border-b border-red-900/40 pb-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span>BEFORE BXSTRENGTH</span>
-                  </div>
-                  <ul className="space-y-2">
-                    {activeItem.beforeTraits.map((trait, idx) => (
-                      <li key={idx} className="text-xs text-zinc-300 flex items-start gap-2 leading-relaxed">
-                        <span className="text-red-500 font-bold">•</span>
-                        <span>{trait}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* After Traits Box */}
-                <div className="bg-[#18181c] border border-emerald-950/80 p-4 rounded-xl space-y-3 shadow-lg shadow-emerald-950/20">
-                  <div className="flex items-center gap-2 text-emerald-400 font-black text-xs uppercase tracking-wider border-b border-emerald-900/40 pb-2">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>AFTER EXPERT COACHING</span>
-                  </div>
-                  <ul className="space-y-2">
-                    {activeItem.afterTraits.map((trait, idx) => (
-                      <li key={idx} className="text-xs text-zinc-200 flex items-start gap-2 leading-relaxed font-medium">
-                        <span className="text-emerald-400 font-bold">✓</span>
-                        <span>{trait}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
+              {/* Prev / Next Arrow Controls */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handlePrev}
+                  className="p-2 sm:p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-600 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all cursor-pointer"
+                  aria-label="Previous Slide"
+                >
+                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="p-2 sm:p-2.5 rounded-xl bg-emerald-400 text-black hover:bg-emerald-300 font-black transition-all cursor-pointer shadow-lg shadow-emerald-500/20"
+                  aria-label="Next Slide"
+                >
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
               </div>
 
-              {/* Client Testimony Quote */}
-              <div className="bg-zinc-900/80 border border-zinc-800 p-4 rounded-xl italic text-xs text-zinc-300 relative">
-                <p className="relative z-10">"{activeItem.quote}"</p>
-                <span className="block mt-2 not-italic font-bold text-emerald-400 text-[10px] uppercase">
-                  — {activeItem.name}, {activeItem.location}
+            </div>
+          </div>
+
+          {/* Key Metric Highlights Bar */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-zinc-900/90 border border-zinc-800 text-center">
+            <div>
+              <span className="text-[9px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">RESULT</span>
+              <span className="text-xl sm:text-3xl font-black text-emerald-400 font-mono">{activeItem.weightLoss}</span>
+            </div>
+            <div>
+              <span className="text-[9px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">START WEIGHT</span>
+              <span className="text-xl sm:text-3xl font-black text-red-400 font-mono">{activeItem.beforeWeight}</span>
+            </div>
+            <div>
+              <span className="text-[9px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">FIT WEIGHT</span>
+              <span className="text-xl sm:text-3xl font-black text-emerald-300 font-mono">{activeItem.afterWeight}</span>
+            </div>
+            <div>
+              <span className="text-[9px] sm:text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">DURATION</span>
+              <span className="text-lg sm:text-2xl font-black text-white font-mono mt-0.5 block">{activeItem.duration.split(' ')[0]} {activeItem.duration.split(' ')[1]}</span>
+            </div>
+          </div>
+
+          {/* Side-by-Side Visual Photo Comparison */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-stretch">
+            
+            {/* BEFORE PHOTO CARD */}
+            <div className="relative rounded-2xl overflow-hidden bg-zinc-900 border border-red-950/80 shadow-2xl group min-h-[320px] sm:min-h-[420px] flex flex-col justify-between">
+              <img
+                src={activeItem.beforeImg}
+                alt={`${activeItem.name} Before`}
+                className="absolute inset-0 w-full h-full object-cover filter contrast-105 brightness-90 group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/20" />
+              
+              {/* Top Tag */}
+              <div className="relative z-10 p-4 sm:p-5 flex justify-between items-center">
+                <span className="px-3 py-1 rounded-lg bg-red-950/90 border border-red-800 text-red-300 text-[10px] sm:text-xs font-black tracking-widest uppercase backdrop-blur-md flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+                  BEFORE • {activeItem.beforeWeight}
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-bold text-zinc-400 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded border border-zinc-800">
+                  Initial State
                 </span>
               </div>
 
-              {/* Call to Action Triggers */}
-              <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={onOpenConsultation}
-                  className="flex-1 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-black tracking-widest py-3.5 px-6 rounded-lg uppercase transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>START YOUR TRANSFORMATION</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={onOpenAssessment}
-                  className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white text-xs font-bold tracking-wider py-3.5 px-6 rounded-lg uppercase transition-all cursor-pointer"
-                >
-                  Take 5-Min Assessment
-                </button>
+              {/* Bottom Visual Badges */}
+              <div className="relative z-10 p-4 sm:p-5 space-y-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {activeItem.beforeBadges.map((badge, idx) => (
+                    <span key={idx} className="bg-red-950/80 border border-red-900/60 text-red-200 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded">
+                      ✕ {badge}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* AFTER PHOTO CARD */}
+            <div className="relative rounded-2xl overflow-hidden bg-zinc-900 border border-emerald-950/80 shadow-2xl group min-h-[320px] sm:min-h-[420px] flex flex-col justify-between">
+              <img
+                src={activeItem.afterImg}
+                alt={`${activeItem.name} After`}
+                className="absolute inset-0 w-full h-full object-cover filter contrast-105 group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/20" />
+              
+              {/* Top Tag */}
+              <div className="relative z-10 p-4 sm:p-5 flex justify-between items-center">
+                <span className="px-3 py-1 rounded-lg bg-emerald-950/90 border border-emerald-700 text-emerald-300 text-[10px] sm:text-xs font-black tracking-widest uppercase backdrop-blur-md flex items-center gap-1">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                  AFTER • {activeItem.afterWeight}
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-black text-black bg-emerald-400 px-2.5 py-1 rounded uppercase">
+                  {activeItem.weightLoss}
+                </span>
               </div>
 
+              {/* Bottom Visual Badges */}
+              <div className="relative z-10 p-4 sm:p-5 space-y-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {activeItem.afterBadges.map((badge, idx) => (
+                    <span key={idx} className="bg-emerald-950/90 border border-emerald-800/80 text-emerald-200 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded">
+                      ✓ {badge}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
 
           </div>
+
+          {/* Quote & Coach Info Bar */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 sm:p-5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-400 shrink-0">
+                <Award className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <div>
+                <p className="text-white italic font-medium text-xs sm:text-sm">"{activeItem.quote}"</p>
+                <p className="text-zinc-400 text-[10px] sm:text-[11px] mt-0.5">
+                  <strong className="text-emerald-400">{activeItem.name}</strong> ({activeItem.location}) • Supervised by <strong>{activeItem.coach}</strong> ({activeItem.coachTitle})
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2.5 shrink-0 w-full md:w-auto">
+              <button
+                onClick={onOpenConsultation}
+                className="flex-1 md:flex-none bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-black tracking-widest py-3 px-5 sm:px-6 rounded-lg uppercase transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>START TRANSFORMATION</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={onOpenAssessment}
+                className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold py-3 px-4 rounded-lg uppercase transition-all cursor-pointer whitespace-nowrap hidden sm:block"
+              >
+                ASSESSMENT
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Bottom Slide Dots */}
+          <div className="flex sm:hidden justify-center items-center gap-2 pt-2">
+            {TRANSFORMATIONS.map((item, idx) => (
+              <button
+                key={item.id}
+                onClick={() => setCurrentIndex(idx)}
+                className={`h-2 rounded-full transition-all cursor-pointer ${
+                  currentIndex === idx ? 'w-6 bg-emerald-400' : 'w-2 bg-zinc-800'
+                }`}
+              />
+            ))}
+          </div>
+
         </div>
 
       </div>

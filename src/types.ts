@@ -14,6 +14,20 @@ export interface CoachPermissions {
   allowSupportTickets: boolean;    // Support Ticket Desk tab
 }
 
+export type SubscriptionTier = 'Normal User' | 'Premium User' | 'Premium Elite User';
+
+export interface BillingStatement {
+  id: string;
+  invoiceNumber: string;
+  amount: number;
+  currency: string;
+  date: string;
+  status: 'Paid' | 'Pending' | 'Overdue';
+  description: string;
+  receiptFileUrl?: string;
+  fileName?: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -23,9 +37,12 @@ export interface User {
   avatarUrl?: string;
   phone?: string;
   age?: number;
+  heightCm?: number;
   gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
   emergencyContact?: string;
   fitnessGoals?: string;
+  subscriptionTier?: SubscriptionTier;
+  billingStatements?: BillingStatement[];
   isVerified: boolean;
   status: 'active' | 'inactive';
   createdAt: string;

@@ -8,8 +8,32 @@ interface NutritionPlanViewProps {
 }
 
 export const NutritionPlanView: React.FC<NutritionPlanViewProps> = ({ plans, onShowToast }) => {
-  const plan = plans[0];
   const [waterMl, setWaterMl] = useState(1750);
+
+  if (!plans || plans.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-[#111111] border border-gray-800 p-6">
+          <h2 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+            <Utensils className="w-5 h-5 text-[#E52165]" />
+            NUTRITION & MACRONUTRIENT PLAN
+          </h2>
+          <p className="text-xs text-gray-400 mt-1">
+            Target calorie budget, protein breakdown, meal schedules, and hydration tracking.
+          </p>
+        </div>
+        <div className="bg-[#111111] border border-gray-800 p-12 text-center space-y-3 rounded-xl">
+          <Utensils className="w-10 h-10 text-gray-600 mx-auto" />
+          <h3 className="text-sm font-black uppercase text-white tracking-wider">NO DIET PLAN ASSIGNED YET</h3>
+          <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
+            Your assigned BxStrength nutritionist or coach will prepare your custom macronutrient target and meal structure shortly.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const plan = plans[0];
 
   const addWater = (ml: number) => {
     const next = waterMl + ml;

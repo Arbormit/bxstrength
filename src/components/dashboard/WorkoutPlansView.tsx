@@ -11,6 +11,29 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({ programs, on
   const [activeProgIndex, setActiveProgIndex] = useState(0);
   const [exerciseState, setExerciseState] = useState<Record<string, boolean>>({});
 
+  if (!programs || programs.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-[#111111] border border-gray-800 p-6">
+          <h2 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+            <Dumbbell className="w-5 h-5 text-white" />
+            MY WORKOUT PROGRAMS & ROUTINES
+          </h2>
+          <p className="text-xs text-gray-400 mt-1">
+            Personalized exercise routines assigned by your BxStrength head coach.
+          </p>
+        </div>
+        <div className="bg-[#111111] border border-gray-800 p-12 text-center space-y-3 rounded-xl">
+          <Dumbbell className="w-10 h-10 text-gray-600 mx-auto" />
+          <h3 className="text-sm font-black uppercase text-white tracking-wider">NO WORKOUT PROGRAM ASSIGNED YET</h3>
+          <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
+            Your personal BxStrength coach will design and assign your customized workout protocol once your initial assessment is complete.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const currentProg = programs[activeProgIndex] || programs[0];
 
   const toggleExercise = (exId: string, exName: string) => {

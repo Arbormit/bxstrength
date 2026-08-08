@@ -1,25 +1,157 @@
 import React from 'react';
-import { Subscription } from '../../types';
-import { CreditCard, CheckCircle2, ShieldCheck, Download } from 'lucide-react';
+import { User, SubscriptionTier, BillingStatement } from '../../types';
+import { CreditCard, CheckCircle2, ShieldCheck, Download, FileText, ExternalLink } from 'lucide-react';
 
 interface SubscriptionViewProps {
-  subscription?: Subscription;
+  user: User;
   onShowToast: (msg: string) => void;
 }
 
-export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ subscription, onShowToast }) => {
-  const current = subscription || {
-    id: 'sub-demo',
-    userId: 'user-client-1',
-    userName: 'David Miller',
-    userEmail: 'david@client.com',
-    planName: 'Premium Elite' as const,
-    billingCycle: 'monthly' as const,
-    price: 89,
-    startDate: '2025-02-10',
-    nextBillingDate: '2026-08-10',
-    status: 'active' as const,
-    autoRenew: true
+export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ user, onShowToast }) => {
+  const tier: SubscriptionTier = user.subscriptionTier || 'Normal User';
+  const statements: BillingStatement[] = user.billingStatements || [];
+
+  const tierDetails = {
+    'Normal User': {
+      price: 0,
+      badge: 'NORMAL / FREE MEMBER',
+      privileges: [
+        'Basic facility & community access',
+        'Standard health & symptom search tool access',
+        'Self-guided workout logging'
+      ]
+    },
+    'Premium User': {
+      price: 49,
+      badge: 'PREMIUM ATHLETE TIER',
+      privileges: [
+        'Assigned personal fitness coach & chat access',
+        'Custom workout & training protocols',
+        'Group class priority bookings (HIIT, Spin, Boxing)',
+        'Progressive biometrics & BMI tracking'
+      ]
+    },
+    'Premium Elite User': {
+      price: 89,
+      badge: 'PREMIUM ELITE CLUB TIER',
+      privileges: [
+        '1-on-1 Dedicated Head Coach supervision',
+        'Customized nutrition & female cycle-synced diet architecture',
+        'Unlimited UK facility, steam room & sauna access',
+        'Priority booking for 1-on-1 assessment sessions'
+      ]
+    }
+  }[tier];
+
+  const handleDownloadDocument = (inv: BillingStatement) => {
+    if (inv.receiptFileUrl) {
+      // Direct Download of Admin Uploaded Payment Slip / Receipt File
+      const link = document.createElement('a');
+      link.href = inv.receiptFileUrl;
+      link.download = inv.fileName || `${inv.invoiceNumber}_Payment_Receipt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      onShowToast(`Downloaded official receipt file "${inv.fileName || inv.invoiceNumber}"!`);
+    } else {
+      // Dynamic Official UK Tax Invoice PDF Document Generator
+      const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>BxStrength Official Tax Receipt - ${inv.invoiceNumber}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0c; color: #f4f4f5; margin: 0; padding: 40px; }
+    .card { max-width: 650px; margin: 0 auto; background: #121214; border: 1px solid #27272a; padding: 35px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #10b981; padding-bottom: 20px; }
+    .brand { font-size: 26px; font-weight: 900; letter-spacing: -0.5px; color: #ffffff; }
+    .brand span { color: #10b981; }
+    .sub { font-size: 10px; color: #a1a1aa; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-top: 2px; }
+    .badge { font-size: 12px; font-weight: 900; color: #10b981; text-align: right; }
+    .inv-num { font-family: monospace; font-size: 13px; color: #a1a1aa; margin-top: 4px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
+    .info-box { background: #09090b; p: 15px; padding: 14px; border-radius: 8px; border: 1px solid #27272a; }
+    .lbl { font-size: 10px; font-weight: 800; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px; }
+    .val { font-size: 13px; font-weight: 700; color: #ffffff; margin-top: 4px; }
+    table { width: 100%; margin-top: 30px; border-collapse: collapse; }
+    th { background: #18181b; color: #a1a1aa; text-transform: uppercase; font-size: 10px; font-weight: 800; padding: 12px; text-align: left; border-bottom: 1px solid #27272a; }
+    td { padding: 14px 12px; border-bottom: 1px solid #27272a; font-size: 13px; }
+    .total-box { margin-top: 25px; background: #09090b; border: 1px solid #10b981; padding: 16px; border-radius: 8px; text-align: right; }
+    .total-val { font-size: 20px; font-weight: 900; color: #10b981; font-family: monospace; }
+    .footer { margin-top: 35px; border-top: 1px solid #27272a; pt: 18px; padding-top: 18px; font-size: 10px; color: #71717a; text-align: center; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div>
+        <div class="brand">BxStrength<span>.</span></div>
+        <div class="sub">UK Digital Coaching & Performance Ltd</div>
+      </div>
+      <div>
+        <div class="badge">OFFICIAL TAX RECEIPT</div>
+        <div class="inv-num">${inv.invoiceNumber}</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="info-box">
+        <div class="lbl">BILLED TO CLIENT</div>
+        <div class="val">${user.name}</div>
+        <div style="font-size: 11px; color: #a1a1aa; margin-top: 2px;">${user.email}</div>
+      </div>
+      <div class="info-box">
+        <div class="lbl">ISSUING FACILITY</div>
+        <div class="val">BxStrength Mayfair Club</div>
+        <div style="font-size: 11px; color: #a1a1aa; margin-top: 2px;">Mayfair, London W1J 8AJ, UK</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ITEM DESCRIPTION</th>
+          <th>BILLING DATE</th>
+          <th>STATUS</th>
+          <th style="text-align: right;">AMOUNT</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-weight: 700;">${inv.description || user.subscriptionTier || 'Membership Subscription'}</td>
+          <td style="font-family: monospace;">${inv.date}</td>
+          <td style="color: #10b981; font-weight: 800;">${inv.status.toUpperCase()}</td>
+          <td style="text-align: right; font-family: monospace; font-weight: 800;">£${inv.amount}.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="total-box">
+      <div style="font-size: 10px; color: #a1a1aa; text-transform: uppercase; font-weight: 700;">TOTAL AMOUNT PAID</div>
+      <div class="total-val">£${inv.amount}.00 GBP</div>
+    </div>
+
+    <div class="footer">
+      Official billing document generated for account ${user.email}. Registered in England & Wales #10948291.<br/>
+      BxStrength Mayfair, London W1J 8AJ & Remote UK Coaching.
+    </div>
+  </div>
+</body>
+</html>
+      `;
+
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${inv.invoiceNumber}_Official_Tax_Receipt.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      onShowToast(`Downloaded tax receipt file for ${inv.invoiceNumber}!`);
+    }
   };
 
   return (
@@ -27,7 +159,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ subscription
       <div className="bg-[#111111] border border-gray-800 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-[#E52165]" />
+            <CreditCard className="w-5 h-5 text-emerald-400" />
             MY MEMBERSHIP SUBSCRIPTION & BILLING
           </h2>
           <p className="text-xs text-gray-400 mt-1">
@@ -39,19 +171,19 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ subscription
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Active Card */}
         <div className="lg:col-span-2 bg-[#111111] border border-gray-800 p-6 relative overflow-hidden">
-          <div className="h-1 w-full bg-[#E52165] absolute top-0 left-0"></div>
+          <div className="h-1 w-full bg-emerald-400 absolute top-0 left-0"></div>
 
           <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-6">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#E52165] bg-pink-950/60 px-2 py-0.5 border border-pink-800/60">
-                ACTIVE CLUB TIER
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-950/60 px-2.5 py-1 border border-emerald-800">
+                {tierDetails.badge}
               </span>
-              <h3 className="text-2xl font-black uppercase text-white mt-1">{current.planName}</h3>
+              <h3 className="text-2xl font-black uppercase text-white mt-2">{tier}</h3>
             </div>
 
             <div className="text-right">
-              <span className="text-2xl font-black text-white font-mono">${current.price}</span>
-              <span className="text-xs text-gray-400 block">/ {current.billingCycle}</span>
+              <span className="text-2xl font-black text-white font-mono">£{tierDetails.price}</span>
+              <span className="text-xs text-gray-400 block">/ monthly</span>
             </div>
           </div>
 
@@ -59,22 +191,22 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ subscription
             <div>
               <span className="text-gray-500 font-bold uppercase block">Subscription Status</span>
               <span className="text-emerald-400 font-bold uppercase flex items-center gap-1 mt-0.5">
-                <CheckCircle2 className="w-4 h-4" /> {current.status.toUpperCase()}
+                <CheckCircle2 className="w-4 h-4" /> ACTIVE IN DATABASE
               </span>
             </div>
 
             <div>
-              <span className="text-gray-500 font-bold uppercase block">Next Renewal Date</span>
-              <span className="text-white font-mono font-bold mt-0.5 block">{current.nextBillingDate}</span>
+              <span className="text-gray-500 font-bold uppercase block">Account Reference</span>
+              <span className="text-white font-mono font-bold mt-0.5 block">{user.email}</span>
             </div>
           </div>
 
           {/* Included Features */}
           <div className="border-t border-gray-800 pt-4 space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-300 mb-2">Included Membership Privileges:</h4>
-            {['Unlimited access to all gym facilities & heavy iron zones', 'Free admission to all group classes (HIIT, Spin, Boxing, Yoga)', 'Custom workout & diet plans assigned by personal coach', 'Steam room, sauna & locker access'].map((feat, i) => (
+            {tierDetails.privileges.map((feat, i) => (
               <div key={i} className="flex items-center gap-2 text-xs text-gray-300">
-                <CheckCircle2 className="w-4 h-4 text-[#E52165] flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 <span>{feat}</span>
               </div>
             ))}
@@ -83,27 +215,50 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ subscription
 
         {/* Invoice Download */}
         <div className="bg-[#111111] border border-gray-800 p-6 space-y-4">
-          <h3 className="text-sm font-black uppercase tracking-wider text-white border-b border-gray-800 pb-3">
-            BILLING STATEMENTS
+          <h3 className="text-sm font-black uppercase tracking-wider text-white border-b border-gray-800 pb-3 flex items-center justify-between">
+            <span>BILLING STATEMENTS</span>
+            <span className="text-[10px] text-gray-400 font-mono">({statements.length})</span>
           </h3>
 
-          <div className="space-y-2">
-            {['INV-2026-07 (Jul 10, 2026)', 'INV-2026-06 (Jun 10, 2026)', 'INV-2026-05 (May 10, 2026)'].map((inv, idx) => (
-              <div key={idx} className="bg-gray-900 border border-gray-800 p-3 flex items-center justify-between text-xs">
-                <div>
-                  <span className="block text-white font-bold">{inv}</span>
-                  <span className="text-gray-400 font-mono">${current.price}.00 • Paid</span>
+          {statements.length === 0 ? (
+            <div className="bg-gray-900/60 border border-gray-800 p-6 text-center space-y-2 rounded">
+              <FileText className="w-8 h-8 text-gray-600 mx-auto" />
+              <p className="text-xs text-gray-300 font-bold uppercase">No billing statements issued</p>
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                Billing statements and official tax receipts will appear here once issued by your coach or system administrator.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[350px] overflow-y-auto">
+              {statements.map((inv) => (
+                <div key={inv.id} className="bg-gray-900 border border-gray-800 p-3.5 rounded space-y-2 hover:border-gray-700 transition-colors">
+                  <div className="flex items-center justify-between text-xs">
+                    <div>
+                      <span className="block text-white font-bold font-mono">{inv.invoiceNumber}</span>
+                      <span className="text-gray-400 text-[11px] block">{inv.description || 'Monthly Subscription'}</span>
+                      <span className="text-emerald-400 font-mono text-[10px] font-bold">
+                        £{inv.amount}.00 • {inv.status} ({inv.date})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-800 flex items-center justify-between text-[11px]">
+                    <span className="text-[10px] text-gray-400 truncate max-w-[150px]">
+                      {inv.fileName ? `📄 ${inv.fileName}` : 'Tax Receipt Document'}
+                    </span>
+                    <button
+                      onClick={() => handleDownloadDocument(inv)}
+                      className="bg-emerald-400 hover:bg-emerald-300 text-black text-[10px] font-black tracking-wider px-3 py-1.5 rounded uppercase transition-colors flex items-center gap-1 cursor-pointer"
+                      title="Download Official Billing Document"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>{inv.receiptFileUrl ? 'DOWNLOAD SLIP' : 'DOWNLOAD RECEIPT'}</span>
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => onShowToast(`Downloaded tax receipt PDF for ${inv}`)}
-                  className="p-1.5 text-[#E52165] hover:bg-gray-800 rounded transition-colors"
-                  title="Download Receipt PDF"
-                >
-                  <Download className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

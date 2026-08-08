@@ -34,9 +34,6 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking 
     <section id="services-section" className="w-full bg-[#0a0a0a] text-white py-20 border-b border-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-[11px] font-black tracking-widest text-zinc-400 uppercase bg-zinc-900 border border-zinc-800 px-3.5 py-1.5 rounded-full inline-block mb-3">
-            INTERACTIVE SERVICES ARCHITECTURE
-          </span>
           <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
             SCIENTIFIC PROBLEM-SOLVING
           </h2>

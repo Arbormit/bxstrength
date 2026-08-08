@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Calendar, User, Clock, ArrowRight, Dumbbell, Shield, BookOpen, TrendingUp, ShieldCheck, AlertCircle, Command, Activity, HeartPulse, Send, CheckCircle2, MessageSquare, HelpCircle } from 'lucide-react';
+import { Search, X, Calendar, User as UserIcon, Clock, ArrowRight, Dumbbell, Shield, BookOpen, TrendingUp, ShieldCheck, AlertCircle, Command, Activity, HeartPulse, Send, CheckCircle2, MessageSquare, HelpCircle } from 'lucide-react';
 import { 
   CLASSES_DATA, 
   TRAINERS_DATA, 
@@ -7,7 +7,7 @@ import {
   BLOG_POSTS_DATA, 
   MEMBERSHIP_PLANS 
 } from '../data/gymData';
-import { FitnessClass, Trainer, ServiceItem, BlogPost, MembershipPlan, ViewPage } from '../types';
+import { FitnessClass, Trainer, ServiceItem, BlogPost, MembershipPlan, ViewPage, User } from '../types';
 import { VelocityAPI } from '../services/api';
 
 interface SearchModalProps {
@@ -78,15 +78,15 @@ export const HEALTH_SYMPTOM_DATABASE: HealthSymptomTopic[] = [
     id: 'fat-loss-130',
     keywords: ['fat loss', 'weight loss', '130kg', 'obesity', 'overweight', 'recomp', 'belly fat', 'diet'],
     title: 'Executive Metabolic Reset (130kg ➔ 80kg Protocol)',
-    category: 'Metabolic Recomposition',
-    summary: 'Structured wave deficit nutrition and joint-safe strength training designed for 30kg–50kg sustained fat loss.',
+    category: 'Sustained Weight Loss & Recomposition',
+    summary: 'Structured fat loss protocol going from 130kg down to 80kg fit weight while preserving joint health and metabolic function.',
     recommendedCoach: 'David Williams',
     relatedTopics: [
-      'Caloric Deficit Wave Periodization',
-      'Visceral Fat Biomarker Tracking',
-      'Non-Exercise Activity Thermogenesis (NEAT)'
+      'Visceral Fat Mobilization',
+      'Non-Exercise Activity Thermogenesis (NEAT)',
+      'High-Protein Macro Calculation'
     ],
-    protocolGuide: 'Significant weight loss requires protecting lean muscle mass while systematically lowering visceral fat. We implement high-protein macro targets, weekly biometric check-ins, and progressive resistance to prevent metabolic adaptation.'
+    protocolGuide: 'Sustained weight loss from 130kg to 80kg requires non-linear caloric wave periodization, strength maintenance to prevent muscle wasting, and daily steps tracking (NEAT optimization).'
   },
   {
     id: 'shoulder-impingement',
@@ -142,7 +142,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   const [results, setResults] = useState<{
     symptoms: HealthSymptomTopic[];
     classes: FitnessClass[];
-    trainers: Trainer[];
+    trainers: User[];
     services: ServiceItem[];
     blogs: BlogPost[];
     plans: MembershipPlan[];
@@ -155,8 +155,45 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     plans: []
   });
 
+  const [dbCoaches, setDbCoaches] = useState<User[]>([]);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // Load real coaches from NeonDB database on open
+  useEffect(() => {
+    if (!isOpen) return;
+    const loadRealCoaches = async () => {
+      try {
+        const res = await fetch('/api/users');
+        if (res.ok) {
+          const rawUsers = await res.json();
+          if (Array.isArray(rawUsers)) {
+            const coaches = rawUsers.filter((u: any) => u.role === 'coach' || u.role === 'admin');
+            setDbCoaches(coaches.map((u: any) => ({
+              id: String(u.id || `coach-${Date.now()}`),
+              name: String(u.name || u.email || 'Coach'),
+              email: String(u.email || ''),
+              role: (u.role || 'coach') as any,
+              coachPosition: u.coach_position || u.coachPosition || (u.role === 'coach' ? 'Senior Coach' : 'Head Coach'),
+              phone: u.phone || '',
+              avatarUrl: u.avatar_url || u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.email)}`,
+              fitnessGoals: u.fitness_goals || u.fitnessGoals || 'Strength & Biomechanics',
+              isVerified: true,
+              status: u.status || 'active',
+              createdAt: u.created_at || new Date().toISOString()
+            })));
+            return;
+          }
+        }
+      } catch {}
+
+      const localUsers = VelocityAPI.getUsers().filter(u => u.role === 'coach' || u.role === 'admin');
+      setDbCoaches(localUsers);
+    };
+
+    loadRealCoaches();
+  }, [isOpen]);
 
   // Popular search recommendations including health symptoms
   const popularSearches = [
@@ -251,12 +288,12 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       matchesQuery(cls.trainerName)
     );
 
-    // Filter Trainers
-    const matchedTrainers = TRAINERS_DATA.filter(trainer => 
-      matchesQuery(trainer.name) || 
-      matchesQuery(trainer.role) || 
-      matchesQuery(trainer.bio) || 
-      trainer.specialties.some(spec => matchesQuery(spec))
+    // Filter Real Database Coaches (No static dummy data)
+    const matchedTrainers = dbCoaches.filter(coach => 
+      matchesQuery(coach.name) || 
+      matchesQuery(coach.coachPosition || '') || 
+      matchesQuery(coach.email) ||
+      matchesQuery(coach.fitnessGoals || '')
     );
 
     // Filter Services
@@ -615,12 +652,12 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                 </div>
               )}
 
-              {/* Group: Trainers / Coaches */}
-              {results.trainers.length > 0 && (
+              {/* Group: Real Database Coaches */}
+              {results.trainers.length > 0 ? (
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black uppercase text-zinc-400 tracking-widest border-b border-zinc-800 pb-1 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-white" />
-                    <span>RECOMMENDED SPECIALIST COACHES ({results.trainers.length})</span>
+                    <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>DATABASE VERIFIED COACHES ({results.trainers.length})</span>
                   </h4>
                   <div className="grid gap-2">
                     {results.trainers.map(trainer => (
@@ -630,7 +667,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                       >
                         <div className="flex gap-3 items-center">
                           <img 
-                            src={trainer.image} 
+                            src={trainer.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(trainer.name)}`} 
                             alt={trainer.name} 
                             className="w-10 h-10 object-cover rounded-full border border-zinc-700"
                           />
@@ -638,13 +675,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                             <h5 className="text-sm font-black text-white uppercase group-hover:text-emerald-400 transition-colors">
                               {trainer.name}
                             </h5>
-                            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{trainer.role}</p>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {trainer.specialties.map(spec => (
-                                <span key={spec} className="text-[8px] font-bold text-zinc-300 bg-zinc-800 px-1.5 py-0.5 rounded uppercase">
-                                  {spec}
-                                </span>
-                              ))}
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider bg-amber-950/60 px-2 py-0.5 rounded border border-amber-900/60">
+                                {trainer.coachPosition || 'Senior Coach'}
+                              </span>
+                              <span className="text-[9px] text-zinc-400 font-mono">{trainer.email}</span>
                             </div>
                           </div>
                         </div>
@@ -663,6 +698,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                     ))}
                   </div>
                 </div>
+              ) : (
+                query.toLowerCase().includes('coach') || query.toLowerCase().includes('david') || query.toLowerCase().includes('trainer') ? (
+                  <div className="bg-[#18181b] border border-zinc-800/80 p-4 rounded-lg text-center space-y-1">
+                    <UserIcon className="w-5 h-5 text-zinc-500 mx-auto" />
+                    <p className="text-xs text-zinc-300 font-bold uppercase">No coaches currently available in database</p>
+                    <p className="text-[11px] text-zinc-500 font-normal">Contact admin or book a discovery consultation for custom coach matching.</p>
+                  </div>
+                ) : null
               )}
 
               {/* Group: Blog Posts & Scientific Research */}
