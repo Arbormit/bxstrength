@@ -20,13 +20,23 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
   const [rateLimiting, setRateLimiting] = useState(true);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
+  // Pending action double confirmation state
+  const [pendingPermChange, setPendingPermChange] = useState<{ key: keyof ReturnType<typeof VelocityAPI.getCoachPermissions>; val: boolean; label: string } | null>(null);
+
   // Coach Permissions state
   const [coachPermissions, setCoachPermissions] = useState(() => VelocityAPI.getCoachPermissions());
 
-  const handleToggleCoachPerm = (key: keyof typeof coachPermissions, val: boolean) => {
+  const handleInitiatePermToggle = (key: keyof typeof coachPermissions, val: boolean, label: string) => {
+    setPendingPermChange({ key, val, label });
+  };
+
+  const executePermToggle = () => {
+    if (!pendingPermChange) return;
+    const { key, val, label } = pendingPermChange;
     const updated = VelocityAPI.saveCoachPermissions({ [key]: val });
     setCoachPermissions(updated);
-    onShowToast(`Coach tab access permission updated: ${String(key)} -> ${val ? 'ALLOWED' : 'RESTRICTED'}`);
+    onShowToast(`Coach Tab Permission Updated: "${label}" set to ${val ? 'ALLOWED' : 'RESTRICTED'}`);
+    setPendingPermChange(null);
   };
 
   const handleSaveSettings = (e: React.FormEvent) => {
@@ -132,7 +142,7 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
                 <input
                   type="checkbox"
                   checked={coachPermissions.allowFinancials}
-                  onChange={(e) => handleToggleCoachPerm('allowFinancials', e.target.checked)}
+                  onChange={(e) => handleInitiatePermToggle('allowFinancials', e.target.checked, 'Client Financials & Payments')}
                   className="w-4 h-4 rounded border-amber-700 text-amber-400 focus:ring-amber-400 cursor-pointer"
                 />
               </div>
@@ -146,7 +156,7 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
                 <input
                   type="checkbox"
                   checked={coachPermissions.allowLeadPipeline}
-                  onChange={(e) => handleToggleCoachPerm('allowLeadPipeline', e.target.checked)}
+                  onChange={(e) => handleInitiatePermToggle('allowLeadPipeline', e.target.checked, 'CRM Lead Pipeline')}
                   className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
                 />
               </div>
@@ -160,7 +170,7 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
                 <input
                   type="checkbox"
                   checked={coachPermissions.allowClientRoster}
-                  onChange={(e) => handleToggleCoachPerm('allowClientRoster', e.target.checked)}
+                  onChange={(e) => handleInitiatePermToggle('allowClientRoster', e.target.checked, 'Client Roster & Athlete Profiles')}
                   className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
                 />
               </div>
@@ -174,7 +184,7 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
                 <input
                   type="checkbox"
                   checked={coachPermissions.allowWorkoutPrograms}
-                  onChange={(e) => handleToggleCoachPerm('allowWorkoutPrograms', e.target.checked)}
+                  onChange={(e) => handleInitiatePermToggle('allowWorkoutPrograms', e.target.checked, 'Workout Program Builder')}
                   className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
                 />
               </div>
@@ -188,7 +198,7 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
                 <input
                   type="checkbox"
                   checked={coachPermissions.allowNutritionPlans}
-                  onChange={(e) => handleToggleCoachPerm('allowNutritionPlans', e.target.checked)}
+                  onChange={(e) => handleInitiatePermToggle('allowNutritionPlans', e.target.checked, 'Diet & Nutrition Plan Builder')}
                   className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
                 />
               </div>
@@ -202,7 +212,7 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
                 <input
                   type="checkbox"
                   checked={coachPermissions.allowSupportTickets}
-                  onChange={(e) => handleToggleCoachPerm('allowSupportTickets', e.target.checked)}
+                  onChange={(e) => handleInitiatePermToggle('allowSupportTickets', e.target.checked, 'Support Ticket Desk')}
                   className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
                 />
               </div>
@@ -264,6 +274,21 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
         </div>
       </div>
 
+      {/* Double Confirmation Modal for Coach Permissions */}
+      {pendingPermChange && (
+        <ConfirmModal
+          isOpen={true}
+          title="UPDATE COACH TAB PERMISSION"
+          message={`Are you sure you want to ${pendingPermChange.val ? 'ALLOW' : 'RESTRICT'} access to tab "${pendingPermChange.label}" for all coaches? Respective coach dashboards will update in real-time.`}
+          type={pendingPermChange.val ? 'success' : 'warning'}
+          confirmText="EXECUTE PERMISSION CHANGE"
+          cancelText="CANCEL"
+          requireTextConfirm={true}
+          onConfirm={executePermToggle}
+          onCancel={() => setPendingPermChange(null)}
+        />
+      )}
+
       <ConfirmModal
         isOpen={showClearConfirm}
         title="PURGE AUDIT LOG RECORDS"
@@ -271,6 +296,7 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
         type="danger"
         confirmText="PURGE LOGS NOW"
         cancelText="CANCEL"
+        requireTextConfirm={true}
         onConfirm={confirmClearLogs}
         onCancel={() => setShowClearConfirm(false)}
       />

@@ -1,8 +1,8 @@
-import React, { useState, useId } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { ConsultationBooking } from '../types';
-import { TRAINERS_DATA } from '../data/gymData';
 import { VelocityAPI } from '../services/api';
-import { Calendar, Clock, User, CheckCircle2, X, Dumbbell, ShieldCheck, Bell, MessageSquare } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Calendar, Clock, User, CheckCircle2, X, Dumbbell, ShieldCheck, Bell, UserCheck } from 'lucide-react';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -17,13 +17,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   preSelectedClass,
   preSelectedTrainer
 }) => {
-  const [userName, setUserName] = useState('');
-  const [userEmail, setUserEmail] = useState('');
-  const [userPhone, setUserPhone] = useState('');
+  const { user } = useAuth();
+
+  const [userName, setUserName] = useState(user?.name || '');
+  const [userEmail, setUserEmail] = useState(user?.email || '');
+  const [userPhone, setUserPhone] = useState(user?.phone || '');
   const [goal, setGoal] = useState('Strength & Body Recomposition');
-  const [selectedTrainer, setSelectedTrainer] = useState(preSelectedTrainer || 'Any UK Certified Master Coach');
-  const [bookingDate, setBookingDate] = useState('2026-08-10');
-  const [selectedTime, setSelectedTime] = useState('10:00 AM (UK GMT)');
+  const [selectedTrainer, setSelectedTrainer] = useState(preSelectedTrainer || 'Assigned Lead Coach');
+  const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedTime, setSelectedTime] = useState('Flexible Slot (Coach Will Confirm)');
   
   const [confirmedBooking, setConfirmedBooking] = useState<ConsultationBooking | null>(null);
 
@@ -31,14 +33,27 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const emailInputId = useId();
   const phoneInputId = useId();
   const goalInputId = useId();
-  const trainerInputId = useId();
-  const dateInputId = useId();
-  const timeInputId = useId();
+
+  // Auto-fill logged in user details whenever modal opens or user updates
+  useEffect(() => {
+    if (user) {
+      setUserName(user.name || '');
+      setUserEmail(user.email || '');
+      setUserPhone(user.phone || '');
+    }
+  }, [user, isOpen]);
+
+  useEffect(() => {
+    if (preSelectedTrainer) {
+      setSelectedTrainer(preSelectedTrainer);
+    }
+  }, [preSelectedTrainer]);
 
   if (!isOpen) return null;
 
   const handleBookingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const todayStr = new Date().toISOString().split('T')[0];
     const newBooking: ConsultationBooking = {
       id: 'BX-CONS-' + Math.floor(100000 + Math.random() * 900000),
       clientName: userName,
@@ -46,7 +61,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       clientPhone: userPhone,
       goal,
       coachPreference: selectedTrainer,
-      date: bookingDate,
+      date: bookingDate || todayStr,
       timeSlot: selectedTime,
       status: 'Confirmed',
       remindersSent: { h24: true, h2: true, m30: true },
@@ -59,8 +74,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         name: userName,
         email: userEmail,
         phone: userPhone,
-        subject: `30-Min Consultation: ${selectedTrainer}`,
-        message: `[DISCOVERY CONSULTATION BOOKED]\nRef: ${newBooking.id}\nGoal: ${goal}\nCoach Preference: ${selectedTrainer}\nRequested Slot: ${bookingDate} at ${selectedTime}`
+        subject: `15-Min Session: ${selectedTrainer}`,
+        message: `[15-MIN SESSION BOOKED]\nRef: ${newBooking.id}\nGoal: ${goal}\nAssigned Coach: ${selectedTrainer}`
       });
     } catch (err) {
       console.error('Consultation enquiry save error:', err);
@@ -76,7 +91,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         phone: userPhone,
         goal,
         coachPreference: selectedTrainer,
-        preferredDate: bookingDate,
+        preferredDate: bookingDate || todayStr,
         preferredTime: selectedTime
       })
     }).catch((err) => console.warn('Server consultation sync notice:', err.message));
@@ -100,8 +115,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               <Dumbbell className="w-4 h-4 transform -rotate-45" />
             </div>
             <div>
-              <h3 className="text-sm font-black uppercase tracking-wider text-white">BxStrength Discovery Consultation</h3>
-              <p className="text-[11px] text-zinc-400">30-Minute 1-on-1 Strategy Session (No Obligation)</p>
+              <h3 className="text-sm font-black uppercase tracking-wider text-white">BxStrength 15-Min Session</h3>
+              <p className="text-[11px] text-zinc-400">15-Minute 1-on-1 Strategy Session (No Obligation)</p>
             </div>
           </div>
           <button
@@ -127,7 +142,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 SESSION SCHEDULED!
               </h4>
               <p className="text-xs text-zinc-400 mt-1 max-w-sm mx-auto">
-                Calendar invite & Video link sent to <strong>{confirmedBooking.clientEmail}</strong> and WhatsApp confirmation triggered.
+                Confirmation sent to <strong>{confirmedBooking.clientEmail}</strong>. Our coach team will contact you shortly.
               </p>
             </div>
 
@@ -150,24 +165,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <p className="font-bold text-white uppercase">{confirmedBooking.goal}</p>
                 </div>
                 <div>
-                  <p className="text-zinc-500 text-[10px] uppercase font-bold">ASSIGNED COACH</p>
-                  <p className="font-bold text-white uppercase">{confirmedBooking.coachPreference}</p>
+                  <p className="text-zinc-500 text-[10px] uppercase font-bold">SESSION TYPE</p>
+                  <p className="font-bold text-white uppercase">15-Min Strategy Session</p>
                 </div>
                 <div>
-                  <p className="text-zinc-500 text-[10px] uppercase font-bold">DATE & TIME</p>
-                  <p className="font-bold text-white">{confirmedBooking.date} @ {confirmedBooking.timeSlot}</p>
-                </div>
-              </div>
-
-              {/* Automatic Reminders Timeline (PRD Section 6) */}
-              <div className="pt-3 border-t border-zinc-800/80">
-                <p className="text-[10px] font-bold uppercase text-zinc-400 mb-2 flex items-center gap-1">
-                  <Bell className="w-3 h-3 text-white" /> AUTOMATIC REMINDER SCHEDULE:
-                </p>
-                <div className="grid grid-cols-3 gap-1.5 text-[10px] text-zinc-400 text-center">
-                  <span className="bg-zinc-800 p-1.5 rounded">24 Hours Before</span>
-                  <span className="bg-zinc-800 p-1.5 rounded">2 Hours Before</span>
-                  <span className="bg-zinc-800 p-1.5 rounded">30 Mins Before</span>
+                  <p className="text-zinc-500 text-[10px] uppercase font-bold">STATUS</p>
+                  <p className="font-bold text-emerald-400">Confirmed / Scheduled</p>
                 </div>
               </div>
             </div>
@@ -182,6 +185,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         ) : (
           /* Consultation Booking Form */
           <form onSubmit={handleBookingSubmit} className="p-6 space-y-4">
+
             <div>
               <label htmlFor={nameInputId} className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1">
                 FULL NAME *
@@ -229,73 +233,21 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor={goalInputId} className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1">
-                  PRIMARY GOAL *
-                </label>
-                <select
-                  id={goalInputId}
-                  value={goal}
-                  onChange={(e) => setGoal(e.target.value)}
-                  className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-white transition-colors"
-                >
-                  <option value="Strength & Body Recomposition">Strength & Recomposition</option>
-                  <option value="Fat Loss & Metabolic Health">Fat Loss & Metabolic Health</option>
-                  <option value="Postural & Back Rehabilitation">Postural & Back Rehab</option>
-                  <option value="Executive Conditioning">Executive Conditioning</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor={trainerInputId} className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1">
-                  COACH PREFERENCE *
-                </label>
-                <select
-                  id={trainerInputId}
-                  value={selectedTrainer}
-                  onChange={(e) => setSelectedTrainer(e.target.value)}
-                  className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-white transition-colors"
-                >
-                  <option value="Any UK Certified Master Coach">Any UK Certified Master Coach</option>
-                  {TRAINERS_DATA.map((t) => (
-                    <option key={t.id} value={t.name}>{t.name} ({t.role.split(' ')[0]})</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor={dateInputId} className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1">
-                  PREFERRED DATE *
-                </label>
-                <input
-                  id={dateInputId}
-                  type="date"
-                  required
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                  className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-white transition-colors"
-                />
-              </div>
-
-              <div>
-                <label htmlFor={timeInputId} className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1">
-                  TIME SLOT *
-                </label>
-                <select
-                  id={timeInputId}
-                  value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
-                  className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-white transition-colors"
-                >
-                  <option value="09:00 AM (UK GMT)">09:00 AM (UK GMT)</option>
-                  <option value="11:30 AM (UK GMT)">11:30 AM (UK GMT)</option>
-                  <option value="02:00 PM (UK GMT)">02:00 PM (UK GMT)</option>
-                  <option value="05:30 PM (UK GMT)">05:30 PM (UK GMT)</option>
-                </select>
-              </div>
+            <div>
+              <label htmlFor={goalInputId} className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1">
+                PRIMARY GOAL *
+              </label>
+              <select
+                id={goalInputId}
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-white transition-colors"
+              >
+                <option value="Strength & Body Recomposition">Strength & Recomposition</option>
+                <option value="Fat Loss & Metabolic Health">Fat Loss & Metabolic Health</option>
+                <option value="Postural & Back Rehabilitation">Postural & Back Rehab</option>
+                <option value="Executive Conditioning">Executive Conditioning</option>
+              </select>
             </div>
 
             <div className="pt-2">
@@ -304,7 +256,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 className="w-full bg-white hover:bg-zinc-200 text-black font-black text-xs tracking-widest py-3.5 rounded-lg uppercase shadow-xl transition-all cursor-pointer"
                 id="btn-confirm-booking-submit"
               >
-                BOOK 30-MIN DISCOVERY CONSULTATION
+                BOOK 15-MIN SESSION
               </button>
             </div>
           </form>

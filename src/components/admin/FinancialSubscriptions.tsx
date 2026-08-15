@@ -73,7 +73,7 @@ export const FinancialSubscriptions: React.FC<FinancialSubscriptionsProps> = ({
     }
   };
 
-  const totalMRR = subscriptions.reduce((sum, s) => sum + s.price, 0);
+  const totalMRR = subscriptions.reduce((sum, s) => (s.status === 'active' ? sum + s.price : sum), 0);
 
   return (
     <div className="space-y-6">
@@ -91,7 +91,7 @@ export const FinancialSubscriptions: React.FC<FinancialSubscriptionsProps> = ({
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black tracking-widest px-4 py-2.5 uppercase shadow-md flex items-center gap-2 transition-all"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black tracking-widest px-4 py-2.5 uppercase shadow-md flex items-center gap-2 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>ADD CLIENT BILLING</span>
@@ -99,7 +99,7 @@ export const FinancialSubscriptions: React.FC<FinancialSubscriptionsProps> = ({
 
           <div className="bg-gray-900 border border-gray-800 px-4 py-2 text-right">
             <span className="block text-[9px] uppercase font-bold text-gray-400">TOTAL MONTHLY MRR</span>
-            <span className="text-xl font-black text-emerald-400 font-mono">${totalMRR}.00</span>
+            <span className="text-xl font-black text-emerald-400 font-mono">£{totalMRR}.00</span>
           </div>
         </div>
       </div>

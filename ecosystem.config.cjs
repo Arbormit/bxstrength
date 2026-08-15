@@ -2,7 +2,7 @@
 module.exports = {
   apps: [
     {
-      name: 'velocity-fitness-api',
+      name: 'bxstrength-api',
       script: 'npx',
       args: 'tsx server.ts',
       instances: 'max', // Scale across all available CPU cores on AWS EC2

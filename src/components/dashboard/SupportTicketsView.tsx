@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, SupportTicket, TicketCategory, TicketPriority } from '../../types';
 import { VelocityAPI } from '../../services/api';
 import { sendBrevoTicketEmail } from '../../services/emailService';
-import { LifeBuoy, Plus, CheckCircle2, Clock, AlertCircle, MessageSquare, Tag, X, ShieldAlert, Send } from 'lucide-react';
+import { LifeBuoy, Plus, CheckCircle2, Clock, AlertCircle, MessageSquare, Tag, X, ShieldAlert, Send, UserCheck } from 'lucide-react';
 
 import { Skeleton } from '../ui/Skeleton';
 

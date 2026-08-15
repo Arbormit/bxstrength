@@ -11,9 +11,10 @@ import { EnquiriesManager } from './EnquiriesManager';
 import { AnnouncementsManager } from './AnnouncementsManager';
 import { AuditLogsAndSettings } from './AuditLogsAndSettings';
 import { TicketManagement } from './TicketManagement';
+import { CoachesManager } from './CoachesManager';
 import {
   LayoutDashboard, Users, Calendar, Dumbbell, Utensils,
-  CreditCard, Mail, ShieldAlert, ShieldCheck, LogOut, CheckCircle2, X, LifeBuoy
+  CreditCard, Mail, ShieldAlert, ShieldCheck, LogOut, CheckCircle2, X, LifeBuoy, UserCheck
 } from 'lucide-react';
 
 import { SkeletonLoader } from '../ui/SkeletonLoader';
@@ -122,6 +123,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
 
   const allNavItems = [
     { id: 'overview', label: isCoach ? 'COACH DASHBOARD' : 'CRM OVERVIEW', icon: LayoutDashboard },
+    { id: 'coaches', label: 'COACH CARDS MANAGER', icon: UserCheck },
     { id: 'users', label: isCoach ? 'CLIENT ROSTER' : 'USER DIRECTORY', icon: Users },
     { id: 'schedule', label: 'CLASS SCHEDULES', icon: Calendar },
     { id: 'programs', label: 'WORKOUT PROGRAMS', icon: Dumbbell },
@@ -295,6 +297,10 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
                 onEnquiriesUpdated={loadCRMData}
                 onShowToast={showToast}
               />
+            )}
+
+            {activeTab === 'coaches' && (
+              <CoachesManager user={user} onShowToast={showToast} />
             )}
 
             {activeTab === 'tickets' && (

@@ -1,13 +1,22 @@
-import React, { useState, useId } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { VelocityAPI } from '../services/api';
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { MapPin, Phone, Mail, Clock, Send, CheckCircle2, ShieldCheck, UserCheck } from 'lucide-react';
 
 export const ContactView: React.FC = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const { user } = useAuth();
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+    }
+  }, [user]);
 
   const nameInputId = useId();
   const emailInputId = useId();

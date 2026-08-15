@@ -38,7 +38,7 @@ export const HEALTH_SYMPTOM_DATABASE: HealthSymptomTopic[] = [
     title: 'Knee Joint Rehabilitation & Patellar Biomechanics',
     category: 'Joint & Structural Health',
     summary: 'Custom low-impact loading, quad vmo strengthening, and patellar tracking correction for squatting and stair pain.',
-    recommendedCoach: 'David Williams',
+    recommendedCoach: 'Shaban Faridi',
     relatedTopics: [
       'VMO Activation Drills',
       'Joint Mobility & Cartilage Decompression',
@@ -52,7 +52,7 @@ export const HEALTH_SYMPTOM_DATABASE: HealthSymptomTopic[] = [
     title: 'Lower Back Rehabilitation & L4-L5 Spinal Decompression',
     category: 'Postural & Spinal Health',
     summary: 'Core bracing, glute activation, and pelvic alignment to eliminate chronic lower back tightness during sitting or lifting.',
-    recommendedCoach: 'Marcus Vance',
+    recommendedCoach: 'Shaban Faridi',
     relatedTopics: [
       'Intra-Abdominal Pressure (IAP) Bracing',
       'Posterior Chain Alignment',
@@ -66,7 +66,7 @@ export const HEALTH_SYMPTOM_DATABASE: HealthSymptomTopic[] = [
     title: 'PCOS & Female Menstrual Cycle Synchronized Training',
     category: 'Women\'s Metabolic & Hormonal Health',
     summary: 'Periodized training aligned with Follicular, Ovulatory, and Luteal phases to manage PCOS, normalize period regularity, and reduce inflammation.',
-    recommendedCoach: 'Dr. Sophia Chen',
+    recommendedCoach: 'Sadeem',
     relatedTopics: [
       'Luteal Phase Progesterone Nutrition',
       'Insulin Sensitivity for PCOS',
@@ -80,7 +80,7 @@ export const HEALTH_SYMPTOM_DATABASE: HealthSymptomTopic[] = [
     title: 'Executive Metabolic Reset (130kg ➔ 80kg Protocol)',
     category: 'Sustained Weight Loss & Recomposition',
     summary: 'Structured fat loss protocol going from 130kg down to 80kg fit weight while preserving joint health and metabolic function.',
-    recommendedCoach: 'David Williams',
+    recommendedCoach: 'Sadeem',
     relatedTopics: [
       'Visceral Fat Mobilization',
       'Non-Exercise Activity Thermogenesis (NEAT)',
@@ -94,7 +94,7 @@ export const HEALTH_SYMPTOM_DATABASE: HealthSymptomTopic[] = [
     title: 'Rotator Cuff & Shoulder Overhead Mobility Rehab',
     category: 'Upper Body Biomechanics',
     summary: 'Scapular rhythm restoration, rotator cuff strengthening, and thoracic mobility to restore pain-free pressing.',
-    recommendedCoach: 'Marcus Vance',
+    recommendedCoach: 'Shaban Faridi',
     relatedTopics: [
       'Scapular Upward Rotation Drills',
       'Subscapularis & Infraspinatus Firing',
@@ -108,14 +108,23 @@ export const HEALTH_SYMPTOM_DATABASE: HealthSymptomTopic[] = [
     title: 'Post-Pregnancy Core & Pelvic Floor Restoration',
     category: 'Female Recovery & Core Integrity',
     summary: 'Diastasis recti recovery, pelvic floor re-education, and safe return to heavy lifting post-delivery.',
-    recommendedCoach: 'Dr. Sophia Chen',
+    recommendedCoach: 'Moheeb Khan',
     relatedTopics: [
       'Diastasis Recti Core Realignment',
       'Pelvic Pressure Management',
       'Safe Return to Strength Training'
     ],
-    protocolGuide: 'Rebuilding postpartum strength requires progressive intra-abdominal pressure control without placing shear stress on healed connective tissue. We guide mothers step-by-step back to full athletic vitality.'
+    protocolGuide: 'Postpartum recovery requires strict intra-abdominal pressure regulation to prevent hernia or pelvic floor strain. We prioritize gentle transverse abdominis re-education before introducing progressive barbell loads.'
   }
+];
+
+export const POPULAR_SEARCH_SUGGESTIONS = [
+  'Knee Pain', 
+  'Back Pain', 
+  'Periods Cycle & PCOS', 
+  'Fat Loss (130kg to 80kg)', 
+  'Shoulder Rehab',
+  'Shaban Faridi'
 ];
 
 export const SearchModal: React.FC<SearchModalProps> = ({
@@ -202,7 +211,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     'Periods Cycle & PCOS', 
     'Fat Loss (130kg to 80kg)', 
     'Shoulder Rehab',
-    'David Williams'
+    'Shaban Faridi'
   ];
 
   // Handle escape key closing

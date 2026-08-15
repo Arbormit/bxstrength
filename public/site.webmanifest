@@ -1,0 +1,18 @@
+{
+  "name": "BxStrength — Premier UK & USA Performance Fitness Coaching",
+  "short_name": "BxStrength",
+  "description": "BxStrength is the #1 UK & USA digital coaching platform for boxing, strength training, physiotherapy, and bespoke athlete transformation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

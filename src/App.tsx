@@ -26,6 +26,7 @@ import { AdminCRM } from './components/admin/AdminCRM';
 import { LoginModal } from './components/auth/LoginModal';
 import { RegisterModal } from './components/auth/RegisterModal';
 import { ForgotPasswordModal } from './components/auth/ForgotPasswordModal';
+import { SeoHead } from './components/SeoHead';
 import { FloatingActionWidget } from './components/ui/FloatingActionWidget';
 import { Preloader } from './components/ui/Preloader';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
@@ -145,6 +146,9 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col selection:bg-white selection:text-black">
+      {/* Dynamic SEO Meta Head Manager */}
+      <SeoHead currentPage={currentPage} />
+
       {/* 3-5 Sec Animated Preloader Splash Screen */}
       {isLoadingSplash && <Preloader onComplete={() => setIsLoadingSplash(false)} />}
 

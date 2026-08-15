@@ -91,7 +91,7 @@ export const EnquiriesManager: React.FC<EnquiriesManagerProps> = ({
             WEBSITE ENQUIRIES & DIAGNOSTIC LEADS DATABASE
           </h2>
           <p className="text-xs text-zinc-400 mt-1">
-            Real-time contact messages, 5-minute self assessments, and 30-minute discovery consultation bookings stored in server database.
+            Real-time contact messages, 5-minute self assessments, and 15-minute session bookings stored in server database.
           </p>
         </div>
 

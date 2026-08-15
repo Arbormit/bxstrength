@@ -593,11 +593,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       {/* Dedicated Confirm Modal for Delete User */}
       <ConfirmModal
         isOpen={!!deletingUser}
-        title="DELETE CLIENT ACCOUNT"
-        message={`Are you sure you want to permanently delete the client account for "${deletingUser?.name}"? This action cannot be undone.`}
+        title="DELETE USER / CLIENT ACCOUNT"
+        message={`Are you sure you want to permanently delete the account for "${deletingUser?.name}" (${deletingUser?.email})? This action cannot be undone.`}
         type="danger"
         confirmText="DELETE PERMANENTLY"
         cancelText="KEEP ACCOUNT"
+        requireTextConfirm={true}
         onConfirm={confirmDelete}
         onCancel={() => setDeletingUser(null)}
       />

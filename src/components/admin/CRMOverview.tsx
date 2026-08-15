@@ -72,7 +72,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         email: u.email,
         phone: u.phone || '+44 20 7946 0921',
         goal: u.fitnessGoals || 'Strength & Recomp',
-        assignedCoach: idx % 2 === 0 ? 'David Williams' : 'Dr. Sophia Chen',
+        assignedCoach: idx % 2 === 0 ? 'Shaban Faridi' : 'Sadeem',
         stage: idx === 0 ? 'Active Client' : 'Coach Assigned',
         source: 'Self Assessment Diagnostic',
         createdAt: u.createdAt || new Date().toISOString()
@@ -87,7 +87,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         email: e.email,
         phone: e.phone || '+44 7700 900077',
         goal: e.subject || 'VIP Coaching Consultation',
-        assignedCoach: 'Marcus Vance',
+        assignedCoach: 'Moheeb Khan',
         stage: 'Lead',
         source: 'Website Contact Form',
         createdAt: e.createdAt || new Date().toISOString()
@@ -109,7 +109,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
   const [emailInput, setEmailInput] = useState('');
   const [phoneInput, setPhoneInput] = useState('');
   const [goalInput, setGoalInput] = useState('Body Reconstitution & Strength');
-  const [coachInput, setCoachInput] = useState('David Williams');
+  const [coachInput, setCoachInput] = useState('Shaban Faridi');
   const [stageInput, setStageInput] = useState<LeadPipelineStage>('Lead');
   const [sourceInput, setSourceInput] = useState('Manual Admin Entry');
 
@@ -238,12 +238,14 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
               {isCoach ? 'FITNESS COACH CONTROL CENTER' : 'CLIENT PIPELINE & BUSINESS ANALYTICS'}
             </h1>
             <p className="text-xs text-zinc-400 max-w-xl mt-1">
-              Track real lead progress from digital assessment to consultation, coach assignment, active retention, and client renewals.
+              {isCoach
+                ? 'Manage your assigned client roster, 15-min strategy call sessions, workout programs, and nutrition plans.'
+                : 'Track real lead progress from digital assessment to consultation, coach assignment, active retention, and client renewals.'}
             </p>
           </div>
 
           <div className="flex items-center gap-2.5">
-            {leads.length > 0 && (
+            {leads.length > 0 && !isCoach && (
               <button
                 onClick={() => setShowClearConfirm(true)}
                 className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white text-xs font-bold tracking-wider px-3.5 py-3 rounded-lg uppercase transition-all cursor-pointer"
@@ -257,7 +259,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
               className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest px-5 py-3 rounded-lg uppercase transition-all shadow-lg cursor-pointer flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              <span>NEW LEAD ENTRY</span>
+              <span>{isCoach ? 'ADD ATHLETE / CLIENT' : 'NEW LEAD ENTRY'}</span>
             </button>
           </div>
         </div>
@@ -267,23 +269,25 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
       <div className="bg-[#121214] border border-zinc-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 text-xs">
         <div className="flex items-center gap-2 font-bold uppercase text-zinc-400">
           <Filter className="w-4 h-4 text-white" />
-          <span>Pipeline Filters:</span>
+          <span>{isCoach ? 'Athlete Roster Filters:' : 'Pipeline Filters:'}</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-zinc-400 uppercase font-bold">Coach:</span>
-            <select
-              value={selectedFilterCoach}
-              onChange={(e) => setSelectedFilterCoach(e.target.value)}
-              className="bg-[#18181b] border border-zinc-800 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600"
-            >
-              <option value="All">All UK Coaches</option>
-              <option value="David Williams">David Williams</option>
-              <option value="Dr. Sophia Chen">Dr. Sophia Chen</option>
-              <option value="Marcus Vance">Marcus Vance</option>
-            </select>
-          </div>
+          {!isCoach && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-zinc-400 uppercase font-bold">Coach:</span>
+              <select
+                value={selectedFilterCoach}
+                onChange={(e) => setSelectedFilterCoach(e.target.value)}
+                className="bg-[#18181b] border border-zinc-800 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600"
+              >
+                <option value="All">All UK Coaches</option>
+                <option value="Shaban Faridi">Shaban Faridi</option>
+                <option value="Sadeem">Sadeem</option>
+                <option value="Moheeb Khan">Moheeb Khan</option>
+              </select>
+            </div>
+          )}
 
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] text-zinc-400 uppercase font-bold">Stage:</span>
@@ -292,7 +296,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
               onChange={(e) => setSelectedFilterStage(e.target.value)}
               className="bg-[#18181b] border border-zinc-800 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600"
             >
-              <option value="All">All 10 Pipeline Stages</option>
+              <option value="All">All Pipeline Stages</option>
               {pipelineStages.map((stg) => (
                 <option key={stg} value={stg}>{stg}</option>
               ))}
@@ -301,85 +305,198 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         </div>
       </div>
 
-      {/* 10-Stage Pipeline Horizontal Visualiser */}
-      <div className="bg-[#121214] border border-zinc-800 p-6 rounded-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-          <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-emerald-400" />
-            CLIENT CRM CONVERSION PIPELINE (10 STAGES)
-          </h3>
-          <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-            Total Active Leads: <strong className="text-white">{leads.length}</strong>
-          </span>
-        </div>
+      {/* 10-Stage Pipeline Horizontal Visualiser (Only Shown to Admin, Hidden for Coaches) */}
+      {!isCoach && (
+        <div className="bg-[#121214] border border-zinc-800 p-6 rounded-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+            <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-emerald-400" />
+              CLIENT CRM CONVERSION PIPELINE (10 STAGES)
+            </h3>
+            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+              Total Active Leads: <strong className="text-white">{leads.length}</strong>
+            </span>
+          </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-2 text-center pt-2">
-          {pipelineStages.map((stage, idx) => {
-            const count = pipelineCounts[stage] || 0;
-            const isSelected = selectedFilterStage === stage;
-            return (
-              <div
-                key={stage}
-                onClick={() => setSelectedFilterStage(isSelected ? 'All' : stage)}
-                className={`bg-[#18181b] border rounded-lg p-2.5 flex flex-col justify-between transition-all group cursor-pointer ${
-                  isSelected 
-                    ? 'border-emerald-500 bg-emerald-950/20' 
-                    : 'border-zinc-800 hover:border-zinc-600'
-                }`}
-              >
-                <span className="text-[9px] font-bold text-zinc-500 uppercase">Step {idx + 1}</span>
-                <span className={`text-base font-black my-1 ${count > 0 ? 'text-white' : 'text-zinc-600'}`}>
-                  {count}
-                </span>
-                <span className="text-[10px] font-bold text-zinc-300 uppercase truncate group-hover:text-white">
-                  {stage}
-                </span>
-              </div>
-            );
-          })}
+          <div className="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-2 text-center pt-2">
+            {pipelineStages.map((stage, idx) => {
+              const count = pipelineCounts[stage] || 0;
+              const isSelected = selectedFilterStage === stage;
+              return (
+                <div
+                  key={stage}
+                  onClick={() => setSelectedFilterStage(isSelected ? 'All' : stage)}
+                  className={`bg-[#18181b] border rounded-lg p-2.5 flex flex-col justify-between transition-all group cursor-pointer ${
+                    isSelected 
+                      ? 'border-emerald-500 bg-emerald-950/20' 
+                      : 'border-zinc-800 hover:border-zinc-600'
+                  }`}
+                >
+                  <span className="text-[9px] font-bold text-zinc-500 uppercase">Step {idx + 1}</span>
+                  <span className={`text-base font-black my-1 ${count > 0 ? 'text-white' : 'text-zinc-600'}`}>
+                    {count}
+                  </span>
+                  <span className="text-[10px] font-bold text-zinc-300 uppercase truncate group-hover:text-white">
+                    {stage}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Metric Analytics Cards */}
+      {/* Metric Analytics Cards (Tailored for Coach vs Admin) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Total CRM Leads</span>
-            <Users className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div className="text-3xl font-black text-white tracking-tight">{leads.length}</div>
-          <p className="text-[11px] text-zinc-400 mt-1 font-semibold">Active in Pipeline</p>
-        </div>
+        {isCoach ? (
+          <>
+            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
+              <div className="flex items-center justify-between text-zinc-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">My Assigned Clients</span>
+                <Users className="w-5 h-5 text-[#CCFF00]" />
+              </div>
+              <div className="text-3xl font-black text-white tracking-tight">
+                {users.filter(u => u.role === 'client').length}
+              </div>
+              <p className="text-[11px] text-[#CCFF00] mt-1 font-semibold">Active Client Roster</p>
+            </div>
 
-        <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Monthly Revenue</span>
-            <DollarSign className="w-5 h-5 text-white" />
-          </div>
-          <div className="text-3xl font-black text-white tracking-tight">£{totalRevenue || 450}</div>
-          <p className="text-[11px] text-zinc-400 mt-1 font-semibold">UK Sterling Subscriptions</p>
-        </div>
+            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
+              <div className="flex items-center justify-between text-zinc-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">15-Min Strategy Calls</span>
+                <Phone className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div className="text-3xl font-black text-white tracking-tight">
+                {enquiries.length}
+              </div>
+              <p className="text-[11px] text-emerald-400 mt-1 font-semibold">Client Consultations Received</p>
+            </div>
 
-        <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Consultation Conv. Rate</span>
-            <TrendingUp className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div className="text-3xl font-black text-white tracking-tight">
-            {leads.length > 0 ? `${Math.round((pipelineCounts['Active Client'] / leads.length) * 100)}%` : '0%'}
-          </div>
-          <p className="text-[11px] text-emerald-400 mt-1 font-semibold">Diagnostic to Active Client</p>
-        </div>
+            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
+              <div className="flex items-center justify-between text-zinc-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">Workout & Diet Programs</span>
+                <Dumbbell className="w-5 h-5 text-pink-400" />
+              </div>
+              <div className="text-3xl font-black text-white tracking-tight">
+                {VelocityAPI.getPrograms().length}
+              </div>
+              <p className="text-[11px] text-pink-400 mt-1 font-semibold">Active Training Plans</p>
+            </div>
 
-        <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">CSAT Score</span>
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div className="text-3xl font-black text-white tracking-tight">4.9 / 5.0</div>
-          <p className="text-[11px] text-emerald-400 mt-1 font-semibold">99% Client Satisfaction</p>
-        </div>
+            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
+              <div className="flex items-center justify-between text-zinc-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">Pending Enquiries & Tickets</span>
+                <Mail className="w-5 h-5 text-amber-400" />
+              </div>
+              <div className="text-3xl font-black text-white tracking-tight">
+                {enquiries.filter(e => e.status === 'new').length}
+              </div>
+              <p className="text-[11px] text-amber-400 mt-1 font-semibold">New Client Requests</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
+              <div className="flex items-center justify-between text-zinc-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">Total CRM Leads</span>
+                <Users className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div className="text-3xl font-black text-white tracking-tight">{leads.length}</div>
+              <p className="text-[11px] text-zinc-400 mt-1 font-semibold">Active in Pipeline</p>
+            </div>
+
+            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
+              <div className="flex items-center justify-between text-zinc-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">Monthly Revenue</span>
+                <DollarSign className="w-5 h-5 text-[#CCFF00]" />
+              </div>
+              <div className="text-3xl font-black text-white tracking-tight">£{totalRevenue}</div>
+              <p className="text-[11px] text-zinc-400 mt-1 font-semibold">Active Subscriptions Total</p>
+            </div>
+
+            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
+              <div className="flex items-center justify-between text-zinc-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">Active Memberships</span>
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div className="text-3xl font-black text-white tracking-tight">
+                {subscriptions.filter(s => s.status === 'active').length}
+              </div>
+              <p className="text-[11px] text-emerald-400 mt-1 font-semibold">Verified Paid Clients</p>
+            </div>
+
+            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
+              <div className="flex items-center justify-between text-zinc-400 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider">Client Reviews &amp; CSAT</span>
+                <CheckCircle2 className="w-5 h-5 text-amber-400" />
+              </div>
+              <div className="text-base font-black text-amber-300 tracking-tight mt-1">
+                Pending Client Feedback
+              </div>
+              <p className="text-[11px] text-zinc-400 mt-1 font-semibold">Updates live upon verified reviews</p>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Coach Quick Actions Bar */}
+      {isCoach && (
+        <div className="bg-[#141416] border border-zinc-800 p-5 rounded-xl">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-black uppercase tracking-widest text-[#CCFF00] flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              COACH QUICK WORKSPACE SHORTCUTS
+            </h3>
+            <span className="text-[10px] text-zinc-400 font-bold uppercase">Direct Tab Access</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <button
+              onClick={() => onNavigateTab('users')}
+              className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-left transition-all group cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-zinc-300 group-hover:text-white mb-1">
+                <span className="text-xs font-bold uppercase">Athlete Roster</span>
+                <ChevronRight className="w-3.5 h-3.5 text-[#CCFF00]" />
+              </div>
+              <p className="text-[10px] text-zinc-500 line-clamp-1">View &amp; edit assigned client profiles</p>
+            </button>
+
+            <button
+              onClick={() => onNavigateTab('programs')}
+              className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-left transition-all group cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-zinc-300 group-hover:text-white mb-1">
+                <span className="text-xs font-bold uppercase">Workout Plans</span>
+                <ChevronRight className="w-3.5 h-3.5 text-pink-400" />
+              </div>
+              <p className="text-[10px] text-zinc-500 line-clamp-1">Create &amp; assign training routines</p>
+            </button>
+
+            <button
+              onClick={() => onNavigateTab('nutrition')}
+              className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-left transition-all group cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-zinc-300 group-hover:text-white mb-1">
+                <span className="text-xs font-bold uppercase">Nutrition Diets</span>
+                <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+              <p className="text-[10px] text-zinc-500 line-clamp-1">Build macro &amp; meal plans</p>
+            </button>
+
+            <button
+              onClick={() => onNavigateTab('tickets')}
+              className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-left transition-all group cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-zinc-300 group-hover:text-white mb-1">
+                <span className="text-xs font-bold uppercase">Support Desk</span>
+                <ChevronRight className="w-3.5 h-3.5 text-amber-400" />
+              </div>
+              <p className="text-[10px] text-zinc-500 line-clamp-1">Respond to athlete support tickets</p>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Roster & Empty Lead State */}
       <div className="bg-[#121214] border border-zinc-800 p-6 rounded-xl">
@@ -387,10 +504,12 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
           <div>
             <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
               <Users className="w-4 h-4 text-white" />
-              LIVE CRM LEADS & ASSIGNED UK COACHES
+              {isCoach ? 'MY ASSIGNED ATHLETE LEADS & DIAGNOSTIC REQUESTS' : 'LIVE CRM LEADS & ASSIGNED UK COACHES'}
             </h3>
             <p className="text-xs text-zinc-400 mt-0.5">
-              Manage lead conversion pipeline, update stages, and view assigned specialist coaches.
+              {isCoach
+                ? 'Review diagnostic submissions, 15-min strategy call bookings, and client status.'
+                : 'Manage lead conversion pipeline, update stages, and view assigned specialist coaches.'}
             </p>
           </div>
 
@@ -398,7 +517,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
             onClick={() => setShowAddModal(true)}
             className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest px-4 py-2 rounded uppercase transition-colors flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> ADD LEAD
+            <Plus className="w-4 h-4" /> {isCoach ? 'ADD ATHLETE' : 'ADD LEAD'}
           </button>
         </div>
 
@@ -575,9 +694,9 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                     onChange={(e) => setCoachInput(e.target.value)}
                     className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-zinc-600"
                   >
-                    <option value="David Williams">David Williams (Strength Lead)</option>
-                    <option value="Dr. Sophia Chen">Dr. Sophia Chen (Biomechanics)</option>
-                    <option value="Marcus Vance">Marcus Vance (Head Performance)</option>
+                    <option value="Shaban Faridi">Shaban Faridi (Head Coach)</option>
+                    <option value="Sadeem">Sadeem (Senior Strength Lead)</option>
+                    <option value="Moheeb Khan">Moheeb Khan (Tactical Lead)</option>
                   </select>
                 </div>
 

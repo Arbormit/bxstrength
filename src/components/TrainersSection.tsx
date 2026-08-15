@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trainer, ViewPage } from '../types';
 import { TRAINERS_DATA, BxTrainer } from '../data/gymData';
 import { Star, Calendar, ShieldCheck, Globe, Clock, Award, Trophy, CheckCircle2, X, ExternalLink } from 'lucide-react';
@@ -15,6 +15,24 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
   onOpenBookingWithTrainer
 }) => {
   const [selectedTrainerForProfile, setSelectedTrainerForProfile] = useState<BxTrainer | null>(null);
+  const [trainers, setTrainers] = useState<BxTrainer[]>(TRAINERS_DATA);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/trainers')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setTrainers(data);
+        }
+      })
+      .catch(() => {
+        // Fallback silently to initial state
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <section id="trainers-section" className="py-12 sm:py-20 bg-[#0a0a0a] text-white border-b border-zinc-800 font-sans">
@@ -35,14 +53,13 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
 
         {/* Coach Cards List - Borderless Design Matching Reference Sample */}
         <div className="space-y-16 lg:space-y-24">
-          {TRAINERS_DATA.map((trainer: BxTrainer) => {
+          {trainers.map((trainer: BxTrainer) => {
             const headlines: Record<string, string> = {
-              'david-williams': 'THE ARCHITECT OF PERFORMANCE',
-              'sophia-chen': 'CLINICAL METABOLIC MASTER',
-              'marcus-vance': 'THE POSTURAL RECONSTRUCTIONIST',
-              'alex-mercer': 'TACTICAL ATHLETIC CONDITIONER'
+              'Shaban Faridi': 'HEAD COACH | BOXING INSTRUCTOR | PHYSIOTHERAPY PROFESSIONAL',
+              'Sadeem': 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
+              'Moheeb Khan': 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
             };
-            const headline = headlines[trainer.id] || 'THE ARCHITECT OF PERFORMANCE';
+            const headline = trainer.headline || headlines[trainer.name] || headlines[trainer.id] || 'THE ARCHITECT OF PERFORMANCE';
 
             return (
               <div
@@ -84,9 +101,13 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
                     {/* Paragraph Bio matching sample formatting */}
                     <div className="text-zinc-300 text-xs sm:text-sm font-normal leading-relaxed space-y-4 max-w-3xl">
                       <p>{trainer.bio}</p>
-                      <p>
-                        His methodology bridges the gap between traditional strength training and the chaotic demands of high-performance conditioning. Whether peaking for elite competition or building a foundation for sustainable power, {trainer.name.split(' ')[0]} applies a data-driven, precision-focused approach to every session.
-                      </p>
+                      {trainer.secondaryBio ? (
+                        <p>{trainer.secondaryBio}</p>
+                      ) : (
+                        <p>
+                          His methodology bridges the gap between traditional strength training and the chaotic demands of high-performance conditioning. Whether peaking for elite competition or building a foundation for sustainable power, {trainer.name.split(' ')[0]} applies a data-driven, precision-focused approach to every session.
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -105,9 +126,9 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
                     <div className="bg-[#141416] p-5 rounded-2xl border-0 shadow-inner flex flex-col justify-between">
                       <Trophy className="w-5 h-5 text-[#CCFF00]" />
                       <div className="mt-3">
-                        <p className="text-2xl sm:text-3xl font-black text-white">50+</p>
+                        <p className="text-2xl sm:text-3xl font-black text-white">{trainer.clientsServed ? `${trainer.clientsServed}+` : '1000+'}</p>
                         <p className="text-[10px] sm:text-[11px] font-bold text-zinc-400 uppercase tracking-widest mt-1">
-                          PRO FIGHTERS TRAINED
+                          CLIENTS SERVED GLOBALLY
                         </p>
                       </div>
                     </div>
@@ -207,6 +228,61 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
                 ))}
               </div>
             </div>
+
+            {/* Coach Physique & Fitness Media Gallery Showcase (Photos & Videos) */}
+            {((selectedTrainerForProfile.galleryPhotos && selectedTrainerForProfile.galleryPhotos.length > 0) ||
+              (selectedTrainerForProfile.galleryVideos && selectedTrainerForProfile.galleryVideos.length > 0)) && (
+              <div className="space-y-3 pt-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-white flex items-center justify-between border-b border-zinc-800 pb-2">
+                  <span className="flex items-center gap-2 text-[#CCFF00]">
+                    <Award className="w-4 h-4 text-[#CCFF00]" />
+                    ATHLETE PHYSIQUE & CONDITIONING GALLERY
+                  </span>
+                  <span className="text-[10px] text-zinc-400 font-bold uppercase">Real Physique Showcase</span>
+                </h4>
+
+                {/* Photos Grid */}
+                {selectedTrainerForProfile.galleryPhotos && selectedTrainerForProfile.galleryPhotos.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {selectedTrainerForProfile.galleryPhotos.map((photo, idx) => (
+                      <div key={idx} className="group relative rounded-xl overflow-hidden aspect-square border border-zinc-800 bg-zinc-900">
+                        <img
+                          src={photo}
+                          alt={`${selectedTrainerForProfile.name} Physique ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                          <span className="text-[9px] font-bold uppercase text-[#CCFF00]">PHYSIQUE #{idx + 1}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Videos Showcase */}
+                {selectedTrainerForProfile.galleryVideos && selectedTrainerForProfile.galleryVideos.length > 0 && (
+                  <div className="space-y-2.5 pt-2">
+                    <p className="text-[10px] font-black uppercase text-pink-400 tracking-wider">TRAINING & ATHLETE PERFORMANCE CLIPS:</p>
+                    <div className="grid grid-cols-1 gap-3">
+                      {selectedTrainerForProfile.galleryVideos.map((vidUrl, idx) => (
+                        <div key={idx} className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 shadow-lg">
+                          <video
+                            controls
+                            preload="metadata"
+                            playsInline
+                            className="w-full max-h-56 object-cover rounded-xl"
+                            poster={selectedTrainerForProfile.image}
+                          >
+                            <source src={vidUrl} type="video/mp4" />
+                            Your browser does not support HTML5 video playback.
+                          </video>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Action CTA */}
             <button

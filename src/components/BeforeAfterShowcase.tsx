@@ -28,11 +28,11 @@ export interface TransformationItem {
 export const TRANSFORMATIONS: TransformationItem[] = [
   {
     id: 'marcus-130-80',
-    name: 'Marcus Vance',
+    name: 'Hamza Khan',
     age: 34,
     location: 'London, UK',
-    coach: 'David Williams',
-    coachTitle: 'Head of Strength & Conditioning',
+    coach: 'Shaban Faridi',
+    coachTitle: 'Head Coach & Physiotherapy Lead',
     duration: '10 Months (8–12 Mo Protocol)',
     beforeWeight: '130 KG',
     afterWeight: '80 KG FIT',
@@ -41,7 +41,7 @@ export const TRANSFORMATIONS: TransformationItem[] = [
     afterImg: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=80&w=800',
     beforeBadges: ['130 kg Body Weight', 'Severe Knee Pain', 'High Visceral Fat', 'Poor Energy'],
     afterBadges: ['80 kg Fit Weight', 'Zero Joint Pain', 'Lean Muscle Build', 'Peak Energy'],
-    quote: "I went from 130kg with constant joint pain to 80kg of lean muscle in 10 months under Head Coach David's direct supervision.",
+    quote: "I went from 130kg with constant joint pain to 80kg of lean muscle under Head Coach Shaban's direct physiotherapy & boxing supervision.",
     focusArea: 'Executive Recomposition & Joint Rehab'
   },
   {
@@ -49,8 +49,8 @@ export const TRANSFORMATIONS: TransformationItem[] = [
     name: 'Elena Rostova',
     age: 29,
     location: 'Manchester, UK',
-    coach: 'Dr. Sophia Chen',
-    coachTitle: 'Lead Women\'s Health Specialist',
+    coach: 'Sadeem',
+    coachTitle: 'Senior Strength & Virtual Performance Coach',
     duration: '8 Months Protocol',
     beforeWeight: '92 KG',
     afterWeight: '64 KG FIT',
@@ -59,7 +59,7 @@ export const TRANSFORMATIONS: TransformationItem[] = [
     afterImg: 'https://images.unsplash.com/photo-1548690312-e3b507d8c110?auto=format&fit=crop&q=80&w=800',
     beforeBadges: ['92 kg Weight', 'PCOS Symptoms', 'Irregular Cycles', 'Water Retention'],
     afterBadges: ['64 kg Fit Weight', '28-Day Cycle Synced', 'Hormonal Balance', 'High Vitality'],
-    quote: "My period cycle normalized for the first time in 5 years while losing 28kg with Dr. Sophia's female cycle-synced coaching.",
+    quote: "My period cycle normalized for the first time in 5 years while losing 28kg with Sadeem's virtual conditioning coaching.",
     focusArea: 'PCOS & Female Cycle Syncing'
   },
   {
@@ -67,18 +67,18 @@ export const TRANSFORMATIONS: TransformationItem[] = [
     name: 'James Sterling',
     age: 41,
     location: 'Birmingham, UK',
-    coach: 'Marcus Vance',
-    coachTitle: 'Senior Biomechanics Specialist',
+    coach: 'Moheeb Khan',
+    coachTitle: 'Tactical Conditioning & Functional Lead',
     duration: '9 Months Protocol',
     beforeWeight: '115 KG',
     afterWeight: '82 KG FIT',
     weightLoss: '-33 KG FAT LOSS',
-    beforeImg: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800',
-    afterImg: 'https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?auto=format&fit=crop&q=80&w=800',
-    beforeBadges: ['115 kg Weight', 'L4-L5 Back Pain', 'Weak Core', 'Knee Discomfort'],
-    afterBadges: ['82 kg Fit Weight', 'Pain-Free Back', '180kg Deadlift', 'Strong Core'],
-    quote: "BxStrength fixed my biomechanics and back pain first, then transformed my body completely.",
-    focusArea: 'Postural Rehab & Back Health'
+    beforeImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800',
+    afterImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=800',
+    beforeBadges: ['115 kg Weight', 'L4-L5 Herniation', 'Chronic Back Pain', 'Low Mobility'],
+    afterBadges: ['82 kg Fit Weight', 'Pain-Free Spine', 'Strong Core Bracing', 'Full Agility'],
+    quote: "Moheeb eliminated my L4-L5 disc pain completely while rebuilding my core and helping me drop 33kg of fat safely.",
+    focusArea: 'L4-L5 Spinal Decompression & Tactical Rehab'
   }
 ];
 

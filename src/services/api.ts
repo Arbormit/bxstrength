@@ -4,6 +4,7 @@ import {
   Enquiry, AuditLog, Announcement, BlogPost, Testimonial,
   SupportTicket, TicketStatus, TicketCategory, TicketPriority
 } from '../types';
+import { TRAINERS_DATA, BxTrainer } from '../data/gymData';
 
 const STORAGE_KEYS = {
   USERS: 'velocity_users',
@@ -40,7 +41,7 @@ export const DEFAULT_COACH_PERMISSIONS: CoachPermissions = {
 const SEED_USERS: User[] = [
   {
     id: 'user-admin-1',
-    name: 'Marcus Vance',
+    name: 'System Administrator',
     email: 'admin@velocity.com',
     role: 'admin',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
@@ -1193,5 +1194,82 @@ export const VelocityAPI = {
       );
     }
     return updated;
+  },
+
+  // --- REAL-TIME TRAINERS / COACH CARDS API ---
+  async getTrainersAsync(): Promise<BxTrainer[]> {
+    try {
+      const res = await fetch('/api/trainers');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          return data;
+        }
+      }
+    } catch {
+      // Fallback silently
+    }
+    return TRAINERS_DATA;
+  },
+
+  async addTrainerAsync(trainerData: Partial<BxTrainer>): Promise<{ success: boolean; data?: BxTrainer; error?: string }> {
+    try {
+      const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+      const res = await fetch('/api/trainers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || ''}`
+        },
+        body: JSON.stringify(trainerData)
+      });
+      const json = await res.json();
+      if (res.ok) {
+        return { success: true, data: json.data };
+      }
+      return { success: false, error: json.error || 'Failed to add coach' };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Server error' };
+    }
+  },
+
+  async updateTrainerAsync(id: string, trainerData: Partial<BxTrainer>): Promise<{ success: boolean; data?: BxTrainer; error?: string }> {
+    try {
+      const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+      const res = await fetch(`/api/trainers/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || ''}`
+        },
+        body: JSON.stringify(trainerData)
+      });
+      const json = await res.json();
+      if (res.ok) {
+        return { success: true, data: json.data };
+      }
+      return { success: false, error: json.error || 'Failed to update coach' };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Server error' };
+    }
+  },
+
+  async deleteTrainerAsync(id: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+      const res = await fetch(`/api/trainers/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token || ''}`
+        }
+      });
+      const json = await res.json();
+      if (res.ok) {
+        return { success: true };
+      }
+      return { success: false, error: json.error || 'Failed to delete coach' };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Server error' };
+    }
   }
 };

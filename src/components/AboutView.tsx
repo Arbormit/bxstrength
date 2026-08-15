@@ -61,7 +61,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenBooking 
                   onClick={onOpenBooking}
                   className="bg-white hover:bg-zinc-200 text-black font-black text-xs tracking-widest uppercase px-8 py-4 rounded-lg transition-colors cursor-pointer shadow-lg"
                 >
-                  BOOK 30-MIN DISCOVERY CONSULTATION
+                  BOOK 15-MIN SESSION
                 </button>
               </div>
             </div>

@@ -220,9 +220,12 @@ export interface Trainer {
   bio: string;
   specialties: string[];
   experienceYears: number;
+  clientsServed?: number;
   rating: number;
   certifications?: string[];
   achievements?: string[];
+  galleryPhotos?: string[];
+  galleryVideos?: string[];
   socials: {
     facebook?: string;
     twitter?: string;

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { X, CheckCircle2, ChevronRight, Dumbbell, ShieldCheck, Flame, ArrowRight, Activity, Clock, Target } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, CheckCircle2, ChevronRight, Dumbbell, ShieldCheck, Flame, ArrowRight, Activity, Clock, Target, UserCheck } from 'lucide-react';
 import { SelfAssessmentData } from '../types';
 import { VelocityAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 interface SelfAssessmentModalProps {
   isOpen: boolean;
@@ -14,17 +15,30 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
   onClose,
   onCompleteAndBookConsultation,
 }) => {
+  const { user } = useAuth();
   const [step, setStep] = useState<number>(1);
   const [formData, setFormData] = useState<SelfAssessmentData>({
     goal: '',
     obstacle: '',
     experience: '',
     commitment: '',
-    name: '',
-    email: '',
-    phone: '',
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
     submittedAt: '',
   });
+
+  // Auto-fill user details whenever user or modal state updates
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || user.name || '',
+        email: prev.email || user.email || '',
+        phone: prev.phone || user.phone || ''
+      }));
+    }
+  }, [user, isOpen]);
 
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
 
@@ -277,7 +291,7 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
                     <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white mb-2">
                       Generate Your Diagnostic Report
                     </h2>
-                    <p className="text-xs text-zinc-400">Enter your details so your assigned UK coach can review your profile before your free consultation.</p>
+                    <p className="text-xs text-zinc-400">Enter your details so your assigned UK coach can review your profile before your free 15-min session.</p>
                   </div>
 
                   <div className="space-y-4">
@@ -352,7 +366,7 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
                   Assessment Complete, {formData.name.split(' ')[0]}!
                 </h2>
                 <p className="text-xs text-zinc-400 max-w-md mx-auto mt-2">
-                  Based on your goal (<strong className="text-white">{formData.goal}</strong>) and schedule, you qualify for our 1-on-1 UK Master Coach consultation.
+                  Based on your goal (<strong className="text-white">{formData.goal}</strong>) and schedule, you qualify for our 1-on-1 15-min session.
                 </p>
               </div>
 
@@ -381,7 +395,7 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
                   onClick={handleFinalBooking}
                   className="w-full sm:w-auto bg-white hover:bg-zinc-200 text-black font-black text-xs tracking-widest uppercase px-8 py-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-xl cursor-pointer"
                 >
-                  BOOK 30-MIN DISCOVERY CONSULTATION
+                  BOOK 15-MIN SESSION
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button

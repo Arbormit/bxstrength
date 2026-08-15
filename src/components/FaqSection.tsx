@@ -26,7 +26,7 @@ export const FaqSection: React.FC<{ onOpenConsultation: () => void; onOpenAssess
     {
       question: 'What should I do next?',
       answer:
-        'Start by taking our free 5-minute Self-Assessment diagnostic or book a 30-minute discovery consultation with a UK Master Coach. There is zero obligation, no upfront payment, and you will leave with actionable clarity on your fitness strategy.',
+        'Start by taking our free 5-minute Self-Assessment diagnostic or book a 15-minute discovery consultation with a UK Master Coach. There is zero obligation, no upfront payment, and you will leave with actionable clarity on your fitness strategy.',
     },
     {
       question: 'How does remote coaching work compared to in-person?',
@@ -87,7 +87,7 @@ export const FaqSection: React.FC<{ onOpenConsultation: () => void; onOpenAssess
         <div className="mt-12 p-8 bg-zinc-900 border border-zinc-800 rounded-xl text-center flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="text-left">
             <h4 className="text-lg font-black uppercase tracking-tight text-white">Ready to get started?</h4>
-            <p className="text-xs text-zinc-400 mt-1">Book your free 30-minute discovery consultation today.</p>
+            <p className="text-xs text-zinc-400 mt-1">Book your free 15-minute discovery consultation session today.</p>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button
