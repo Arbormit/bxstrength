@@ -89,12 +89,15 @@ export const TRAINERS_DATA: BxTrainer[] = [
     rating: 4.9,
     languages: ['English', 'Hindi'],
     availability: 'Mon - Sat (Morning & Evening)',
-    certification: 'Diploma in Physiotherapy – Singhania University (Rajasthan, India) | Boxing Techniques & Coaching Methods – IG Stadium',
+    certification: 'Diploma in Physiotherapy | Boxing Techniques & Coaching Methods | Boxing Instructor | Rehab & Corrective Exercise | Fitness & Conditioning | Gym Owner & Head Coach | Business Developer & Fitness Trainer',
     certifications: [
-      'Diploma in Physiotherapy – Singhania University (Rajasthan, India)',
-      'Boxing Techniques & Coaching Methods – IG Stadium',
-      'CIMSPA Level 4 Master Trainer',
-      'UK Licensed Physical Therapy & Sports Rehab'
+      'Diploma in Physiotherapy',
+      'Boxing Techniques & Coaching Methods',
+      'Boxing Instructor',
+      'Rehab & Corrective Exercise',
+      'Fitness & Conditioning',
+      'Gym Owner & Head Coach',
+      'Business Developer & Fitness Trainer'
     ],
     achievements: [
       'Head Coach for 50+ Professional Fight Camps',
@@ -136,7 +139,7 @@ export const TRAINERS_DATA: BxTrainer[] = [
       'FMS Functional Movement Screen Certified'
     ],
     achievements: [
-      'Coached 400+ Global Virtual & In-Person Clients',
+      'Coached 400+ Global Virtual Clients Worldwide',
       'Featured Specialist in International Fitness Podcasts',
       '1,500+ Hours of 1-on-1 Performance Coaching'
     ],

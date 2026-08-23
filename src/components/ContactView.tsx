@@ -104,17 +104,8 @@ export const ContactView: React.FC = () => {
                 <Mail className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-black text-white uppercase">EMAIL ADVISORY</p>
-                  <p className="mt-1 text-white font-bold">admin@bxstrength.com</p>
-                  <p className="text-zinc-400 text-[11px]">24/7 Digital Form & Client Support</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 p-5 bg-[#121214] border border-zinc-800 rounded-xl">
-                <Clock className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-black text-white uppercase">COACHING ADVISORY HOURS</p>
-                  <p className="mt-1 text-zinc-300">Monday - Friday: 07:00 AM - 20:00 PM GMT</p>
-                  <p className="text-zinc-300">Saturday - Sunday: 08:00 AM - 16:00 PM GMT</p>
+                  <p className="mt-1 text-white font-bold">info@bxstrength.com</p>
+                  <p className="text-zinc-400 text-[11px]">24/7 Digital Form &amp; Client Support</p>
                 </div>
               </div>
             </div>

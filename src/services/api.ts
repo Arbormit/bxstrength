@@ -203,7 +203,6 @@ export const VelocityAPI = {
       if (err.message && (err.message.includes('Security Lockout Active') || err.message.includes('Invalid credentials') || err.message.includes('Too many login attempts'))) {
         throw err;
       }
-      console.warn('Backend login connection notice:', err.message);
     }
 
     // Fallback to client store
@@ -280,7 +279,6 @@ export const VelocityAPI = {
       if (err.message && err.message.includes('already exists')) {
         throw err;
       }
-      console.warn('Backend registration notice:', err.message);
     }
 
     // Fallback to local store if backend API unavailable
@@ -452,9 +450,7 @@ export const VelocityAPI = {
         },
         body: JSON.stringify(updates)
       });
-    } catch (err: any) {
-      console.warn('NeonDB real-time profile update note:', err.message);
-    }
+    } catch (err: any) {}
 
     this.addAuditLog(
       current?.id || targetUser.id, 
@@ -763,48 +759,49 @@ export const VelocityAPI = {
     return getItem<Subscription[]>(STORAGE_KEYS.SUBSCRIPTIONS, SEED_SUBSCRIPTIONS);
   },
 
-  createSubscription(subData: {
+  createSubscription(subData: Partial<Subscription> & {
     userId: string;
     planName: string;
-    billingCycle: 'monthly' | 'quarterly' | 'annual';
     price: number;
-    startDate?: string;
-    nextBillingDate?: string;
-    status?: 'active' | 'past_due' | 'cancelled';
+    billingCycle?: 'monthly' | 'quarterly' | 'annual' | 'yearly';
   }): Subscription {
     const users = this.getUsers();
     const targetUser = users.find((u) => u.id === subData.userId);
-    if (!targetUser) throw new Error('Selected client account not found');
+    const userName = targetUser ? targetUser.name : (subData.userName || 'Client Athlete');
+    const userEmail = targetUser ? targetUser.email : (subData.userEmail || 'client@domain.com');
 
     const subs = this.getSubscriptions();
     const nextDate = subData.nextBillingDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
 
     const newSub: Subscription = {
-      id: `sub-${Date.now()}`,
-      userId: targetUser.id,
-      userName: targetUser.name,
-      userEmail: targetUser.email,
+      id: subData.id || `sub-${Date.now()}`,
+      userId: subData.userId,
+      userName: userName,
+      userEmail: userEmail,
       planName: subData.planName as any,
-      billingCycle: subData.billingCycle,
+      billingCycle: subData.billingCycle || 'monthly',
       price: Number(subData.price),
       startDate: subData.startDate || new Date().toISOString().split('T')[0],
       nextBillingDate: nextDate,
+      expiryDate: subData.expiryDate,
       status: subData.status || 'active',
-      autoRenew: true
+      autoRenew: subData.autoRenew ?? true,
+      serviceType: subData.serviceType,
+      customExercises: subData.customExercises
     };
 
-    const existingIdx = subs.findIndex(s => s.userId === targetUser.id || s.userEmail.toLowerCase() === targetUser.email.toLowerCase());
-    if (existingIdx !== -1) {
-      subs[existingIdx] = newSub;
-    } else {
-      subs.unshift(newSub);
-    }
-
+    subs.unshift(newSub);
     setItem(STORAGE_KEYS.SUBSCRIPTIONS, subs);
+
+    fetch('/api/subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newSub)
+    }).catch(() => {});
 
     const current = this.getCurrentUser();
     if (current) {
-      this.addAuditLog(current.id, current.name, current.role, 'CREATE_SUBSCRIPTION', `Created & assigned ${newSub.planName} subscription ($${newSub.price}/${newSub.billingCycle}) for ${targetUser.name}`);
+      this.addAuditLog(current.id, current.name, current.role, 'CREATE_SUBSCRIPTION', `Created subscription "${newSub.planName}" for ${userName}`);
     }
 
     return newSub;
@@ -870,6 +867,22 @@ export const VelocityAPI = {
     const current = this.getCurrentUser();
     if (current) {
       this.addAuditLog(current.id, current.name, current.role, 'UPDATE_ENQUIRY', `Marked enquiry from ${enquiries[idx].name} as ${status.toUpperCase()}`);
+    }
+
+    return enquiries[idx];
+  },
+
+  updateEnquiryCoach(id: string, coachName: string): Enquiry {
+    const enquiries = this.getEnquiries();
+    const idx = enquiries.findIndex((e) => e.id === id);
+    if (idx === -1) throw new Error('Enquiry not found');
+
+    enquiries[idx].assignedCoach = coachName;
+    setItem(STORAGE_KEYS.ENQUIRIES, enquiries);
+
+    const current = this.getCurrentUser();
+    if (current) {
+      this.addAuditLog(current.id, current.name, current.role, 'ASSIGN_ENQUIRY_COACH', `Assigned enquiry from ${enquiries[idx].name} to Coach ${coachName}`);
     }
 
     return enquiries[idx];

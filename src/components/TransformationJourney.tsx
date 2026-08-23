@@ -24,7 +24,7 @@ export const TransformationJourney: React.FC<TransformationJourneyProps> = ({
       title: 'Discovery Session',
       desc: '15-minute 1-on-1 strategy call with our senior strength lead.',
       icon: CalendarCheck,
-      ctaText: 'Book Consultation',
+      ctaText: 'Book Free Consultation',
       action: onOpenConsultation,
     },
     {

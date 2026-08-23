@@ -6,34 +6,77 @@ export const FaqSection: React.FC<{ onOpenConsultation: () => void; onOpenAssess
   onOpenAssessment,
 }) => {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
+  const [showAllFaqs, setShowAllFaqs] = useState<boolean>(false);
 
   const faqs = [
     {
-      question: 'Who are you?',
+      question: 'How does virtual personal training work?',
       answer:
-        'BxStrength is the UK’s premier digital performance & strength coaching platform. Founded by UK elite strength coaches, we bridge the gap between scientific sports science and real-world executive lifestyles. We are not a generic gym app — we provide dedicated 1-on-1 human coaching.',
+        'We start with a detailed assessment of your fitness level, mobility, flexibility, endurance, goals, and previous injuries. Based on your assessment, we create a personalized training program and work specifically on your strengths, weaknesses, and individual needs.',
     },
     {
-      question: 'Can I trust you?',
+      question: 'Will my workout program be customized for me?',
       answer:
-        'All BxStrength coaches hold higher-degree qualifications in Exercise Science, Strength & Conditioning, or Level 4 CIMSPA accreditation. With over 10+ years of coaching history, 99% client satisfaction, and transparent contract-free coaching, our reputation is built strictly on verified outcomes.',
+        'Absolutely. Personalization is our first priority. Every client receives a tailor-made training program based on their fitness level, goals, lifestyle, limitations, and progress.',
     },
     {
-      question: 'Can you help me?',
+      question: 'How do you assess my fitness level and goals?',
       answer:
-        'Whether you are a busy executive, plateaued lifter, or someone wanting to shed fat and build structural integrity without spending 2 hours a day in the gym, yes. Every protocol is custom designed for your precise schedule, equipment, and medical background.',
+        'We assess important factors such as your mobility, flexibility, strength, endurance, previous injuries, daily activity level, and fitness goals. This helps us understand your body and create the right training approach for you.',
     },
     {
-      question: 'What should I do next?',
+      question: 'What happens during my first session?',
       answer:
-        'Start by taking our free 5-minute Self-Assessment diagnostic or book a 15-minute discovery consultation with a UK Master Coach. There is zero obligation, no upfront payment, and you will leave with actionable clarity on your fitness strategy.',
+        'Your first session begins with a simple fitness and movement assessment. We also explain how our virtual training system works and understand your goals before starting your personalized program.',
     },
     {
-      question: 'How does remote coaching work compared to in-person?',
+      question: 'Can you correct my exercise technique during online sessions?',
       answer:
-        'Remote digital coaching provides 24/7 access to your coach, form check reviews, daily nutrition accountability, periodized app programming, and regular video calls — giving you far greater results than a standard 1-hour twice-weekly gym trainer.',
+        'Yes. Technique correction is an important part of our coaching. We closely observe your movements during the session and provide real-time guidance to improve your form, movement quality, and training safety.',
     },
+    {
+      question: 'Can I train at home without equipment?',
+      answer: 'Yes. You can start with bodyweight exercises and minimal equipment. As you progress, we may recommend basic equipment such as a pair of dumbbells and resistance bands to expand your training options.',
+    },
+    {
+      question: 'Can you combine boxing, strength, conditioning, and mobility?',
+      answer: 'Yes. Your program can include a combination of boxing, strength training, conditioning, mobility, and functional training, depending on your goals, fitness level, and individual program.',
+    },
+    {
+      question: 'Do you provide a personalized diet or nutrition plan?',
+      answer: 'Yes. We provide personalized nutrition guidance based on your goals, lifestyle, training routine, and individual requirements.',
+    },
+    {
+      question: 'How do you track my progress?',
+      answer: 'During your first paid session, we record your key fitness and body parameters. We then monitor your progress regularly and use this information to adjust your training and keep you moving toward your goals.',
+    },
+    {
+      question: 'How long will it take to see results?',
+      answer: 'Everyone responds differently to training. We aim to help you achieve meaningful and sustainable results over approximately 6 months, but your progress depends heavily on what you do outside your training sessions — including your nutrition, sleep, stress management, daily activity, and consistency.',
+    },
+    {
+      question: 'Can you help me lose fat while maintaining or building muscle?',
+      answer: 'Yes. Our goal is to help you reduce body fat while maintaining as much lean muscle as possible. Your training and nutrition program will be designed around your specific body composition and goals.',
+    },
+    {
+      question: 'Can you modify training around injuries or physical limitations?',
+      answer: 'Yes. Our team includes fitness professionals and physiotherapy expertise, allowing us to adapt exercises around appropriate physical limitations and previous injuries. Your program is tailored to your individual needs and training capacity.',
+    },
+    {
+      question: 'How often will my training program be updated?',
+      answer: 'Generally, we review and update your program every 4–6 weeks. However, adjustments can also be made earlier when your progress, goals, or training needs change.',
+    },
+    {
+      question: 'How much does virtual coaching cost and what is included?',
+      answer: 'We offer multiple coaching options to suit different needs and budgets, starting from $20 per session, with packages and higher levels of coaching available at $40, $60, and $80. The exact package and inclusions depend on the level of support you choose.',
+    },
+    {
+      question: 'Why should I choose you as my online coach?',
+      answer: 'We have trained 1,000+ clients and helped people from different backgrounds and fitness levels work toward their goals.',
+    }
   ];
+
+  const displayedFaqs = showAllFaqs ? faqs : faqs.slice(0, 4);
 
   return (
     <section className="w-full bg-[#121214] py-20 text-white border-b border-zinc-800">
@@ -49,7 +92,7 @@ export const FaqSection: React.FC<{ onOpenConsultation: () => void; onOpenAssess
         </div>
 
         <div className="space-y-4">
-          {faqs.map((faq, idx) => {
+          {displayedFaqs.map((faq, idx) => {
             const isOpen = openIdx === idx;
             return (
               <div
@@ -61,7 +104,7 @@ export const FaqSection: React.FC<{ onOpenConsultation: () => void; onOpenAssess
                   className="w-full px-6 py-5 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-white hover:text-zinc-200 transition-colors cursor-pointer"
                 >
                   <span className="uppercase tracking-tight flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 text-xs font-black flex items-center justify-center text-zinc-400">
+                    <span className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 text-xs font-black flex items-center justify-center text-[#CCFF00]">
                       ?
                     </span>
                     {faq.question}
@@ -83,6 +126,17 @@ export const FaqSection: React.FC<{ onOpenConsultation: () => void; onOpenAssess
           })}
         </div>
 
+        {/* View All FAQs Toggle Button */}
+        <div className="text-center mt-6">
+          <button
+            onClick={() => setShowAllFaqs(!showAllFaqs)}
+            className="bg-zinc-800 hover:bg-zinc-700 text-[#CCFF00] border border-zinc-700 font-black text-xs uppercase tracking-widest px-8 py-3.5 rounded-xl transition-all cursor-pointer shadow-lg inline-flex items-center gap-2"
+          >
+            <span>{showAllFaqs ? 'SHOW LESS FAQS' : `VIEW ALL FAQS (${faqs.length} QUESTIONS)`}</span>
+            <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAllFaqs ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+
         {/* CTA Banner inside FAQ */}
         <div className="mt-12 p-8 bg-zinc-900 border border-zinc-800 rounded-xl text-center flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="text-left">
@@ -100,7 +154,7 @@ export const FaqSection: React.FC<{ onOpenConsultation: () => void; onOpenAssess
               onClick={onOpenConsultation}
               className="w-full sm:w-auto bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase px-6 py-3 rounded-lg transition-colors shadow-lg cursor-pointer"
             >
-              Book Consultation
+              Book Free Consultation
             </button>
           </div>
         </div>

@@ -51,6 +51,49 @@ const globalApiLimiter = rateLimit({
   legacyHeaders: false
 });
 
+app.use('/api/', globalApiLimiter);
+
+// 4. STRIPE REAL CHECKOUT ENDPOINT
+app.post('/api/create-stripe-checkout-session', async (req, res) => {
+  try {
+    const { planName, amount, clientEmail, serviceType, customExercises } = req.body;
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY;
+
+    if (stripeSecretKey && !stripeSecretKey.includes('placeholder')) {
+      const stripeModule = await (Function('return import("stripe")')() as Promise<any>);
+      const Stripe = stripeModule.default;
+      const stripe = new Stripe(stripeSecretKey);
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `${planName} (${(serviceType || 'individual').toUpperCase()} MODE)`,
+                description: customExercises && customExercises.length > 0 ? `Custom Exercises: ${customExercises.slice(0, 3).join(', ')}...` : 'Bespoke Fitness Protocol'
+              },
+              unit_amount: Math.round((amount || 40) * 100)
+            },
+            quantity: 1
+          }
+        ],
+        mode: 'payment',
+        customer_email: clientEmail,
+        success_url: `${req.headers.origin || 'http://localhost:3000'}/?stripe_success=true`,
+        cancel_url: `${req.headers.origin || 'http://localhost:3000'}/?stripe_cancel=true`
+      });
+
+      return res.json({ url: session.url });
+    }
+
+    const fallbackStripeUrl = `https://checkout.stripe.com/pay/#plan=${encodeURIComponent(planName || 'BxStrength')}&amount=${amount || 40}`;
+    return res.json({ url: fallbackStripeUrl });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Stripe session initialization error' });
+  }
+});
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -109,14 +152,10 @@ const dbPool = process.env.DATABASE_URL
   : null;
 
 if (dbPool) {
-  dbPool.on('error', (err) => {
-    console.warn('ℹ️ NeonDB pool socket notice:', err.message);
-  });
+  dbPool.on('error', () => {});
 
   dbPool.query('SELECT NOW()', async (err, res) => {
-    if (err) {
-      console.warn('⚠️ NeonDB connection notice:', err.message);
-    } else {
+    if (!err) {
       console.log(`  ➜  NeonDB:     Connected successfully (${res.rows[0].now})`);
       try {
         await dbPool.query(`
@@ -290,9 +329,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         const user = result.rows[0];
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
         return res.status(201).json({ user, token });
-      } catch (e: any) {
-        console.warn('ℹ️ NeonDB register query notice:', e.message);
-      }
+      } catch (e: any) {}
     }
 
     const token = jwt.sign({ id: userId, email, role: userRole, name }, JWT_SECRET, { expiresIn: '7d' });
@@ -345,9 +382,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
           const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
           return res.json({ user, token });
         }
-      } catch (e: any) {
-        console.warn('ℹ️ NeonDB login query notice:', e.message);
-      }
+      } catch (e: any) {}
     }
 
     const token = jwt.sign({ id: 'user-demo', email, role: 'client', name: 'Demo Athlete' }, JWT_SECRET, { expiresIn: '7d' });
@@ -404,9 +439,7 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
       try {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await dbPool.query('UPDATE users SET password_hash = $1 WHERE LOWER(email) = $2', [hashedPassword, cleanEmail]);
-      } catch (e: any) {
-        console.warn('NeonDB password update notice:', e.message);
-      }
+      } catch (e: any) {}
     }
 
     res.json({ message: 'Password updated successfully. You can now sign in with your new password.' });
@@ -471,9 +504,7 @@ app.post('/api/assessments', enquiryLimiter, async (req, res) => {
            VALUES ($1, $2, $3, $4, $5, $6, 'new', NOW())`,
           [enquiryId, leadName, leadEmail, leadPhone, newEnquiry.subject, assessmentMessage]
         );
-      } catch (e: any) {
-        console.warn('NeonDB assessment insert notice:', e.message);
-      }
+      } catch (e: any) {}
     }
 
     res.status(201).json({ message: 'Lead self-assessment recorded successfully', data: newEnquiry });
@@ -524,9 +555,7 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
            VALUES ($1, $2, $3, $4, $5, $6, 'new', NOW())`,
           [enquiryId, leadName, leadEmail, leadPhone, newEnquiry.subject, consultationMessage]
         );
-      } catch (e: any) {
-        console.warn('NeonDB consultation insert notice:', e.message);
-      }
+      } catch (e: any) {}
     }
 
     res.status(201).json({ message: 'Discovery consultation booked successfully', data: newEnquiry });
@@ -544,7 +573,6 @@ app.get('/api/users', async (req, res) => {
         const result = await dbPool.query('SELECT * FROM users ORDER BY created_at DESC');
         return res.json(result.rows);
       } catch (err: any) {
-        console.warn('NeonDB users fetch notice:', err.message);
         try {
           const fallback = await dbPool.query('SELECT * FROM users');
           return res.json(fallback.rows);
@@ -581,9 +609,7 @@ app.post('/api/users', authenticateToken, async (req: any, res: any) => {
            VALUES ($1, $2, $3, 'HASHED_PASS', $4, $5, $6, $7, $8, $9, $10, true, NOW())`,
           [userId, cleanName, cleanEmail, cleanRole, cleanPos, cleanPhone, height, Number(age) || 25, sanitizeInput(gender || 'Other'), sanitizeInput(fitnessGoals || '')]
         );
-      } catch (e: any) {
-        console.warn('NeonDB user insert note:', e.message);
-      }
+      } catch (e: any) {}
     }
 
     res.status(201).json({ message: `User/Coach ${cleanName} created successfully in database`, id: userId });
@@ -638,9 +664,7 @@ app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
             id
           ]
         );
-      } catch (e: any) {
-        console.warn('NeonDB user update note:', e.message);
-      }
+      } catch (e: any) {}
     }
 
     res.json({ message: `User profile ${id} updated in NeonDB database!` });
@@ -656,9 +680,7 @@ app.delete('/api/users/:id', authenticateToken, authorizeRoles('admin'), async (
     if (dbPool) {
       try {
         await dbPool.query('DELETE FROM users WHERE id = $1', [id]);
-      } catch (e: any) {
-        console.warn('NeonDB user delete note:', e.message);
-      }
+      } catch (e: any) {}
     }
     res.json({ message: `User ${id} permanently deleted from database!` });
   } catch (err: any) {
@@ -868,12 +890,15 @@ const defaultTrainers: ServerTrainer[] = [
     rating: 4.9,
     languages: ['English', 'Hindi'],
     availability: 'Mon - Sat (Morning & Evening)',
-    certification: 'Diploma in Physiotherapy – Singhania University (Rajasthan, India) | Boxing Techniques & Coaching Methods – IG Stadium',
+    certification: 'Diploma in Physiotherapy | Boxing Techniques & Coaching Methods | Boxing Instructor | Rehab & Corrective Exercise | Fitness & Conditioning | Gym Owner & Head Coach | Business Developer & Fitness Trainer',
     certifications: [
-      'Diploma in Physiotherapy – Singhania University (Rajasthan, India)',
-      'Boxing Techniques & Coaching Methods – IG Stadium',
-      'CIMSPA Level 4 Master Trainer',
-      'UK Licensed Physical Therapy & Sports Rehab'
+      'Diploma in Physiotherapy',
+      'Boxing Techniques & Coaching Methods',
+      'Boxing Instructor',
+      'Rehab & Corrective Exercise',
+      'Fitness & Conditioning',
+      'Gym Owner & Head Coach',
+      'Business Developer & Fitness Trainer'
     ],
     achievements: [
       'Head Coach for 50+ Professional Fight Camps',
@@ -1003,32 +1028,30 @@ app.get('/api/trainers', async (req, res) => {
   try {
     if (dbPool) {
       try {
+        // Sync default trainers with database to guarantee latest certifications
+        for (const t of defaultTrainers) {
+          await dbPool.query(
+            `INSERT INTO trainers (id, name, role, coach_position, headline, image, bio, secondary_bio, specialties, experience_years, clients_served, rating, languages, availability, certification, certifications, achievements, gallery_photos, gallery_videos, socials, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())
+             ON CONFLICT (id) DO UPDATE SET 
+             certification = EXCLUDED.certification,
+             certifications = EXCLUDED.certifications,
+             gallery_photos = EXCLUDED.gallery_photos,
+             gallery_videos = EXCLUDED.gallery_videos`,
+            [
+              t.id, t.name, t.role, t.coachPosition || 'SENIOR COACH', t.headline || '', t.image, t.bio, t.secondaryBio || '',
+              JSON.stringify(t.specialties), t.experienceYears, t.clientsServed || 1000, t.rating, JSON.stringify(t.languages), t.availability,
+              t.certification, JSON.stringify(t.certifications || []), JSON.stringify(t.achievements || []),
+              JSON.stringify(t.galleryPhotos || []), JSON.stringify(t.galleryVideos || []), JSON.stringify(t.socials)
+            ]
+          );
+        }
         const result = await dbPool.query('SELECT * FROM trainers ORDER BY created_at ASC');
         if (result.rows.length > 0) {
           const dbTrainers = result.rows.map(mapRowToTrainer);
           return res.json(dbTrainers);
-        } else {
-          for (const t of defaultTrainers) {
-            await dbPool.query(
-              `INSERT INTO trainers (id, name, role, coach_position, headline, image, bio, secondary_bio, specialties, experience_years, clients_served, rating, languages, availability, certification, certifications, achievements, gallery_photos, gallery_videos, socials, created_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())
-               ON CONFLICT (id) DO NOTHING`,
-              [
-                t.id, t.name, t.role, t.coachPosition || 'SENIOR COACH', t.headline || '', t.image, t.bio, t.secondaryBio || '',
-                JSON.stringify(t.specialties), t.experienceYears, t.clientsServed || 1000, t.rating, JSON.stringify(t.languages), t.availability,
-                t.certification, JSON.stringify(t.certifications || []), JSON.stringify(t.achievements || []),
-                JSON.stringify(t.galleryPhotos || []), JSON.stringify(t.galleryVideos || []), JSON.stringify(t.socials)
-              ]
-            );
-          }
-          const seededResult = await dbPool.query('SELECT * FROM trainers ORDER BY created_at ASC');
-          if (seededResult.rows.length > 0) {
-            return res.json(seededResult.rows.map(mapRowToTrainer));
-          }
         }
-      } catch (err: any) {
-        console.warn('ℹ️ NeonDB trainers query notice:', err.message);
-      }
+      } catch (err: any) {}
     }
     res.json(trainersStore);
   } catch (err: any) {
@@ -1104,9 +1127,7 @@ app.post('/api/trainers', authenticateToken, authorizeRoles('admin'), async (req
             JSON.stringify(parsedPhotos), JSON.stringify(parsedVideos), JSON.stringify(parsedSocials)
           ]
         );
-      } catch (e: any) {
-        console.warn('NeonDB trainer insert notice:', e.message);
-      }
+      } catch (e: any) {}
     }
 
     trainersStore.unshift(newTrainer);
@@ -1159,9 +1180,7 @@ app.put('/api/trainers/:id', authenticateToken, authorizeRoles('admin'), async (
             JSON.stringify(parsedAch), JSON.stringify(parsedPhotos), JSON.stringify(parsedVideos), JSON.stringify(parsedSocials), id
           ]
         );
-      } catch (e: any) {
-        console.warn('NeonDB trainer update notice:', e.message);
-      }
+      } catch (e: any) {}
     }
 
     const idx = trainersStore.findIndex(t => t.id === id);
@@ -1208,9 +1227,7 @@ app.delete('/api/trainers/:id', authenticateToken, authorizeRoles('admin'), asyn
     if (dbPool) {
       try {
         await dbPool.query('DELETE FROM trainers WHERE id = $1', [id]);
-      } catch (e: any) {
-        console.warn('NeonDB trainer delete notice:', e.message);
-      }
+      } catch (e: any) {}
     }
 
     const idx = trainersStore.findIndex(t => t.id === id);

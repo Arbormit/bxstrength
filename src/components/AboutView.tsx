@@ -13,14 +13,14 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenBooking 
       {/* Page Header */}
       <div className="bg-[#121214] text-white py-16 border-b border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="text-[11px] font-black tracking-widest text-zinc-400 uppercase bg-zinc-900 border border-zinc-800 px-3.5 py-1.5 rounded-full inline-block mb-3">
+          {/* <span className="text-[11px] font-black tracking-widest text-zinc-400 uppercase bg-zinc-900 border border-zinc-800 px-3.5 py-1.5 rounded-full inline-block mb-3">
             UK DIGITAL COACHING PLATFORM
-          </span>
+          </span> */}
           <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
-            ABOUT BXSTRENGTH
+            ABOUT BxStrength
           </h1>
           <p className="text-zinc-400 text-sm max-w-xl mx-auto mt-3">
-            Bridging elite sports science and executive digital coaching across the United Kingdom.
+            What makes our approach different is that you don't have to rely on just one type of professional. Our platform brings together fitness coaching, boxing, strength & conditioning, mobility, and physiotherapy expertise under one system.
           </p>
         </div>
       </div>
@@ -32,22 +32,37 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenBooking 
             
             <div className="lg:col-span-7 space-y-6">
               <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">
-                THE BXSTRENGTH METHODOLOGY
+                THE BxStrength METHODOLOGY
               </span>
-              <h2 className="text-3xl sm:text-4xl font-black uppercase text-white tracking-tight leading-tight">
+              {/* <h2 className="text-3xl sm:text-4xl font-black uppercase text-white tracking-tight leading-tight">
                 BUILT FOR THOSE WHO DEMAND RESULTS WITHOUT GUESSWORK
-              </h2>
+              </h2> */}
 
               <p className="text-zinc-400 text-sm sm:text-base leading-relaxed font-normal">
-                BxStrength was founded in London to replace random gym routines and bodybuilder advice with periodized strength science, metabolic tracking, and dedicated human coaching.
+                BxStrength is a personalized fitness coaching platform offering bespoke 1-on-1 virtual performance training and global online coaching.
+Our coaching team has experience in boxing, strength training, functional fitness, conditioning, mobility, weight management, and physiotherapy-informed exercise.
+Led by a Head Coach with 10+ years of fitness experience, BxStrength has worked with 1,000+ clients, including clients from India, the UK, Canada, Australia, Saudi Arabia, and the UAE.
               </p>
+              <p>
+                We help beginners and experienced clients become stronger, fitter, more active, and more confident through training tailored to their individual goals.
+              </p>
+
+              <h2 className="text-3xl sm:text-4xl font-black uppercase text-white tracking-tight leading-tight">Our Services</h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 {[
-                  'UK CIMSPA & REPs Level 4 Certified Master Coaches',
-                  'Periodized Barbell Strength & Postural Rehabilitation',
-                  'Flexible Macro Nutrition & Metabolic Health Protocols',
-                  '24/7 Digital Form Reviews & Direct WhatsApp Access',
+                  'Boxing Training',
+                  'Strength Training',
+                  'Functional Training',
+                  'Fat Loss & Weight Management',
+                  'Body Toning',
+                  'Mobility & Flexibility',
+                  'Conditioning',
+                  'Beginner Fitness',
+                  'Virtual Personal Training',
+                  'Personalized Workout Programs',
+                  'Movement & Recovery Support',
+                  'Yoga Classes and Pilates'
                 ].map((feat, idx) => (
                   <div key={idx} className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-white flex-shrink-0" />
@@ -76,8 +91,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenBooking 
                 <div className="p-4 bg-[#121214] border-t border-zinc-800 flex items-center gap-3">
                   <ShieldCheck className="w-6 h-6 text-emerald-400" />
                   <div>
-                    <p className="text-xs font-black uppercase text-white">UK Registered Platform</p>
-                    <p className="text-[11px] text-zinc-400">London HQ & Remote Digital Coaching</p>
+                    <p className="text-xs font-black uppercase text-white">India Registered Platform</p>
+                    <p className="text-[11px] text-zinc-400">New Delhi HQ & Remote Digital Coaching</p>
                   </div>
                 </div>
               </div>

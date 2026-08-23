@@ -53,6 +53,13 @@ export const EnquiriesManager: React.FC<EnquiriesManagerProps> = ({
     onEnquiriesUpdated();
   };
 
+  const handleAssignCoach = (id: string, coachName: string) => {
+    VelocityAPI.updateEnquiryCoach(id, coachName);
+    onShowToast(`Lead assigned to ${coachName}`);
+    fetchEnquiriesFromDatabase();
+    onEnquiriesUpdated();
+  };
+
   const handleDeleteTrigger = (id: string, name: string) => {
     setDeletingEnquiry({ id, name });
   };
@@ -154,11 +161,24 @@ export const EnquiriesManager: React.FC<EnquiriesManagerProps> = ({
                 <p className="text-zinc-200 leading-relaxed font-normal whitespace-pre-line">{e.message}</p>
               </div>
 
-              <div className="text-[10px] text-zinc-500 flex flex-col sm:flex-row justify-between gap-1 pt-1 font-semibold">
-                <span className="flex items-center gap-1">
+              <div className="text-[11px] text-zinc-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 border-t border-zinc-800/60 font-semibold">
+                <span className="flex items-center gap-1 text-[10px] text-zinc-500">
                   <Calendar className="w-3 h-3 text-zinc-400" /> Submitted: {new Date(e.createdAt).toLocaleString()}
                 </span>
-                {e.assignedNotes && <span className="text-zinc-400 font-bold uppercase">Notes: {e.assignedNotes}</span>}
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase text-zinc-400">ASSIGN LEAD TO COACH:</span>
+                  <select
+                    value={e.assignedCoach || 'Unassigned'}
+                    onChange={(ev) => handleAssignCoach(e.id, ev.target.value)}
+                    className="bg-[#18181b] border border-zinc-700 text-[#CCFF00] text-xs font-bold px-3 py-1 rounded-lg focus:outline-none focus:border-[#CCFF00] cursor-pointer"
+                  >
+                    <option value="Unassigned">Unassigned (General Lead)</option>
+                    <option value="Shaban Faridi (Head Coach)">Shaban Faridi (Head Coach)</option>
+                    <option value="Sadeem (Strength & Conditioning)">Sadeem (Strength & Conditioning)</option>
+                    <option value="Moheeb Khan (Boxing Specialist)">Moheeb Khan (Boxing Specialist)</option>
+                  </select>
+                </div>
               </div>
             </div>
           ))}

@@ -103,14 +103,14 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5 hover:text-white transition-colors text-zinc-300">
-              <Phone className="w-3.5 h-3.5 text-zinc-400" /> +44 20 7946 0921 (UK Advisory)
+              <Phone className="w-3.5 h-3.5 text-zinc-400" /> +91 123456789 (India Advisory)
             </span>
-            <span>📍 Mayfair, London W1J 8AJ & Remote UK</span>
-            <span className="text-zinc-700">|</span>
+            <span>📍 New Delhi, India</span>
+            {/* <span className="text-zinc-700">|</span>
             <span className="text-emerald-400 font-medium flex items-center gap-1.5 text-[11px]">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               Live Coach Support Active
-            </span>
+            </span> */}
           </div>
 
           <div className="flex items-center gap-4 text-xs">
@@ -156,7 +156,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-2xl font-black tracking-tight text-white leading-none">
                 BxStrength<span className="text-zinc-400">.</span>
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400">UK Digital Coaching</span>
             </div>
           </button>
 
@@ -176,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="bg-white hover:bg-zinc-200 text-black font-black text-xs tracking-wider uppercase px-5 py-2.5 rounded-lg transition-all shadow-md cursor-pointer flex items-center gap-1.5"
             >
               <Calendar className="w-4 h-4" />
-              BOOK CONSULTATION
+              BOOK FREE CONSULTATION
             </button>
 
             {isAuthenticated && user ? (
@@ -322,7 +321,7 @@ export const Header: React.FC<HeaderProps> = ({
                 }}
                 className="w-full bg-white text-black text-xs font-black tracking-widest py-3 rounded-lg uppercase text-center flex items-center justify-center gap-2 shadow-md"
               >
-                <Calendar className="w-4 h-4" /> BOOK CONSULTATION
+                <Calendar className="w-4 h-4" /> BOOK FREE CONSULTATION
               </button>
             </div>
           </nav>

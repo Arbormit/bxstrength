@@ -162,8 +162,11 @@ export interface Subscription {
   price: number;
   startDate: string;
   nextBillingDate: string;
+  expiryDate?: string;
   status: 'active' | 'past_due' | 'cancelled';
   autoRenew: boolean;
+  serviceType?: 'individual' | 'custom';
+  customExercises?: string[];
 }
 
 export interface Enquiry {
@@ -176,6 +179,7 @@ export interface Enquiry {
   createdAt: string;
   status: 'new' | 'in_progress' | 'resolved';
   assignedNotes?: string;
+  assignedCoach?: string;
 }
 
 export interface AuditLog {
@@ -309,9 +313,15 @@ export type LeadPipelineStage =
 
 export interface SelfAssessmentData {
   goal: string;
-  obstacle: string;
-  experience: string;
-  commitment: string;
+  fitnessLevel?: string;
+  trainingDays?: string;
+  trainingLocation?: string;
+  equipment?: string;
+  trainingInterest?: string;
+  hasInjury?: string;
+  obstacle?: string;
+  experience?: string;
+  commitment?: string;
   name: string;
   email: string;
   phone: string;

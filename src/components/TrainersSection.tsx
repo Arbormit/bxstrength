@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trainer, ViewPage } from '../types';
 import { TRAINERS_DATA, BxTrainer } from '../data/gymData';
-import { Star, Calendar, ShieldCheck, Globe, Clock, Award, Trophy, CheckCircle2, X, ExternalLink } from 'lucide-react';
+import { Star, Calendar, ShieldCheck, Globe, Clock, Award, Trophy, CheckCircle2, X, ExternalLink, Database, RefreshCw } from 'lucide-react';
 
 interface TrainersSectionProps {
   onSelectTrainer: (trainer: Trainer) => void;
@@ -16,6 +16,7 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
 }) => {
   const [selectedTrainerForProfile, setSelectedTrainerForProfile] = useState<BxTrainer | null>(null);
   const [trainers, setTrainers] = useState<BxTrainer[]>(TRAINERS_DATA);
+  const [lightboxMedia, setLightboxMedia] = useState<{ type: 'photo' | 'video'; url: string } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -40,19 +41,35 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
         
         {/* Section Title */}
         <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16 space-y-3">
-          <span className="text-[10px] sm:text-[11px] font-black tracking-widest text-zinc-400 uppercase bg-zinc-900 border border-zinc-800 px-3.5 py-1.5 rounded-full inline-block">
-            UK CERTIFIED MASTERS
+          <span className="text-[10px] sm:text-[11px] font-black tracking-widest text-[#CCFF00] uppercase bg-zinc-900 border border-zinc-800 px-3.5 py-1.5 rounded-full inline-block">
+            EXPERT PERFORMANCE &amp; COMBAT COACHES
           </span>
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-white uppercase tracking-tight">
             MEET OUR COACHES
           </h2>
           <p className="text-zinc-400 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
-            Every BxStrength coach undergoes strict UK background verification, clinical vetting, and elite performance certification.
+            Our head coaches combine 10+ years of boxing instruction, strength &amp; conditioning, and physiotherapy-based rehabilitation.
           </p>
         </div>
 
         {/* Coach Cards List - Borderless Design Matching Reference Sample */}
-        <div className="space-y-16 lg:space-y-24">
+        {trainers.length === 0 ? (
+          <div className="text-center py-16 px-4 bg-zinc-900/60 border border-zinc-800 rounded-3xl max-w-xl mx-auto space-y-4">
+            <Database className="w-10 h-10 text-[#CCFF00] mx-auto animate-pulse" />
+            <h3 className="text-lg font-black uppercase text-white tracking-wider">NO COACH RECORDS IN DATABASE YET</h3>
+            <p className="text-xs text-zinc-400 max-w-md mx-auto">
+              Our database is currently syncing coach profiles. New coach records will reflect here soon.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs px-5 py-2.5 rounded-full transition-all cursor-pointer inline-flex items-center gap-2"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-[#CCFF00]" />
+              <span>RECHECK DATABASE</span>
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-16 lg:space-y-24">
           {trainers.map((trainer: BxTrainer) => {
             const headlines: Record<string, string> = {
               'Shaban Faridi': 'HEAD COACH | BOXING INSTRUCTOR | PHYSIOTHERAPY PROFESSIONAL',
@@ -134,7 +151,7 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
                     </div>
                   </div>
 
-                  {/* Two Action Pill Buttons matching sample */}
+                  {/* Action Pill Button */}
                   <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
                     <button
                       onClick={() => setSelectedTrainerForProfile(trainer)}
@@ -143,23 +160,13 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
                       <span>VIEW QUALIFICATIONS</span>
                       <span className="text-base font-extrabold">→</span>
                     </button>
-
-                    <button
-                      onClick={() => {
-                        if (onOpenBookingWithTrainer) {
-                          onOpenBookingWithTrainer(trainer.name);
-                        }
-                      }}
-                      className="w-full sm:w-auto border border-zinc-700 hover:border-white bg-[#141416] hover:bg-zinc-800 text-white font-black text-xs tracking-widest uppercase px-7 py-3.5 rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <span>BOOK CONSULTATION</span>
-                    </button>
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
+        )}
 
       </div>
 
@@ -200,8 +207,8 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
             {/* Verified Certifications List */}
             <div className="space-y-3">
               <h4 className="text-xs font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2 border-b border-zinc-800 pb-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                VERIFIED UK CERTIFICATIONS
+                <ShieldCheck className="w-4 h-4 text-[#CCFF00]" />
+                CERTIFICATIONS &amp; QUALIFICATIONS
               </h4>
               <div className="space-y-2">
                 {(selectedTrainerForProfile.certifications || [selectedTrainerForProfile.certification]).map((cert, idx) => (
@@ -245,14 +252,20 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
                 {selectedTrainerForProfile.galleryPhotos && selectedTrainerForProfile.galleryPhotos.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                     {selectedTrainerForProfile.galleryPhotos.map((photo, idx) => (
-                      <div key={idx} className="group relative rounded-xl overflow-hidden aspect-square border border-zinc-800 bg-zinc-900">
+                      <div
+                        key={idx}
+                        onClick={() => setLightboxMedia({ type: 'photo', url: photo })}
+                        className="group relative rounded-xl overflow-hidden aspect-square border border-zinc-800 bg-zinc-900 cursor-pointer"
+                      >
                         <img
                           src={photo}
                           alt={`${selectedTrainerForProfile.name} Physique ${idx + 1}`}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                          <span className="text-[9px] font-bold uppercase text-[#CCFF00]">PHYSIQUE #{idx + 1}</span>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                          <span className="text-[10px] font-black uppercase text-black bg-[#CCFF00] px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1">
+                            <ExternalLink className="w-3 h-3" /> CLICK TO EXPAND
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -262,7 +275,7 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
                 {/* Videos Showcase */}
                 {selectedTrainerForProfile.galleryVideos && selectedTrainerForProfile.galleryVideos.length > 0 && (
                   <div className="space-y-2.5 pt-2">
-                    <p className="text-[10px] font-black uppercase text-pink-400 tracking-wider">TRAINING & ATHLETE PERFORMANCE CLIPS:</p>
+                    <p className="text-[10px] font-black uppercase text-[#CCFF00] tracking-wider">TRAINING &amp; ATHLETE PERFORMANCE CLIPS:</p>
                     <div className="grid grid-cols-1 gap-3">
                       {selectedTrainerForProfile.galleryVideos.map((vidUrl, idx) => (
                         <div key={idx} className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 shadow-lg">
@@ -270,7 +283,7 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
                             controls
                             preload="metadata"
                             playsInline
-                            className="w-full max-h-56 object-cover rounded-xl"
+                            className="w-full max-h-64 object-cover rounded-xl"
                             poster={selectedTrainerForProfile.image}
                           >
                             <source src={vidUrl} type="video/mp4" />
@@ -284,20 +297,36 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
               </div>
             )}
 
-            {/* Action CTA */}
+          </div>
+        </div>
+      )}
+
+      {/* Full-Screen Coach Gallery Lightbox Preview Overlay */}
+      {lightboxMedia && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
+          <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center">
             <button
-              onClick={() => {
-                const name = selectedTrainerForProfile.name;
-                setSelectedTrainerForProfile(null);
-                if (onOpenBookingWithTrainer) {
-                  onOpenBookingWithTrainer(name);
-                }
-              }}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs tracking-widest uppercase py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+              onClick={() => setLightboxMedia(null)}
+              className="absolute -top-12 right-0 text-white bg-zinc-800 hover:bg-zinc-700 p-2.5 rounded-full shadow-2xl cursor-pointer"
             >
-              <Calendar className="w-4 h-4" />
-              <span>BOOK 1-ON-1 SESSION WITH {selectedTrainerForProfile.name.split(' ')[0]}</span>
+              <X className="w-6 h-6 text-[#CCFF00]" />
             </button>
+
+            {lightboxMedia.type === 'photo' ? (
+              <img
+                src={lightboxMedia.url}
+                alt="Coach Gallery Preview"
+                className="max-h-[80vh] w-auto object-contain rounded-2xl border-2 border-zinc-700 shadow-2xl"
+              />
+            ) : (
+              <video
+                controls
+                autoPlay
+                className="max-h-[80vh] w-full rounded-2xl border-2 border-zinc-700 shadow-2xl"
+              >
+                <source src={lightboxMedia.url} type="video/mp4" />
+              </video>
+            )}
           </div>
         </div>
       )}

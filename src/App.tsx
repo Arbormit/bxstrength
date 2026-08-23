@@ -28,6 +28,8 @@ import { RegisterModal } from './components/auth/RegisterModal';
 import { ForgotPasswordModal } from './components/auth/ForgotPasswordModal';
 import { SeoHead } from './components/SeoHead';
 import { FloatingActionWidget } from './components/ui/FloatingActionWidget';
+import { ChatbotWidget } from './components/ui/ChatbotWidget';
+import { ServiceCustomizationModal } from './components/ServiceCustomizationModal';
 import { Preloader } from './components/ui/Preloader';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
 import { CheckCircle2, X, WifiOff, AlertTriangle } from 'lucide-react';
@@ -48,6 +50,14 @@ function AppContent() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [searchModalOpen, setSearchModalOpen] = useState<boolean>(false);
   const [selectedBlogPostId, setSelectedBlogPostId] = useState<string | null>(null);
+  const [isChatbotOpen, setIsChatbotOpen] = useState<boolean>(false);
+  const [serviceCustomizationModalOpen, setServiceCustomizationModalOpen] = useState<boolean>(false);
+  const [selectedServiceForCustomization, setSelectedServiceForCustomization] = useState<any>(null);
+
+  const handleSelectService = (srv: any) => {
+    setSelectedServiceForCustomization(srv);
+    setServiceCustomizationModalOpen(true);
+  };
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -225,6 +235,7 @@ function AppContent() {
                 setSelectedTrainerForBooking(undefined);
                 setBookingModalOpen(true);
               }}
+              onSelectService={handleSelectService}
             />
 
             <TrainersSection
@@ -364,8 +375,24 @@ function AppContent() {
         }}
       />
 
-      {/* Floating Action Suite: WhatsApp, Email, Go-To-Top */}
-      <FloatingActionWidget />
+      <ServiceCustomizationModal
+        isOpen={serviceCustomizationModalOpen}
+        onClose={() => setServiceCustomizationModalOpen(false)}
+        service={selectedServiceForCustomization}
+        onNavigateToDashboard={() => setCurrentPage('dashboard')}
+      />
+
+      {/* Floating Action Suite: AI Chatbot, WhatsApp, Email, Go-To-Top */}
+      <FloatingActionWidget
+        isChatbotOpen={isChatbotOpen}
+        onToggleChatbot={() => setIsChatbotOpen(!isChatbotOpen)}
+      />
+      <ChatbotWidget
+        isOpen={isChatbotOpen}
+        onClose={() => setIsChatbotOpen(false)}
+        hideFloatingButton={true}
+        onOpenConsultation={() => setBookingModalOpen(true)}
+      />
     </div>
   );
 }

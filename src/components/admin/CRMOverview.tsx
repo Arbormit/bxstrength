@@ -5,7 +5,7 @@ import { ConfirmModal } from '../ui/ConfirmModal';
 import { 
   Users, DollarSign, Dumbbell, ShieldCheck, Activity, TrendingUp, 
   ChevronRight, AlertCircle, BarChart3, Filter, PieChart, CheckCircle2, 
-  ArrowRight, Plus, Trash2, X, Sparkles, Phone, Mail 
+  ArrowRight, Plus, Trash2, X, Zap, Phone, Mail 
 } from 'lucide-react';
 
 export interface CRMLead {
@@ -444,7 +444,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         <div className="bg-[#141416] border border-zinc-800 p-5 rounded-xl">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-black uppercase tracking-widest text-[#CCFF00] flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
+              <Zap className="w-4 h-4" />
               COACH QUICK WORKSPACE SHORTCUTS
             </h3>
             <span className="text-[10px] text-zinc-400 font-bold uppercase">Direct Tab Access</span>

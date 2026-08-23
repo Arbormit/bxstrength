@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useId } from 'react';
 import { ConsultationBooking } from '../types';
 import { VelocityAPI } from '../services/api';
+import { sendConsultationConfirmationEmail } from '../services/emailService';
 import { useAuth } from '../context/AuthContext';
 import { Calendar, Clock, User, CheckCircle2, X, Dumbbell, ShieldCheck, Bell, UserCheck } from 'lucide-react';
 
@@ -34,14 +35,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const phoneInputId = useId();
   const goalInputId = useId();
 
-  // Auto-fill logged in user details whenever modal opens or user updates
+  // Auto-fill logged in user details when modal opens, preserving typed input
   useEffect(() => {
-    if (user) {
-      setUserName(user.name || '');
-      setUserEmail(user.email || '');
-      setUserPhone(user.phone || '');
+    if (isOpen && user) {
+      setUserName(prev => prev || user.name || '');
+      setUserEmail(prev => prev || user.email || '');
+      setUserPhone(prev => prev || user.phone || '');
     }
-  }, [user, isOpen]);
+  }, [isOpen, user]);
 
   useEffect(() => {
     if (preSelectedTrainer) {
@@ -94,7 +95,19 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         preferredDate: bookingDate || todayStr,
         preferredTime: selectedTime
       })
-    }).catch((err) => console.warn('Server consultation sync notice:', err.message));
+    }).catch(() => {});
+
+    // Send Real Confirmation Email to Client
+    sendConsultationConfirmationEmail({
+      bookingId: newBooking.id,
+      clientName: userName,
+      clientEmail: userEmail,
+      clientPhone: userPhone,
+      goal,
+      coachPreference: selectedTrainer,
+      date: bookingDate || todayStr,
+      timeSlot: selectedTime
+    }).catch(() => {});
 
     setConfirmedBooking(newBooking);
   };
@@ -225,7 +238,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   id={phoneInputId}
                   type="tel"
                   required
-                  placeholder="+44 7700 900077"
+                  placeholder="+91 1234567890"
                   value={userPhone}
                   onChange={(e) => setUserPhone(e.target.value)}
                   className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-white transition-colors"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, ChevronRight, Dumbbell, ShieldCheck, Flame, ArrowRight, Activity, Clock, Target, UserCheck } from 'lucide-react';
+import { X, CheckCircle2, ChevronRight, ChevronLeft, Dumbbell, ShieldCheck, Flame, ArrowRight, Activity, Clock, Target, UserCheck } from 'lucide-react';
 import { SelfAssessmentData } from '../types';
 import { VelocityAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +19,12 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
   const [step, setStep] = useState<number>(1);
   const [formData, setFormData] = useState<SelfAssessmentData>({
     goal: '',
+    fitnessLevel: '',
+    trainingDays: '',
+    trainingLocation: '',
+    equipment: '',
+    trainingInterest: '',
+    hasInjury: '',
     obstacle: '',
     experience: '',
     commitment: '',
@@ -44,24 +50,47 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
 
   if (!isOpen) return null;
 
+  const totalSteps = 8;
+
   const handleSelectGoal = (goal: string) => {
     setFormData((prev) => ({ ...prev, goal }));
     setStep(2);
   };
 
-  const handleSelectObstacle = (obstacle: string) => {
-    setFormData((prev) => ({ ...prev, obstacle }));
+  const handleSelectFitnessLevel = (fitnessLevel: string) => {
+    setFormData((prev) => ({ ...prev, fitnessLevel, experience: fitnessLevel }));
     setStep(3);
   };
 
-  const handleSelectExperience = (experience: string) => {
-    setFormData((prev) => ({ ...prev, experience }));
+  const handleSelectTrainingDays = (trainingDays: string) => {
+    setFormData((prev) => ({ ...prev, trainingDays, commitment: `${trainingDays} Days/Wk` }));
     setStep(4);
   };
 
-  const handleSelectCommitment = (commitment: string) => {
-    setFormData((prev) => ({ ...prev, commitment }));
+  const handleSelectTrainingLocation = (trainingLocation: string) => {
+    setFormData((prev) => ({ ...prev, trainingLocation }));
     setStep(5);
+  };
+
+  const handleSelectEquipment = (equipment: string) => {
+    setFormData((prev) => ({ ...prev, equipment }));
+    setStep(6);
+  };
+
+  const handleSelectTrainingInterest = (trainingInterest: string) => {
+    setFormData((prev) => ({ ...prev, trainingInterest }));
+    setStep(7);
+  };
+
+  const handleSelectHasInjury = (hasInjury: string) => {
+    setFormData((prev) => ({ ...prev, hasInjury }));
+    setStep(8);
+  };
+
+  const handleGoBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -77,8 +106,8 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        subject: `Digital Diagnostic: ${formData.goal}`,
-        message: `[SELF ASSESSMENT DIAGNOSTIC]\nGoal: ${formData.goal}\nObstacle: ${formData.obstacle}\nExperience: ${formData.experience}\nCommitment: ${formData.commitment}`
+        subject: `Diagnostic Assessment: ${formData.goal}`,
+        message: `[SELF ASSESSMENT DIAGNOSTIC]\n1. Main Goal: ${formData.goal}\n2. Fitness Level: ${formData.fitnessLevel || 'N/A'}\n3. Training Days/Wk: ${formData.trainingDays || 'N/A'}\n4. Training Location: ${formData.trainingLocation || 'N/A'}\n5. Equipment: ${formData.equipment || 'N/A'}\n6. Training Interest: ${formData.trainingInterest || 'N/A'}\n7. Injury/Medical Restriction: ${formData.hasInjury || 'N/A'}`
       });
     } catch (err) {
       console.error('Diagnostic enquiry save error:', err);
@@ -93,9 +122,12 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
         email: formData.email,
         phone: formData.phone,
         primaryGoal: formData.goal,
-        mainObstacle: formData.obstacle,
-        experienceLevel: formData.experience,
-        weeklyCommitment: formData.commitment
+        fitnessLevel: formData.fitnessLevel,
+        trainingDays: formData.trainingDays,
+        trainingLocation: formData.trainingLocation,
+        equipment: formData.equipment,
+        trainingInterest: formData.trainingInterest,
+        hasInjury: formData.hasInjury
       })
     }).catch(err => console.warn('Server assessment sync notice:', err.message));
 
@@ -109,80 +141,102 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
     setIsCompleted(false);
   };
 
+  const progressPercent = Math.round((step / totalSteps) * 100);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-[#121214] text-white border border-zinc-800 shadow-2xl rounded-xl overflow-hidden">
-        {/* Top Header Bar */}
-        <div className="px-6 py-5 bg-[#18181b] border-b border-zinc-800 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl bg-[#121214] text-white border border-zinc-800 shadow-2xl rounded-2xl overflow-hidden flex flex-col max-h-[92vh]">
+        
+        {/* Modal Sticky Top Header */}
+        <div className="px-5 py-4 bg-[#18181b] border-b border-zinc-800/80 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-white text-black flex items-center justify-center font-black">
+            <div className="w-8 h-8 rounded-lg bg-[#CCFF00] text-black flex items-center justify-center font-black">
               <Dumbbell className="w-4 h-4 transform -rotate-45" />
             </div>
             <div>
-              <h3 className="text-sm font-black uppercase tracking-wider text-white">BxStrength Self-Assessment</h3>
-              <p className="text-[11px] text-zinc-400 font-medium">Free 5-Minute Qualified Digital Diagnostic</p>
+              <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">BxStrength Self-Assessment</h3>
+              <p className="text-[10px] sm:text-[11px] text-zinc-400 font-medium">Personalised Fitness &amp; Training Diagnostic</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+            className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
+            aria-label="Close Assessment"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 sm:p-8">
+        {/* Modal Body Container with Scroll */}
+        <div className="p-5 sm:p-8 overflow-y-auto flex-1">
           {!isCompleted ? (
             <div>
-              {/* Step indicator */}
-              <div className="flex items-center justify-between mb-8">
-                <span className="text-xs font-bold uppercase tracking-widest text-zinc-400">
-                  Step {step} of 5
-                </span>
-                <div className="flex gap-1.5">
-                  {[1, 2, 3, 4, 5].map((i) => (
+              {/* Single Navigation Header Bar */}
+              <div className="flex items-center justify-between gap-2 mb-6 pb-4 border-b border-zinc-800/60">
+                <div className="flex items-center gap-2">
+                  {step > 1 && (
+                    <button
+                      type="button"
+                      onClick={handleGoBack}
+                      className="flex items-center gap-1 text-xs font-black uppercase tracking-wider text-zinc-200 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg border border-zinc-700 transition-all cursor-pointer"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-[#CCFF00]" />
+                      <span>Back</span>
+                    </button>
+                  )}
+                  <span className="text-xs font-black uppercase tracking-widest text-zinc-300">
+                    STEP {step} OF {totalSteps} {step === 8 && '(FINAL DETAILS)'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-[#CCFF00]">{progressPercent}%</span>
+                  <div className="w-20 sm:w-28 bg-zinc-800 h-2 rounded-full overflow-hidden">
                     <div
-                      key={i}
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
-                        i <= step ? 'w-8 bg-white' : 'w-3 bg-zinc-800'
-                      }`}
+                      className="bg-[#CCFF00] h-full transition-all duration-300 rounded-full"
+                      style={{ width: `${progressPercent}%` }}
                     />
-                  ))}
+                  </div>
                 </div>
               </div>
 
-              {/* STEP 1: GOAL */}
+              {/* QUESTION 1: MAIN GOAL */}
               {step === 1 && (
-                <div className="space-y-6">
+                <div className="space-y-5 animate-in fade-in duration-150">
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white mb-2">
-                      What is your primary fitness goal?
+                    <span className="text-[10px] font-black text-[#CCFF00] uppercase tracking-widest block mb-1">
+                      QUESTION 1 OF 7
+                    </span>
+                    <h2 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white mb-1.5">
+                      What is your main goal?
                     </h2>
-                    <p className="text-xs text-zinc-400">Select the main outcome you want to achieve with BxStrength coaching.</p>
+                    <p className="text-xs text-zinc-400">Select the primary outcome you want to achieve with BxStrength coaching.</p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {[
-                      { title: 'Fat Loss & Recomposition', desc: 'Shed body fat while preserving lean muscle mass' },
-                      { title: 'Strength & Hypertrophy', desc: 'Build raw compound power and muscular hypertrophy' },
-                      { title: 'Postural & Longevity', desc: 'Fix mobility, back pain, and optimize metabolic health' },
-                      { title: 'Executive Performance', desc: 'High-energy conditioning for busy professionals' },
+                      { title: 'Fat loss', desc: 'Reduce body fat & lean recomposition' },
+                      { title: 'Strength', desc: 'Build raw strength & compound power' },
+                      { title: 'Boxing', desc: 'Technique, speed & fight conditioning' },
+                      { title: 'Mobility', desc: 'Flexibility, joint health & posture' },
+                      { title: 'General fitness', desc: 'Stamina, energy & overall health' },
+                      { title: 'Muscle gain', desc: 'Hypertrophy & muscle mass development' },
                     ].map((item) => (
                       <button
                         key={item.title}
+                        type="button"
                         onClick={() => handleSelectGoal(item.title)}
-                        className={`p-4 rounded-lg text-left border transition-all flex flex-col justify-between group ${
+                        className={`p-4 rounded-xl text-left border transition-all flex flex-col justify-between group cursor-pointer ${
                           formData.goal === item.title
-                            ? 'border-white bg-zinc-800'
+                            ? 'border-[#CCFF00] bg-zinc-800/90 shadow-md'
                             : 'border-zinc-800 bg-[#18181b] hover:border-zinc-600 hover:bg-zinc-800/50'
                         }`}
                       >
                         <div>
-                          <p className="text-sm font-bold uppercase text-white group-hover:text-white flex items-center justify-between">
+                          <p className="text-sm font-bold uppercase text-white group-hover:text-[#CCFF00] flex items-center justify-between">
                             {item.title}
-                            <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-[#CCFF00] group-hover:translate-x-0.5 transition-all" />
                           </p>
-                          <p className="text-xs text-zinc-400 mt-1">{item.desc}</p>
+                          <p className="text-[11px] text-zinc-400 mt-1">{item.desc}</p>
                         </div>
                       </button>
                     ))}
@@ -190,111 +244,258 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
                 </div>
               )}
 
-              {/* STEP 2: OBSTACLE */}
+              {/* QUESTION 2: FITNESS LEVEL */}
               {step === 2 && (
-                <div className="space-y-6">
+                <div className="space-y-5 animate-in fade-in duration-150">
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white mb-2">
-                      What has been your biggest obstacle?
+                    <span className="text-[10px] font-black text-[#CCFF00] uppercase tracking-widest block mb-1">
+                      QUESTION 2 OF 7
+                    </span>
+                    <h2 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white mb-1.5">
+                      What is your current fitness level?
                     </h2>
-                    <p className="text-xs text-zinc-400">Understanding your bottlenecks allows us to assign the perfect coach.</p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[
-                      { title: 'Lack of Structure', desc: 'Doing random workouts without periodized planning' },
-                      { title: 'Time Constraints', desc: 'Busy corporate/business schedule with unpredictable travel' },
-                      { title: 'Lack of Accountability', desc: 'Starting strong but losing motivation after a few weeks' },
-                      { title: 'Nutrition Confusion', desc: 'Unsure how to eat for sustained performance without crash dieting' },
-                    ].map((item) => (
-                      <button
-                        key={item.title}
-                        onClick={() => handleSelectObstacle(item.title)}
-                        className="p-4 rounded-lg text-left border border-zinc-800 bg-[#18181b] hover:border-zinc-600 hover:bg-zinc-800/50 transition-all group"
-                      >
-                        <p className="text-sm font-bold uppercase text-white flex items-center justify-between">
-                          {item.title}
-                          <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </p>
-                        <p className="text-xs text-zinc-400 mt-1">{item.desc}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 3: EXPERIENCE */}
-              {step === 3 && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white mb-2">
-                      What is your current training experience?
-                    </h2>
-                    <p className="text-xs text-zinc-400">Be honest — we coach all levels from absolute beginners to athletes.</p>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3">
-                    {[
-                      { title: 'Beginner (0 - 1 Year)', desc: 'New to structured lifting or returning after a long break' },
-                      { title: 'Intermediate (1 - 3 Years)', desc: 'Familiar with core lifts but plateaued in progress' },
-                      { title: 'Advanced (3+ Years)', desc: 'Consistent training history requiring advanced periodization' },
-                    ].map((item) => (
-                      <button
-                        key={item.title}
-                        onClick={() => handleSelectExperience(item.title)}
-                        className="p-4 rounded-lg text-left border border-zinc-800 bg-[#18181b] hover:border-zinc-600 hover:bg-zinc-800/50 transition-all group"
-                      >
-                        <p className="text-sm font-bold uppercase text-white flex items-center justify-between">
-                          {item.title}
-                          <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </p>
-                        <p className="text-xs text-zinc-400 mt-1">{item.desc}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 4: COMMITMENT */}
-              {step === 4 && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white mb-2">
-                      How many days per week can you commit?
-                    </h2>
-                    <p className="text-xs text-zinc-400">We design programs tailored around your real-life availability.</p>
+                    <p className="text-xs text-zinc-400">Be honest — we tailor programs for absolute beginners to advanced athletes.</p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
-                      { title: '2 - 3 Days / Wk', desc: 'Focused high-efficiency full body sessions' },
-                      { title: '3 - 4 Days / Wk', desc: 'Optimal split for lean gains and strength' },
-                      { title: '5+ Days / Wk', desc: 'Comprehensive athletic training protocol' },
+                      { title: 'Beginner', desc: 'New to fitness or returning after a long break' },
+                      { title: 'Intermediate', desc: 'Train regularly with basic exercise knowledge' },
+                      { title: 'Advanced', desc: 'Consistent athlete seeking peak performance' },
                     ].map((item) => (
                       <button
                         key={item.title}
-                        onClick={() => handleSelectCommitment(item.title)}
-                        className="p-4 rounded-lg text-left border border-zinc-800 bg-[#18181b] hover:border-zinc-600 hover:bg-zinc-800/50 transition-all group"
+                        type="button"
+                        onClick={() => handleSelectFitnessLevel(item.title)}
+                        className={`p-5 rounded-xl text-left border transition-all group cursor-pointer ${
+                          formData.fitnessLevel === item.title
+                            ? 'border-[#CCFF00] bg-zinc-800/90 shadow-md'
+                            : 'border-zinc-800 bg-[#18181b] hover:border-zinc-600 hover:bg-zinc-800/50'
+                        }`}
                       >
-                        <p className="text-sm font-bold uppercase text-white flex items-center justify-between">
+                        <p className="text-base font-bold uppercase text-white group-hover:text-[#CCFF00] flex items-center justify-between">
                           {item.title}
-                          <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-[#CCFF00] group-hover:translate-x-0.5 transition-all" />
                         </p>
-                        <p className="text-xs text-zinc-400 mt-1">{item.desc}</p>
+                        <p className="text-xs text-zinc-400 mt-1.5">{item.desc}</p>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* STEP 5: CONTACT DETAILS */}
-              {step === 5 && (
-                <form onSubmit={handleSubmit} className="space-y-5">
+              {/* QUESTION 3: TRAINING DAYS */}
+              {step === 3 && (
+                <div className="space-y-5 animate-in fade-in duration-150">
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white mb-2">
+                    <span className="text-[10px] font-black text-[#CCFF00] uppercase tracking-widest block mb-1">
+                      QUESTION 3 OF 7
+                    </span>
+                    <h2 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white mb-1.5">
+                      How many days per week can you train?
+                    </h2>
+                    <p className="text-xs text-zinc-400">Select your realistic weekly training frequency.</p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { title: '1', label: '1 Day / Wk', desc: 'High-efficiency session' },
+                      { title: '2', label: '2 Days / Wk', desc: 'Balanced schedule' },
+                      { title: '3', label: '3 Days / Wk', desc: 'Optimal progression' },
+                      { title: '4+', label: '4+ Days / Wk', desc: 'Performance protocol' },
+                    ].map((item) => (
+                      <button
+                        key={item.title}
+                        type="button"
+                        onClick={() => handleSelectTrainingDays(item.title)}
+                        className={`p-5 rounded-xl text-center border transition-all group cursor-pointer ${
+                          formData.trainingDays === item.title
+                            ? 'border-[#CCFF00] bg-zinc-800/90 shadow-md'
+                            : 'border-zinc-800 bg-[#18181b] hover:border-zinc-600 hover:bg-zinc-800/50'
+                        }`}
+                      >
+                        <span className="text-3xl font-black text-white group-hover:text-[#CCFF00] block mb-1">
+                          {item.title}
+                        </span>
+                        <p className="text-xs font-bold uppercase text-zinc-300">{item.label}</p>
+                        <p className="text-[10px] text-zinc-400 mt-1">{item.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* QUESTION 4: TRAINING LOCATION */}
+              {step === 4 && (
+                <div className="space-y-5 animate-in fade-in duration-150">
+                  <div>
+                    <span className="text-[10px] font-black text-[#CCFF00] uppercase tracking-widest block mb-1">
+                      QUESTION 4 OF 7
+                    </span>
+                    <h2 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white mb-1.5">
+                      Where will you train?
+                    </h2>
+                    <p className="text-xs text-zinc-400">We design workouts specifically for your training environment.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { title: 'Home', desc: 'At-home workouts with bodyweight or home gear' },
+                      { title: 'Gym', desc: 'Commercial gym or fitness facility access' },
+                      { title: 'Hybrid', desc: 'Combination of home and gym workouts' },
+                    ].map((item) => (
+                      <button
+                        key={item.title}
+                        type="button"
+                        onClick={() => handleSelectTrainingLocation(item.title)}
+                        className={`p-5 rounded-xl text-left border transition-all group cursor-pointer ${
+                          formData.trainingLocation === item.title
+                            ? 'border-[#CCFF00] bg-zinc-800/90 shadow-md'
+                            : 'border-zinc-800 bg-[#18181b] hover:border-zinc-600 hover:bg-zinc-800/50'
+                        }`}
+                      >
+                        <p className="text-base font-bold uppercase text-white group-hover:text-[#CCFF00] flex items-center justify-between">
+                          {item.title}
+                          <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-[#CCFF00] group-hover:translate-x-0.5 transition-all" />
+                        </p>
+                        <p className="text-xs text-zinc-400 mt-1.5">{item.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* QUESTION 5: EQUIPMENT */}
+              {step === 5 && (
+                <div className="space-y-5 animate-in fade-in duration-150">
+                  <div>
+                    <span className="text-[10px] font-black text-[#CCFF00] uppercase tracking-widest block mb-1">
+                      QUESTION 5 OF 7
+                    </span>
+                    <h2 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white mb-1.5">
+                      What equipment do you have?
+                    </h2>
+                    <p className="text-xs text-zinc-400">Select the equipment available during your training sessions.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {[
+                      { title: 'None', desc: 'Bodyweight & functional exercises' },
+                      { title: 'Dumbbells', desc: 'Free weights / adjustable dumbbells' },
+                      { title: 'Bands', desc: 'Resistance & mobility bands' },
+                      { title: 'Full gym', desc: 'Barbells, machines & cardio equipment' },
+                      { title: 'Boxing equipment', desc: 'Heavy bag, gloves & wraps' },
+                    ].map((item) => (
+                      <button
+                        key={item.title}
+                        type="button"
+                        onClick={() => handleSelectEquipment(item.title)}
+                        className={`p-4 rounded-xl text-left border transition-all group cursor-pointer ${
+                          formData.equipment === item.title
+                            ? 'border-[#CCFF00] bg-zinc-800/90 shadow-md'
+                            : 'border-zinc-800 bg-[#18181b] hover:border-zinc-600 hover:bg-zinc-800/50'
+                        }`}
+                      >
+                        <p className="text-sm font-bold uppercase text-white group-hover:text-[#CCFF00] flex items-center justify-between">
+                          {item.title}
+                          <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-[#CCFF00] group-hover:translate-x-0.5 transition-all" />
+                        </p>
+                        <p className="text-[11px] text-zinc-400 mt-1">{item.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* QUESTION 6: TRAINING INTEREST */}
+              {step === 6 && (
+                <div className="space-y-5 animate-in fade-in duration-150">
+                  <div>
+                    <span className="text-[10px] font-black text-[#CCFF00] uppercase tracking-widest block mb-1">
+                      QUESTION 6 OF 7
+                    </span>
+                    <h2 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white mb-1.5">
+                      What type of training interests you?
+                    </h2>
+                    <p className="text-xs text-zinc-400">Select the style of training you prefer to focus on.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {[
+                      { title: 'Boxing', desc: 'Punches, footwork & bag work' },
+                      { title: 'Strength', desc: 'Heavy lifting & muscle building' },
+                      { title: 'Functional', desc: 'Athletic movement & core stability' },
+                      { title: 'Mobility', desc: 'Flexibility, joint health & stretching' },
+                      { title: 'Combination', desc: 'Mix of boxing, strength & mobility' },
+                      { title: 'Not sure', desc: 'Let coach recommend best approach' },
+                    ].map((item) => (
+                      <button
+                        key={item.title}
+                        type="button"
+                        onClick={() => handleSelectTrainingInterest(item.title)}
+                        className={`p-4 rounded-xl text-left border transition-all group cursor-pointer ${
+                          formData.trainingInterest === item.title
+                            ? 'border-[#CCFF00] bg-zinc-800/90 shadow-md'
+                            : 'border-zinc-800 bg-[#18181b] hover:border-zinc-600 hover:bg-zinc-800/50'
+                        }`}
+                      >
+                        <p className="text-sm font-bold uppercase text-white group-hover:text-[#CCFF00] flex items-center justify-between">
+                          {item.title}
+                          <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-[#CCFF00] group-hover:translate-x-0.5 transition-all" />
+                        </p>
+                        <p className="text-[11px] text-zinc-400 mt-1">{item.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* QUESTION 7: INJURY / MEDICAL RESTRICTIONS */}
+              {step === 7 && (
+                <div className="space-y-5 animate-in fade-in duration-150">
+                  <div>
+                    <span className="text-[10px] font-black text-[#CCFF00] uppercase tracking-widest block mb-1">
+                      QUESTION 7 OF 7
+                    </span>
+                    <h2 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white mb-1.5">
+                      Do you currently have an injury, significant pain, medical restriction, or recent surgery?
+                    </h2>
+                    <p className="text-xs text-zinc-400">Our physiotherapy expertise helps adapt exercise around any physical limitation.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                      { title: 'Yes', desc: 'I have an injury, pain, or medical condition to accommodate' },
+                      { title: 'No', desc: 'I have no injuries or medical restrictions' },
+                    ].map((item) => (
+                      <button
+                        key={item.title}
+                        type="button"
+                        onClick={() => handleSelectHasInjury(item.title)}
+                        className={`p-6 rounded-xl text-left border transition-all group cursor-pointer ${
+                          formData.hasInjury === item.title
+                            ? 'border-[#CCFF00] bg-zinc-800/90 shadow-md'
+                            : 'border-zinc-800 bg-[#18181b] hover:border-zinc-600 hover:bg-zinc-800/50'
+                        }`}
+                      >
+                        <span className="text-2xl font-black uppercase text-white group-hover:text-[#CCFF00] block mb-1">
+                          {item.title}
+                        </span>
+                        <p className="text-xs text-zinc-400">{item.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 8: CONTACT DETAILS & REPORT GENERATION */}
+              {step === 8 && (
+                <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in duration-150">
+                  <div>
+                    <span className="text-[10px] font-black text-[#CCFF00] uppercase tracking-widest block mb-1">
+                      FINAL STEP 8 OF 8
+                    </span>
+                    <h2 className="text-lg sm:text-2xl font-black uppercase tracking-tight text-white mb-1.5">
                       Generate Your Diagnostic Report
                     </h2>
-                    <p className="text-xs text-zinc-400">Enter your details so your assigned UK coach can review your profile before your free 15-min session.</p>
+                    <p className="text-xs text-zinc-400">Enter your details so your assigned head coach can review your profile before your 15-min session.</p>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-4 bg-[#18181b] p-5 rounded-xl border border-zinc-800">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                         Full Name *
@@ -304,8 +505,8 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
                         required
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="e.g. Alexander Vance"
-                        className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-white transition-colors"
+                        placeholder="e.g. Rahul Sharma"
+                        className="w-full bg-[#121214] border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-[#CCFF00] transition-colors"
                       />
                     </div>
 
@@ -319,8 +520,8 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
                           required
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          placeholder="alexander@domain.com"
-                          className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-white transition-colors"
+                          placeholder="client@domain.com"
+                          className="w-full bg-[#121214] border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-[#CCFF00] transition-colors"
                         />
                       </div>
                       <div>
@@ -332,8 +533,8 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
                           required
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          placeholder="+44 7700 900077"
-                          className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-white transition-colors"
+                          placeholder="+91 98765 43210"
+                          className="w-full bg-[#121214] border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-[#CCFF00] transition-colors"
                         />
                       </div>
                     </div>
@@ -342,10 +543,10 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
                   <div className="pt-2">
                     <button
                       type="submit"
-                      className="w-full bg-white hover:bg-zinc-200 text-black font-black text-xs tracking-widest uppercase py-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+                      className="w-full bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs tracking-widest uppercase py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xl cursor-pointer active:scale-[0.99]"
                     >
                       <Activity className="w-4 h-4" />
-                      SUBMIT & VIEW ASSESSMENT RESULT
+                      <span>SUBMIT &amp; VIEW DIAGNOSTIC RESULT</span>
                     </button>
                   </div>
                 </form>
@@ -354,51 +555,65 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
           ) : (
             /* COMPLETED ASSESSMENT RESULT */
             <div className="text-center py-4 space-y-6 animate-in zoom-in-95 duration-200">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-8 h-8" />
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[#CCFF00] flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8 text-[#CCFF00]" />
               </div>
 
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-zinc-800 text-zinc-300 rounded-full border border-zinc-700">
-                  QUALIFIED MATCH: 96% COACHING COMPATIBILITY
+                  QUALIFIED MATCH: 98% COACHING COMPATIBILITY
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mt-3">
                   Assessment Complete, {formData.name.split(' ')[0]}!
                 </h2>
-                <p className="text-xs text-zinc-400 max-w-md mx-auto mt-2">
-                  Based on your goal (<strong className="text-white">{formData.goal}</strong>) and schedule, you qualify for our 1-on-1 15-min session.
+                <p className="text-xs sm:text-sm text-zinc-300 max-w-lg mx-auto mt-2 leading-relaxed">
+                  Based on your primary goal of <strong className="text-[#CCFF00] font-bold">{formData.goal}</strong> and training preferences, you have successfully qualified for an exclusive 15-minute 1-on-1 strategy consultation with our Head Coach.
                 </p>
               </div>
 
               {/* Assessment summary pill cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-left text-xs bg-[#18181b] p-4 rounded-lg border border-zinc-800">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-left text-xs bg-[#18181b] p-4 rounded-xl border border-zinc-800">
                 <div>
                   <span className="text-[10px] text-zinc-500 font-bold uppercase block">Goal</span>
                   <span className="font-bold text-white truncate block">{formData.goal || 'General'}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-zinc-500 font-bold uppercase block">Obstacle</span>
-                  <span className="font-bold text-white truncate block">{formData.obstacle || 'Structure'}</span>
-                </div>
-                <div>
                   <span className="text-[10px] text-zinc-500 font-bold uppercase block">Level</span>
-                  <span className="font-bold text-white truncate block">{formData.experience || 'Intermediate'}</span>
+                  <span className="font-bold text-white truncate block">{formData.fitnessLevel || 'Beginner'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-500 font-bold uppercase block">Frequency</span>
-                  <span className="font-bold text-white truncate block">{formData.commitment || '3-4 Days'}</span>
+                  <span className="font-bold text-white truncate block">{formData.trainingDays ? `${formData.trainingDays} Days/Wk` : '3 Days'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase block">Location</span>
+                  <span className="font-bold text-white truncate block">{formData.trainingLocation || 'Home'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase block">Equipment</span>
+                  <span className="font-bold text-white truncate block">{formData.equipment || 'None'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase block">Interest</span>
+                  <span className="font-bold text-white truncate block">{formData.trainingInterest || 'Boxing'}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase block">Injury / Medical</span>
+                  <span className="font-bold text-white truncate block">{formData.hasInjury || 'No'}</span>
                 </div>
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <button
+                  type="button"
                   onClick={handleFinalBooking}
-                  className="w-full sm:w-auto bg-white hover:bg-zinc-200 text-black font-black text-xs tracking-widest uppercase px-8 py-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-xl cursor-pointer"
+                  className="w-full sm:w-auto bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs tracking-widest uppercase px-8 py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xl cursor-pointer"
                 >
-                  BOOK 15-MIN SESSION
+                  BOOK 15-MIN SESSION NOW
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button
+                  type="button"
                   onClick={onClose}
                   className="w-full sm:w-auto text-zinc-400 hover:text-white font-bold text-xs tracking-wider uppercase px-4 py-3 cursor-pointer"
                 >

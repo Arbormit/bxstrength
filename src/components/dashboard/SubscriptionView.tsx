@@ -1,6 +1,7 @@
-import React from 'react';
-import { User, SubscriptionTier, BillingStatement } from '../../types';
-import { CreditCard, CheckCircle2, ShieldCheck, Download, FileText, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, SubscriptionTier, BillingStatement, Subscription } from '../../types';
+import { VelocityAPI } from '../../services/api';
+import { CreditCard, CheckCircle2, ShieldCheck, Download, FileText, ExternalLink, Dumbbell, Calendar, Tag, Layers } from 'lucide-react';
 
 interface SubscriptionViewProps {
   user: User;
@@ -10,6 +11,15 @@ interface SubscriptionViewProps {
 export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ user, onShowToast }) => {
   const tier: SubscriptionTier = user.subscriptionTier || 'Normal User';
   const statements: BillingStatement[] = user.billingStatements || [];
+  const [userSubs, setUserSubs] = useState<Subscription[]>([]);
+
+  useEffect(() => {
+    try {
+      const allSubs = VelocityAPI.getSubscriptions();
+      const userActive = allSubs.filter(s => s.userEmail.toLowerCase() === user.email.toLowerCase() || s.userId === user.id);
+      setUserSubs(userActive);
+    } catch (e) {}
+  }, [user]);
 
   const tierDetails = {
     'Normal User': {
@@ -167,6 +177,63 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ user, onShow
           </p>
         </div>
       </div>
+
+      {/* Purchased Individual & Custom Service Plans Card */}
+      {userSubs.length > 0 && (
+        <div className="bg-[#121214] border border-[#CCFF00]/40 p-6 rounded-2xl space-y-4 shadow-xl">
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+            <div className="flex items-center gap-2">
+              <Dumbbell className="w-5 h-5 text-[#CCFF00]" />
+              <h3 className="text-base font-black uppercase text-white tracking-tight">ACTIVE PURCHASED SERVICE PLANS</h3>
+            </div>
+            <span className="text-xs font-black uppercase px-3 py-1 bg-[#CCFF00] text-black rounded-full">
+              {userSubs.length} ACTIVE PLAN{userSubs.length > 1 ? 'S' : ''}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {userSubs.map((sub) => (
+              <div key={sub.id} className="bg-[#18181b] border border-zinc-800 p-4 rounded-xl space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#CCFF00] bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded">
+                      {sub.serviceType ? `${sub.serviceType.toUpperCase()} MODE` : 'SERVICE PLAN'}
+                    </span>
+                    <h4 className="text-sm font-black uppercase text-white mt-1.5">{sub.planName}</h4>
+                  </div>
+                  <span className="text-sm font-black text-[#CCFF00] font-mono">${sub.price}</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs bg-[#121214] p-3 rounded-lg border border-zinc-800">
+                  <div>
+                    <span className="text-[9px] text-zinc-500 font-bold uppercase block">Start Date</span>
+                    <span className="font-bold text-white block text-[11px]">{new Date(sub.startDate).toLocaleDateString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-zinc-500 font-bold uppercase block">Expiry Date</span>
+                    <span className="font-bold text-[#CCFF00] block text-[11px]">{sub.expiryDate || new Date(sub.nextBillingDate).toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                {sub.customExercises && sub.customExercises.length > 0 && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+                      Included Exercises ({sub.customExercises.length}):
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {sub.customExercises.map((ex, i) => (
+                        <span key={i} className="text-[9px] bg-zinc-900 text-zinc-300 border border-zinc-800 px-2 py-0.5 rounded">
+                          ✓ {ex}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Active Card */}

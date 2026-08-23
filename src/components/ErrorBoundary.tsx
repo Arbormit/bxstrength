@@ -42,7 +42,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             <div className="flex items-center justify-center gap-2">
               <Dumbbell className="w-5 h-5 text-[#E52165]" />
               <span className="text-xs font-black uppercase tracking-widest text-gray-400">
-                VELOCITY FITNESS PLATFORM
+                BxStrength
               </span>
             </div>
 

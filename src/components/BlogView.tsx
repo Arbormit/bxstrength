@@ -3,7 +3,7 @@ import { BLOG_POSTS_DATA } from '../data/gymData';
 import { BlogPost } from '../types';
 import { VelocityAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Search, Clock, User, Tag, ArrowRight, X, Plus, BookOpen, CheckCircle2, Sparkles } from 'lucide-react';
+import { Search, Clock, User, Tag, ArrowRight, X, Plus, BookOpen, CheckCircle2 } from 'lucide-react';
 
 interface BlogViewProps {
   initialSelectedPostId?: string | null;

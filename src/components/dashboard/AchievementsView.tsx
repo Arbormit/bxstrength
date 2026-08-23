@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../../types';
-import { Trophy, Plus, Edit2, Trash2, Award, CheckCircle2, Sparkles, X } from 'lucide-react';
+import { Trophy, Plus, Edit2, Trash2, Award, CheckCircle2, X } from 'lucide-react';
 
 interface Achievement {
   id: string;

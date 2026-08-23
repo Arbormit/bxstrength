@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronUp, Mail } from 'lucide-react';
+import { ChevronUp, Mail, Bot, X } from 'lucide-react';
 
-export const FloatingActionWidget: React.FC = () => {
+interface FloatingActionWidgetProps {
+  onToggleChatbot?: () => void;
+  isChatbotOpen?: boolean;
+}
+
+export const FloatingActionWidget: React.FC<FloatingActionWidgetProps> = ({
+  onToggleChatbot,
+  isChatbotOpen = false
+}) => {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -25,17 +33,46 @@ export const FloatingActionWidget: React.FC = () => {
   };
 
   const openWhatsApp = () => {
-    const phone = '15550192834'; // Replace with actual business WhatsApp number
-    const text = encodeURIComponent('Hello Velocity Fitness Team! I would like to inquire about training programs.');
+    const phone = '15550192834'; // Business WhatsApp number
+    const text = encodeURIComponent('Hello BxStrength Team! I would like to inquire about training programs.');
     window.open(`https://wa.me/${phone}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
   const openEmail = () => {
-    window.location.href = 'mailto:support@velocityfitness.com?subject=Inquiry%20from%20Velocity%20Fitness%20Platform';
+    window.location.href = 'mailto:info@bxstrength.com?subject=Inquiry%20from%20BxStrength%20Platform';
   };
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-2.5 sm:gap-3 pointer-events-auto select-none">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-2.5 sm:gap-3 pointer-events-auto select-none">
+      {/* 1. AI CHATBOT FLOATING BUTTON WITH FLOATING TEXT PILL */}
+      {onToggleChatbot && (
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {!isChatbotOpen && (
+            <div
+              onClick={onToggleChatbot}
+              className="cursor-pointer bg-[#18181b] hover:bg-zinc-800 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-3 sm:px-3.5 py-1.5 rounded-full border border-zinc-700 hover:border-[#CCFF00] shadow-xl flex items-center gap-1.5 animate-bounce transition-all"
+            >
+              <span>Need help? Chat with AI</span>
+            </div>
+          )}
+
+          <button
+            onClick={onToggleChatbot}
+            aria-label="Toggle AI Chat Assistant"
+            title="AI Fitness Assistant"
+            className="relative w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#CCFF00] hover:bg-[#b8e600] text-black shadow-xl shadow-lime-950/40 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 group border-2 border-black flex-shrink-0 cursor-pointer"
+          >
+            {isChatbotOpen ? (
+              <X className="w-6 h-6 text-black" />
+            ) : (
+              <>
+                <Bot className="w-6 h-6 text-black" />
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-black animate-pulse" />
+              </>
+            )}
+          </button>
+        </div>
+      )}
       {/* 1. WHATSAPP FLOATING BUTTON WITH OFFICIAL WHATSAPP SVG ICON */}
       <button
         onClick={openWhatsApp}
