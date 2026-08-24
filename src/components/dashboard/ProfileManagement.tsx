@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { Camera, CheckCircle2, ShieldCheck, Mail, Phone, Lock, Save, AlertCircle, RefreshCw } from 'lucide-react';
+import { Camera, CheckCircle2, ShieldCheck, Mail, Phone, Lock, Save, AlertCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
 
 interface ProfileManagementProps {
   user: User;
@@ -18,6 +18,11 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
   const [emergencyContact, setEmergencyContact] = useState(user.emergencyContact || '');
   const [fitnessGoals, setFitnessGoals] = useState(user.fitnessGoals || '');
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl || '');
+
+  // Password Visibility States
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Password state
@@ -340,39 +345,69 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
                     Current Password
                   </label>
-                  <input
-                    type="password"
-                    value={currentPass}
-                    onChange={(e) => setCurrentPass(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white px-3.5 py-2.5 text-sm rounded-none outline-none"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showCurrentPass ? 'text' : 'password'}
+                      value={currentPass}
+                      onChange={(e) => setCurrentPass(e.target.value)}
+                      maxLength={128}
+                      placeholder="Enter security password"
+                      className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white pl-3.5 pr-10 py-2.5 text-sm rounded-none outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPass(!showCurrentPass)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    >
+                      {showCurrentPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
                     New Password
                   </label>
-                  <input
-                    type="password"
-                    value={newPass}
-                    onChange={(e) => setNewPass(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white px-3.5 py-2.5 text-sm rounded-none outline-none"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNewPass ? 'text' : 'password'}
+                      value={newPass}
+                      onChange={(e) => setNewPass(e.target.value)}
+                      maxLength={128}
+                      placeholder="Enter security password"
+                      className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white pl-3.5 pr-10 py-2.5 text-sm rounded-none outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPass(!showNewPass)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    >
+                      {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
                     Confirm New Password
                   </label>
-                  <input
-                    type="password"
-                    value={confirmPass}
-                    onChange={(e) => setConfirmPass(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white px-3.5 py-2.5 text-sm rounded-none outline-none"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPass ? 'text' : 'password'}
+                      value={confirmPass}
+                      onChange={(e) => setConfirmPass(e.target.value)}
+                      maxLength={128}
+                      placeholder="Enter security password"
+                      className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white pl-3.5 pr-10 py-2.5 text-sm rounded-none outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPass(!showConfirmPass)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    >
+                      {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 

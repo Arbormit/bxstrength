@@ -427,13 +427,13 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
 
             <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
               <div className="flex items-center justify-between text-zinc-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">Client Reviews &amp; CSAT</span>
-                <CheckCircle2 className="w-5 h-5 text-amber-400" />
+                <span className="text-xs font-bold uppercase tracking-wider">Total Enquiries &amp; Leads</span>
+                <Mail className="w-5 h-5 text-amber-400" />
               </div>
-              <div className="text-base font-black text-amber-300 tracking-tight mt-1">
-                Pending Client Feedback
+              <div className="text-3xl font-black text-white tracking-tight">
+                {enquiries.length}
               </div>
-              <p className="text-[11px] text-zinc-400 mt-1 font-semibold">Updates live upon verified reviews</p>
+              <p className="text-[11px] text-amber-400 mt-1 font-semibold">Active Inbound Client Leads</p>
             </div>
           </>
         )}

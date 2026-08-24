@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trainer, ViewPage } from '../types';
-import { TRAINERS_DATA, BxTrainer } from '../data/gymData';
+import { BxTrainer } from '../data/gymData';
 import { Star, Calendar, ShieldCheck, Globe, Clock, Award, Trophy, CheckCircle2, X, ExternalLink, Database, RefreshCw } from 'lucide-react';
 
 interface TrainersSectionProps {
@@ -15,23 +15,27 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
   onOpenBookingWithTrainer
 }) => {
   const [selectedTrainerForProfile, setSelectedTrainerForProfile] = useState<BxTrainer | null>(null);
-  const [trainers, setTrainers] = useState<BxTrainer[]>(TRAINERS_DATA);
+  const [trainers, setTrainers] = useState<BxTrainer[]>([]);
   const [lightboxMedia, setLightboxMedia] = useState<{ type: 'photo' | 'video'; url: string } | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchLiveTrainers = () => {
     fetch('/api/trainers')
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
-        if (isMounted && Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setTrainers(data);
         }
       })
       .catch(() => {
-        // Fallback silently to initial state
+        setTrainers([]);
       });
+  };
+
+  useEffect(() => {
+    fetchLiveTrainers();
+    window.addEventListener('bxstrength_trainers_updated', fetchLiveTrainers);
     return () => {
-      isMounted = false;
+      window.removeEventListener('bxstrength_trainers_updated', fetchLiveTrainers);
     };
   }, []);
 
@@ -52,21 +56,10 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
           </p>
         </div>
 
-        {/* Coach Cards List - Borderless Design Matching Reference Sample */}
+        {/* Coach Cards List */}
         {trainers.length === 0 ? (
-          <div className="text-center py-16 px-4 bg-zinc-900/60 border border-zinc-800 rounded-3xl max-w-xl mx-auto space-y-4">
-            <Database className="w-10 h-10 text-[#CCFF00] mx-auto animate-pulse" />
-            <h3 className="text-lg font-black uppercase text-white tracking-wider">NO COACH RECORDS IN DATABASE YET</h3>
-            <p className="text-xs text-zinc-400 max-w-md mx-auto">
-              Our database is currently syncing coach profiles. New coach records will reflect here soon.
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs px-5 py-2.5 rounded-full transition-all cursor-pointer inline-flex items-center gap-2"
-            >
-              <RefreshCw className="w-3.5 h-3.5 text-[#CCFF00]" />
-              <span>RECHECK DATABASE</span>
-            </button>
+          <div className="text-center py-12 px-4 bg-zinc-900/40 border border-zinc-800/80 rounded-2xl max-w-md mx-auto space-y-2">
+            <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">No coach data available</h3>
           </div>
         ) : (
           <div className="space-y-16 lg:space-y-24">

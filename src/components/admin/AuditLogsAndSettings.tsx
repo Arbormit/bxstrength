@@ -220,6 +220,61 @@ export const AuditLogsAndSettings: React.FC<AuditLogsAndSettingsProps> = ({
             </div>
           </div>
 
+          {/* User / Client Dashboard Feature Permissions Section */}
+          <div className="border-b border-gray-800 pb-6 space-y-4">
+            <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              USER DASHBOARD FEATURE VISIBILITY
+            </h3>
+            <p className="text-[11px] text-gray-400 leading-relaxed font-normal">
+              Toggle feature modules visible to registered Members & Clients in their personal dashboard.
+            </p>
+
+            <div className="space-y-2.5">
+              {/* Workout Routine & Exercise Logger */}
+              <div className="flex items-center justify-between p-3 bg-gray-900 border border-gray-800 rounded text-xs">
+                <div>
+                  <span className="font-bold text-white block">Workout Routine & Exercise Plans</span>
+                  <span className="text-[10px] text-gray-400">Workout plans & exercise routines tab</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={coachPermissions.showUserWorkoutLogger !== false}
+                  onChange={(e) => handleInitiatePermToggle('showUserWorkoutLogger', e.target.checked, 'User Workout Plans Tab')}
+                  className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
+                />
+              </div>
+
+              {/* Nutrition & Diet Tracker */}
+              <div className="flex items-center justify-between p-3 bg-gray-900 border border-gray-800 rounded text-xs">
+                <div>
+                  <span className="font-bold text-white block">Calorie & Macro Nutrition Diet</span>
+                  <span className="text-[10px] text-gray-400">Meal targets & diet plan tab</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={coachPermissions.showUserNutritionTracker !== false}
+                  onChange={(e) => handleInitiatePermToggle('showUserNutritionTracker', e.target.checked, 'User Nutrition Diet Tab')}
+                  className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
+                />
+              </div>
+
+              {/* Invoices & Subscription Billing */}
+              <div className="flex items-center justify-between p-3 bg-gray-900 border border-gray-800 rounded text-xs">
+                <div>
+                  <span className="font-bold text-white block">Billing Statements & Subscriptions</span>
+                  <span className="text-[10px] text-gray-400">Payment receipts & subscription tab</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={coachPermissions.showUserBillingHistory !== false}
+                  onChange={(e) => handleInitiatePermToggle('showUserBillingHistory', e.target.checked, 'User Subscription Billing Tab')}
+                  className="w-4 h-4 rounded border-gray-700 text-emerald-400 focus:ring-emerald-400 cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+
           <h3 className="text-sm font-black uppercase tracking-wider text-white border-b border-gray-800 pb-3 flex items-center gap-2">
             <Lock className="w-4 h-4 text-[#E52165]" />
             PLATFORM SYSTEM SETTINGS

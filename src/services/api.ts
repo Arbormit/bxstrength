@@ -4,7 +4,7 @@ import {
   Enquiry, AuditLog, Announcement, BlogPost, Testimonial,
   SupportTicket, TicketStatus, TicketCategory, TicketPriority
 } from '../types';
-import { TRAINERS_DATA, BxTrainer } from '../data/gymData';
+import { BxTrainer } from '../data/gymData';
 
 const STORAGE_KEYS = {
   USERS: 'velocity_users',
@@ -34,7 +34,16 @@ export const DEFAULT_COACH_PERMISSIONS: CoachPermissions = {
   allowClassSchedules: true,
   allowWorkoutPrograms: true,
   allowNutritionPlans: true,
-  allowSupportTickets: true
+  allowSupportTickets: true,
+  allowDirectMessaging: true,
+
+  // Default User Dashboard Features (All Enabled by Default)
+  showUserNutritionTracker: true,
+  showUserWorkoutLogger: true,
+  showUserBillingHistory: true,
+  showUserLiveVideoCalls: true,
+  showUserSelfAssessment: true,
+  showUserCommunityFeed: true,
 };
 
 // Seed initial data (Only essential system admin for initial setup)
@@ -1215,14 +1224,14 @@ export const VelocityAPI = {
       const res = await fetch('/api/trainers');
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           return data;
         }
       }
     } catch {
       // Fallback silently
     }
-    return TRAINERS_DATA;
+    return [];
   },
 
   async addTrainerAsync(trainerData: Partial<BxTrainer>): Promise<{ success: boolean; data?: BxTrainer; error?: string }> {

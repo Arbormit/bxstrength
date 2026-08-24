@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, Users, CheckCircle, ShieldCheck, MapPin } from 'lucide-react';
+import { Award, Users, CheckCircle, ShieldCheck, Globe } from 'lucide-react';
 
 export const TrustBar: React.FC = () => {
   const trustItems = [
@@ -10,8 +10,8 @@ export const TrustBar: React.FC = () => {
     },
     {
       icon: Users,
-      value: '15+ UK COACHES',
-      label: 'Certified Master Trainers',
+      value: '1,000+ CLIENTS',
+      label: 'Transformed Worldwide',
     },
     {
       icon: CheckCircle,
@@ -20,13 +20,13 @@ export const TrustBar: React.FC = () => {
     },
     {
       icon: ShieldCheck,
-      value: 'UK CERTIFIED',
-      label: 'CIMSPA & REP Register',
+      value: 'EXPERT VERIFIED',
+      label: 'Verified Master Coaches',
     },
     {
-      icon: MapPin,
-      value: 'UK FOCUSED',
-      label: 'London HQ & Remote Digital',
+      icon: Globe,
+      value: 'GLOBAL VIRTUAL',
+      label: '100% Bespoke Virtual Coaching',
     },
   ];
 

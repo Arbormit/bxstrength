@@ -160,36 +160,6 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-3.5">
-            {/* Role Selection */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                Select Account Type / Role *
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRole('client')}
-                  className={`py-2 px-3 text-xs font-extrabold uppercase rounded-lg border text-center transition-all cursor-pointer ${
-                    role === 'client'
-                      ? 'bg-[#E52165] border-[#E52165] text-white shadow-md shadow-[#E52165]/30 ring-1 ring-[#E52165]'
-                      : 'bg-[#18181b] border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                  }`}
-                >
-                  Client / Athlete
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole('user')}
-                  className={`py-2 px-3 text-xs font-extrabold uppercase rounded-lg border text-center transition-all cursor-pointer ${
-                    role === 'user'
-                      ? 'bg-[#E52165] border-[#E52165] text-white shadow-md shadow-[#E52165]/30 ring-1 ring-[#E52165]'
-                      : 'bg-[#18181b] border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                  }`}
-                >
-                  Member / User
-                </button>
-              </div>
-            </div>
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1">
                 Full Name *
@@ -236,7 +206,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   maxLength={128}
-                  placeholder="At least 6 characters"
+                  placeholder="Enter security password"
                   className="w-full bg-[#18181b] border border-zinc-800 focus:border-zinc-600 text-white pl-10 pr-10 py-2.5 text-xs font-bold rounded-lg outline-none"
                 />
                 <button

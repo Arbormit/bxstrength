@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, CheckCircle2, ChevronRight, ChevronLeft, Dumbbell, ShieldCheck, 
   Flame, ArrowRight, Activity, Clock, Target, UserCheck, Lock, CreditCard, 
-  Zap, Layers, RefreshCw, Check, AlertCircle, ShoppingBag, Eye, ExternalLink 
+  Zap, Layers, RefreshCw, Check, AlertCircle, ShoppingBag, Eye, EyeOff, ExternalLink 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { VelocityAPI } from '../services/api';
@@ -47,6 +47,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
   const [authEmail, setAuthEmail] = useState<string>('');
   const [authPhone, setAuthPhone] = useState<string>('');
   const [authPassword, setAuthPassword] = useState<string>('');
+  const [showAuthPassword, setShowAuthPassword] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Stripe Payment State
@@ -516,14 +517,24 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">Password *</label>
-                  <input
-                    type="password"
-                    required
-                    value={authPassword}
-                    onChange={(e) => setAuthPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-[#121214] border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-[#CCFF00]"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showAuthPassword ? 'text' : 'password'}
+                      required
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      maxLength={128}
+                      placeholder="Enter security password"
+                      className="w-full bg-[#121214] border border-zinc-700 rounded-lg pl-4 pr-11 py-3 text-sm text-white focus:outline-none focus:border-[#CCFF00]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAuthPassword(!showAuthPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
+                    >
+                      {showAuthPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 

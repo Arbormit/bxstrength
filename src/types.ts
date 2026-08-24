@@ -12,6 +12,15 @@ export interface CoachPermissions {
   allowWorkoutPrograms: boolean;   // Workout Program Builder tab
   allowNutritionPlans: boolean;    // Diet Plans tab
   allowSupportTickets: boolean;    // Support Ticket Desk tab
+  allowDirectMessaging?: boolean;  // Direct 1-on-1 Client Chat
+
+  // User / Client Dashboard Feature Toggles (Admin-Controlled Visibility)
+  showUserNutritionTracker?: boolean;    // Calorie & Macro Meal Tracker
+  showUserWorkoutLogger?: boolean;       // Workout Routine & Exercise Logger
+  showUserBillingHistory?: boolean;      // Invoices & Subscription Billing
+  showUserLiveVideoCalls?: boolean;      // Virtual Consultation Video Link
+  showUserSelfAssessment?: boolean;      // 60-Sec Performance Self Assessment
+  showUserCommunityFeed?: boolean;       // Athlete Community Board
 }
 
 export type SubscriptionTier = 'Normal User' | 'Premium User' | 'Premium Elite User';

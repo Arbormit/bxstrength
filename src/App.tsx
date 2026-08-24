@@ -28,6 +28,7 @@ import { RegisterModal } from './components/auth/RegisterModal';
 import { ForgotPasswordModal } from './components/auth/ForgotPasswordModal';
 import { SeoHead } from './components/SeoHead';
 import { FloatingActionWidget } from './components/ui/FloatingActionWidget';
+import { Lock } from 'lucide-react';
 import { ChatbotWidget } from './components/ui/ChatbotWidget';
 import { ServiceCustomizationModal } from './components/ServiceCustomizationModal';
 import { Preloader } from './components/ui/Preloader';
@@ -261,10 +262,36 @@ function AppContent() {
         )}
 
         {currentPage === 'schedule' && (
-          <ScheduleView
-            onOpenBookingWithDetails={handleOpenBookingWithDetails}
-            onNavigateToAdmin={() => setCurrentPage('admin')}
-          />
+          isAuthenticated ? (
+            <ScheduleView
+              onOpenBookingWithDetails={handleOpenBookingWithDetails}
+              onNavigateToAdmin={() => setCurrentPage('admin')}
+            />
+          ) : (
+            <div className="bg-[#0a0a0a] min-h-[70vh] flex flex-col items-center justify-center text-center p-6 space-y-4 font-sans">
+              <div className="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-[#CCFF00]">
+                <Lock className="w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight">MEMBERS ONLY TIMETABLE</h2>
+              <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+                Class timetables and live schedule bookings are exclusively available for registered members. Please sign in or create a free account to view.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <button
+                  onClick={() => setLoginModalOpen(true)}
+                  className="w-full sm:w-auto bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase px-6 py-3 rounded-xl cursor-pointer shadow-lg"
+                >
+                  SIGN IN TO VIEW TIMETABLE
+                </button>
+                <button
+                  onClick={() => setRegisterModalOpen(true)}
+                  className="w-full sm:w-auto bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs uppercase px-6 py-3 rounded-xl cursor-pointer shadow-lg shadow-[#CCFF00]/20"
+                >
+                  CREATE FREE ACCOUNT
+                </button>
+              </div>
+            </div>
+          )
         )}
 
         {currentPage === 'trainers' && (

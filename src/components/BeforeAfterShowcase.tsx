@@ -28,7 +28,7 @@ export interface TransformationItem {
 export const TRANSFORMATIONS: TransformationItem[] = [
   {
     id: 'marcus-130-80',
-    name: 'Hamza Khan',
+    name: 'Marcus Vance',
     age: 34,
     location: 'London, UK',
     coach: 'Shaban Faridi',

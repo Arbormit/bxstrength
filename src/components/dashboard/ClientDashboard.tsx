@@ -78,15 +78,17 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
     setTimeout(() => setToastMsg(null), 4000);
   };
 
+  const permissions = VelocityAPI.getCoachPermissions();
+
   const navItems = [
     { id: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
     { id: 'stats', label: 'BODY STATS & BMI', icon: Scale },
-    { id: 'workouts', label: 'WORKOUT PLANS', icon: Dumbbell },
-    { id: 'nutrition', label: 'NUTRITION DIET', icon: Utensils },
+    ...(permissions.showUserWorkoutLogger !== false ? [{ id: 'workouts', label: 'WORKOUT PLANS', icon: Dumbbell }] : []),
+    ...(permissions.showUserNutritionTracker !== false ? [{ id: 'nutrition', label: 'NUTRITION DIET', icon: Utensils }] : []),
     { id: 'bookings', label: 'MY BOOKINGS', icon: Calendar },
     { id: 'achievements', label: 'ACHIEVEMENTS', icon: Award },
     { id: 'tickets', label: 'SUPPORT TICKETS', icon: LifeBuoy },
-    { id: 'subscription', label: 'SUBSCRIPTION', icon: CreditCard },
+    ...(permissions.showUserBillingHistory !== false ? [{ id: 'subscription', label: 'SUBSCRIPTION', icon: CreditCard }] : []),
     { id: 'profile', label: 'MY PROFILE', icon: UserCheck }
   ];
 

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Calendar, User as UserIcon, Clock, ArrowRight, Dumbbell, Shield, BookOpen, TrendingUp, ShieldCheck, AlertCircle, Command, Activity, HeartPulse, Send, CheckCircle2, MessageSquare, HelpCircle } from 'lucide-react';
 import { 
   CLASSES_DATA, 
-  TRAINERS_DATA, 
   SERVICES_DATA, 
   BLOG_POSTS_DATA, 
   MEMBERSHIP_PLANS 
@@ -598,24 +597,17 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             /* Results display grouped by category */
             <div className="space-y-6">
               
-              {/* Top Banner: String Capture Trigger for Custom Queries */}
-              <div className="bg-emerald-950/40 border border-emerald-800/80 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              {/* Top Banner: Informational Protocol Guidance */}
+              <div className="bg-zinc-900/90 border border-zinc-800 p-4 rounded-xl">
                 <div className="space-y-1">
                   <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
                     <HeartPulse className="w-4 h-4 text-emerald-400" />
-                    <span>HAVING SPECIFIC ISSUES WITH "{query.toUpperCase()}"?</span>
+                    <span>SCIENTIFIC RECOVERY &amp; DIAGNOSTIC GUIDES FOR "{query.toUpperCase()}"</span>
                   </h4>
                   <p className="text-[11px] text-zinc-300">
-                    Reach out directly to BxStrength Senior Coaches & Admin to capture your exact symptom string for bespoke guidance.
+                    Review clinical protocols, periodized training adjustments, and biomechanical guides compiled by BxStrength specialists.
                   </p>
                 </div>
-                <button
-                  onClick={() => setShowConsultForm(true)}
-                  className="bg-emerald-400 hover:bg-emerald-300 text-black text-[10px] font-black tracking-widest px-4 py-2.5 rounded uppercase transition-colors shrink-0 cursor-pointer flex items-center gap-1.5"
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>CONSULT SPECIALISTS</span>
-                </button>
               </div>
 
               {/* Group: Primary Symptom Topic Match & Related Topics */}
@@ -693,15 +685,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              onClose();
-                              onOpenBookingWithTrainer(trainer.name);
-                            }}
-                            className="bg-white hover:bg-zinc-200 text-black text-[10px] font-black tracking-widest px-4 py-2 rounded uppercase transition-colors cursor-pointer"
-                          >
-                            BOOK COACH
-                          </button>
+                          <span className="text-[10px] font-extrabold uppercase text-zinc-400 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded">
+                            Verified Credentials
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -712,7 +698,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   <div className="bg-[#18181b] border border-zinc-800/80 p-4 rounded-lg text-center space-y-1">
                     <UserIcon className="w-5 h-5 text-zinc-500 mx-auto" />
                     <p className="text-xs text-zinc-300 font-bold uppercase">No coaches currently available in database</p>
-                    <p className="text-[11px] text-zinc-500 font-normal">Contact admin or book a discovery consultation for custom coach matching.</p>
+                    <p className="text-[11px] text-zinc-500 font-normal">Coach credentials and professional qualifications available upon dynamic database update.</p>
                   </div>
                 ) : null
               )}

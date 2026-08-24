@@ -191,6 +191,7 @@ export const CoachesManager: React.FC<CoachesManagerProps> = ({ user, onShowToas
         onShowToast(`Coach card "${name}" updated live in NeonDB!`);
         setIsModalOpen(false);
         fetchTrainers();
+        window.dispatchEvent(new CustomEvent('bxstrength_trainers_updated'));
       } else {
         onShowToast(res.error || 'Failed to update coach');
       }
@@ -200,6 +201,7 @@ export const CoachesManager: React.FC<CoachesManagerProps> = ({ user, onShowToas
         onShowToast(`Coach card "${name}" added live to NeonDB database!`);
         setIsModalOpen(false);
         fetchTrainers();
+        window.dispatchEvent(new CustomEvent('bxstrength_trainers_updated'));
       } else {
         onShowToast(res.error || 'Failed to add coach');
       }
@@ -218,8 +220,9 @@ export const CoachesManager: React.FC<CoachesManagerProps> = ({ user, onShowToas
     setDeletingTrainerTarget(null);
     const res = await VelocityAPI.deleteTrainerAsync(id);
     if (res.success) {
-      onShowToast(`Coach card for "${coachName}" permanently removed from NeonDB database!`);
+      onShowToast(`Coach "${coachName}" deleted from NeonDB database.`);
       fetchTrainers();
+      window.dispatchEvent(new CustomEvent('bxstrength_trainers_updated'));
     } else {
       onShowToast(res.error || 'Failed to delete coach');
     }

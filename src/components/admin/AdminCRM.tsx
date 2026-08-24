@@ -139,6 +139,40 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
     ? allNavItems.filter((item) => allowedCoachTabs.includes(item.id))
     : allNavItems;
 
+  const groupedNavSections = [
+    {
+      category: 'CORE MANAGEMENT',
+      items: [
+        { id: 'overview', label: isCoach ? 'COACH DASHBOARD' : 'CRM OVERVIEW', icon: LayoutDashboard },
+        { id: 'users', label: isCoach ? 'CLIENT ROSTER' : 'USER DIRECTORY', icon: Users },
+        { id: 'coaches', label: 'COACH CARDS MANAGER', icon: UserCheck },
+      ]
+    },
+    {
+      category: 'ATHLETIC PROGRAMMING',
+      items: [
+        { id: 'schedule', label: 'CLASS SCHEDULES', icon: Calendar },
+        { id: 'programs', label: 'WORKOUT PROGRAMS', icon: Dumbbell },
+        { id: 'nutrition', label: 'DIET PLANS', icon: Utensils },
+      ]
+    },
+    {
+      category: 'FINANCE & COMMUNICATIONS',
+      items: [
+        { id: 'subscriptions', label: 'FINANCIAL BILLING', icon: CreditCard },
+        { id: 'enquiries', label: 'WEBSITE ENQUIRIES', icon: Mail },
+        { id: 'tickets', label: 'SUPPORT TICKETS', icon: LifeBuoy },
+        { id: 'announcements', label: 'ANNOUNCEMENTS', icon: ShieldAlert },
+      ]
+    },
+    {
+      category: 'GOVERNANCE & SECURITY',
+      items: [
+        { id: 'audit', label: 'SECURITY & PERMISSIONS', icon: ShieldCheck }
+      ]
+    }
+  ];
+
   // Auto-redirect coach if currently on a restricted tab (e.g., Financial Billing)
   useEffect(() => {
     if (isCoach && !allowedCoachTabs.includes(activeTab)) {
@@ -182,24 +216,38 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
             </div>
           </div>
 
-          {/* Nav Items */}
-          <nav className="p-3 space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
+          {/* Grouped Nav Items */}
+          <nav className="p-3 space-y-4">
+            {groupedNavSections.map((group) => {
+              const visibleItems = group.items.filter((item) => navItems.some((n) => n.id === item.id));
+              if (visibleItems.length === 0) return null;
+
               return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-colors text-left rounded-lg ${
-                    isActive
-                      ? 'bg-white text-black shadow-md'
-                      : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-black' : 'text-zinc-400'}`} />
-                  <span>{item.label}</span>
-                </button>
+                <div key={group.category} className="space-y-1">
+                  <div className="px-3 pt-3 pb-1.5 border-b border-zinc-800/60 mb-1">
+                    <h3 className="text-[11px] font-black tracking-widest text-zinc-400 uppercase">
+                      {group.category}
+                    </h3>
+                  </div>
+                  {visibleItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveTab(item.id)}
+                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all text-left rounded-lg ${
+                          isActive
+                            ? 'bg-white text-black shadow-md font-extrabold ring-1 ring-white/50'
+                            : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 ${isActive ? 'text-black' : 'text-zinc-400'}`} />
+                        <span className="truncate">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
           </nav>

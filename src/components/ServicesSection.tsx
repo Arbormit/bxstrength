@@ -27,18 +27,6 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
 
   const services: ServiceItem[] = [
     {
-      title: '1-ON-1 BESPOKE STRENGTH & RECOMPOSITION',
-      icon: Dumbbell,
-      category: 'STRENGTH',
-      discountTag: '20% OFF',
-      originalPrice: 50,
-      discountedPrice: 40,
-      priceUnit: '/ session',
-      problem: 'Stuck in training plateaus with generic workout apps, inconsistent form, or losing muscle during weight loss.',
-      solution: 'Periodized strength programming with video technique correction, structural balance work, and targeted progressive overload.',
-      result: 'Noticeable strength gains within 4 weeks, improved posture, and sustainable body recomposition without overtraining.',
-    },
-    {
       title: 'EXECUTIVE METABOLIC CONDITIONING',
       icon: Flame,
       category: 'FAT LOSS',
