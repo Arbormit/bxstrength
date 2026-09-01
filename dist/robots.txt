@@ -1,0 +1,15 @@
+# BxStrength - Global Performance Coaching & Boxing Platform Search Engine Robots File
+User-agent: *
+Allow: /
+Allow: /#trainers
+Allow: /#services
+Allow: /#pricing
+Allow: /#about
+Allow: /#contact
+Disallow: /api/
+Disallow: /admin
+Disallow: /dashboard
+
+# Crawl Delay & Sitemap Index
+Crawl-delay: 1
+Sitemap: https://bxstrength.com/sitemap.xml

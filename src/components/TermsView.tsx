@@ -108,7 +108,7 @@ export const TermsView: React.FC = () => {
             6. Governing Law & Contact Information
           </h2>
           <p className="text-xs text-gray-600">
-            These Terms shall be governed by and construed in accordance with the laws of India. For legal inquiries, dispute resolution, or membership support, contact our legal desk at <a href="mailto:info@velocityfitness@gmail.com" className="text-[#E52165] font-bold underline">info@velocityfitness@gmail.com</a>.
+            These Terms shall be governed by and construed in accordance with the laws of India. For legal inquiries, dispute resolution, or membership support, contact our legal desk at <a href="mailto:support@bxstrength.com" className="text-emerald-600 font-bold underline">support@bxstrength.com</a>.
           </p>
         </section>
 

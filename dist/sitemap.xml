@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- Homepage & Core Fitness Hub -->
+  <url>
+    <loc>https://bxstrength.com/</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en-gb" href="https://bxstrength.com/" />
+    <xhtml:link rel="alternate" hreflang="en-us" href="https://bxstrength.com/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://bxstrength.com/" />
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&amp;fit=crop&amp;q=80&amp;w=1200</image:loc>
+      <image:title>BxStrength UK &amp; USA Premier Fitness Coaching</image:title>
+    </image:image>
+  </url>
+
+  <!-- Coaches & Trainers Showcase Section -->
+  <url>
+    <loc>https://bxstrength.com/#trainers</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&amp;fit=crop&amp;q=80&amp;w=600</image:loc>
+      <image:title>Head Coach Shaban Faridi - Boxing &amp; Physiotherapy</image:title>
+    </image:image>
+  </url>
+
+  <!-- Services & Programs Section -->
+  <url>
+    <loc>https://bxstrength.com/#services</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- About View -->
+  <url>
+    <loc>https://bxstrength.com/#about</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Pricing & Memberships -->
+  <url>
+    <loc>https://bxstrength.com/#pricing</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Contact & Consultations -->
+  <url>
+    <loc>https://bxstrength.com/#contact</loc>
+    <lastmod>2026-08-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

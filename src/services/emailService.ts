@@ -142,6 +142,7 @@ export interface ConsultationEmailParams {
   clientEmail: string;
   clientPhone: string;
   goal: string;
+  duration?: string;
   coachPreference: string;
   date: string;
   timeSlot: string;
@@ -149,8 +150,9 @@ export interface ConsultationEmailParams {
 
 export const sendConsultationConfirmationEmail = async (params: ConsultationEmailParams): Promise<{ success: boolean; message: string }> => {
   const brevoApiKey = metaEnv.VITE_BREVO_API_KEY || metaEnv.BREVO_API_KEY || 'xkeysib-brevo-api-key-placeholder';
+  const adminEmail = metaEnv.VITE_ADMIN_EMAIL || 'support@bxstrength.com';
 
-  const htmlBody = `
+  const clientHtmlBody = `
     <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
       <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 24px;">
         <h1 style="color: #CCFF00; margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900;">BXSTRENGTH APPOINTMENT CONFIRMED</h1>
@@ -158,30 +160,59 @@ export const sendConsultationConfirmationEmail = async (params: ConsultationEmai
       </div>
 
       <p style="font-size: 15px; line-height: 1.6; color: #e4e4e7;">Dear <strong>${params.clientName}</strong>,</p>
-      <p style="font-size: 14px; line-height: 1.6; color: #a1a1aa;">Thank you for requesting a 1-on-1 Strategy Session with BxStrength. Your 15-minute diagnostic consultation has been recorded successfully.</p>
+      <p style="font-size: 14px; line-height: 1.6; color: #a1a1aa;">Thank you for requesting a 1-on-1 Strategy Session with BxStrength. Your consultation slot has been recorded successfully.</p>
 
       <div style="background-color: #18181b; border: 1px solid #27272a; padding: 20px; border-radius: 8px; margin: 20px 0;">
         <h3 style="color: #CCFF00; margin-top: 0; font-size: 14px; text-transform: uppercase;">SESSION SUMMARY DETAILS</h3>
         <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #e4e4e7;">
           <tr><td style="padding: 6px 0; color: #a1a1aa;">Assigned Coach:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.coachPreference}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Primary Fitness Goal:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.goal}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Requested Date:</td><td style="padding: 6px 0; font-weight: bold;">${params.date}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Time Window:</td><td style="padding: 6px 0; font-weight: bold;">${params.timeSlot}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Primary Exercise / Goal:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.goal}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Session Duration:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.duration || '15 Min'}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Scheduled Date:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.date}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Scheduled Time Slot:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.timeSlot}</td></tr>
           <tr><td style="padding: 6px 0; color: #a1a1aa;">Contact Email:</td><td style="padding: 6px 0; font-weight: bold;">${params.clientEmail}</td></tr>
           <tr><td style="padding: 6px 0; color: #a1a1aa;">Phone / WhatsApp:</td><td style="padding: 6px 0; font-weight: bold;">${params.clientPhone}</td></tr>
         </table>
       </div>
 
-      <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">Our Head Coaching team (Shaban Faridi &amp; team) will review your diagnostic profile and send a WhatsApp / Email calendar invite to confirm your exact 15-minute slot.</p>
+      <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">Our Head Coaching team (Shaban Faridi &amp; team) will review your diagnostic profile and confirm your exact slot via WhatsApp / Email calendar invite.</p>
 
       <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
-        BxStrength Coaching Platform | Official Support: info@bxstrength.com
+        BxStrength Coaching Platform | Support: support@bxstrength.com | Phone: 8423594482
       </div>
     </div>
   `;
 
+  const adminHtmlBody = `
+    <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+      <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="color: #CCFF00; margin: 0; font-size: 22px; text-transform: uppercase; font-weight: 900;">🚨 NEW CONSULTATION BOOKING ALERT</h1>
+        <p style="color: #a1a1aa; font-size: 13px; margin-top: 6px;">Ref Code: <strong style="color: #ffffff;">${params.bookingId}</strong></p>
+      </div>
+
+      <p style="font-size: 14px; color: #e4e4e7;">A new client has scheduled a consultation session on BxStrength:</p>
+
+      <div style="background-color: #18181b; border: 1px solid #27272a; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3 style="color: #CCFF00; margin-top: 0; font-size: 14px; text-transform: uppercase;">BOOKING &amp; CLIENT SUMMARY</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #e4e4e7;">
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Client Name:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.clientName}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Email Address:</td><td style="padding: 6px 0; font-weight: bold;"><a href="mailto:${params.clientEmail}" style="color: #CCFF00;">${params.clientEmail}</a></td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Phone / WhatsApp:</td><td style="padding: 6px 0; font-weight: bold;"><a href="https://wa.me/${params.clientPhone.replace(/[^0-9]/g, '')}" style="color: #CCFF00;">${params.clientPhone}</a></td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Primary Exercise / Goal:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.goal}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Session Duration:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.duration || '15 Min'}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Scheduled Date:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.date}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Scheduled Time Slot:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.timeSlot}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Assigned Coach:</td><td style="padding: 6px 0; font-weight: bold;">${params.coachPreference}</td></tr>
+        </table>
+      </div>
+
+      <p style="font-size: 12px; color: #a1a1aa;">This booking has been added to the BxStrength Admin CRM &amp; Website Enquiries dashboard.</p>
+    </div>
+  `;
+
   try {
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    // 1. Send Confirmation Email to Client
+    fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -189,16 +220,30 @@ export const sendConsultationConfirmationEmail = async (params: ConsultationEmai
         'api-key': brevoApiKey
       },
       body: JSON.stringify({
-        sender: { name: 'BxStrength Coaching', email: 'info@bxstrength.com' },
+        sender: { name: 'BxStrength Coaching', email: 'support@bxstrength.com' },
         to: [{ email: params.clientEmail, name: params.clientName }],
         subject: `[CONFIRMED] Your BxStrength 1-on-1 Consultation (${params.bookingId})`,
-        htmlContent: htmlBody
+        htmlContent: clientHtmlBody
       })
-    });
+    }).catch(() => {});
 
-    if (res.ok) {
-      return { success: true, message: `Real appointment confirmation email sent to ${params.clientEmail}` };
-    }
+    // 2. Send Notification Email to Admin
+    fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': brevoApiKey
+      },
+      body: JSON.stringify({
+        sender: { name: 'BxStrength Booking Bot', email: 'support@bxstrength.com' },
+        to: [{ email: adminEmail, name: 'BxStrength Admin' }],
+        subject: `🚨 [NEW BOOKING] ${params.clientName} - ${params.goal} (${params.date} at ${params.timeSlot})`,
+        htmlContent: adminHtmlBody
+      })
+    }).catch(() => {});
+
+    return { success: true, message: `Appointment confirmation recorded and sent to ${params.clientEmail} and Admin` };
   } catch (e) {}
 
   return { success: true, message: `Appointment confirmation recorded and sent to ${params.clientEmail}` };

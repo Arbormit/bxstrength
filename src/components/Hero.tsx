@@ -7,8 +7,8 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = () => {
-  const phoneNumber = "+447000000000";
-  const whatsappNumber = "447000000000";
+  const phoneNumber = "+918423594482";
+  const whatsappNumber = "918423594482";
   const whatsappMessage = encodeURIComponent("Hi BxStrength! I would like to inquire about 1-on-1 Virtual Fitness & Boxing Coaching.");
 
   return (

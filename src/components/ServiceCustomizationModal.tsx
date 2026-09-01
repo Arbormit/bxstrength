@@ -15,6 +15,7 @@ interface ServiceCustomizationModalProps {
   service: {
     title: string;
     category: string;
+    price?: number | string;
     discountedPrice?: number;
     originalPrice?: number;
     priceUnit?: string;
@@ -84,12 +85,36 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
     }
   }, [user, isOpen]);
 
+  // Auto-skip Category Select (Step 1) & Custom Exercises (Step 2) for "Individual Service" category
+  useEffect(() => {
+    if (isOpen && service) {
+      const isIndividual = service.category === 'Individual Service' || service.category === 'Individual';
+      if (isIndividual) {
+        setServiceType('individual');
+        if (user) {
+          setStep(4); // Logged in: Go directly to Order Preview
+        } else {
+          setStep(3); // Not logged in: Go directly to Signup / Login
+        }
+      } else {
+        // Custom, Core Package, and Programme categories can select customization/options
+        setStep(1);
+      }
+    }
+  }, [isOpen, service]);
+
   if (!isOpen || !service) return null;
 
-  // Base & Dynamic Pricing Calculations
-  const basePrice = service.discountedPrice || 40;
-  const customExercisesPrice = serviceType === 'custom' ? selectedExercises.length * 8 : 0;
-  const totalPrice = serviceType === 'custom' ? basePrice + customExercisesPrice : basePrice;
+  // Base & Dynamic Pricing Calculations derived directly from card's price
+  const rawPrice = service.price ?? service.discountedPrice ?? 0;
+  const basePrice = typeof rawPrice === 'string'
+    ? (parseFloat(rawPrice.replace(/[^0-9.]/g, '')) || 0)
+    : Number(rawPrice);
+
+  // If user selects multiple trainings in custom mode, add cost for additional selected trainings beyond 1
+  const additionalTrainingsCount = Math.max(0, selectedExercises.length - 1);
+  const extraTrainingsCost = serviceType === 'custom' ? additionalTrainingsCount * 10 : 0;
+  const totalPrice = basePrice + extraTrainingsCost;
 
   // Expiry Date (1 Month / 30 Days from today)
   const today = new Date();
@@ -264,34 +289,64 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
         {/* Modal Body Container */}
         <div className="p-5 sm:p-8 overflow-y-auto flex-1">
 
-          {/* Stepper Navigation Indicator (Steps 1–5) */}
-          {step < 6 && (
-            <div className="flex items-center justify-between gap-2 mb-6 pb-4 border-b border-zinc-800/80">
-              <div className="flex items-center gap-2">
-                {step > 1 && (
+          {/* Stepper Navigation Indicator */}
+          {step < 6 && (() => {
+            const isIndividual = service.category === 'Individual Service' || service.category === 'Individual';
+            
+            const handleBack = () => {
+              if (isIndividual) {
+                if (step === 4 && !user) setStep(3); // Back to Signup from Preview
+                else onClose(); // Close modal if backing out from Signup or if user is logged in
+              } else {
+                if (step === 4 && serviceType === 'custom') setStep(2);
+                else if (step === 4 && serviceType === 'individual') setStep(1);
+                else if (step === 3 && serviceType === 'custom') setStep(2);
+                else if (step === 3) setStep(1);
+                else setStep(step - 1);
+              }
+            };
+
+            const getStepLabel = () => {
+              if (isIndividual) {
+                if (!user) {
+                  if (step === 3) return 'STEP 1 OF 3: ACCOUNT SIGNUP';
+                  if (step === 4) return 'STEP 2 OF 3: ORDER PREVIEW';
+                  if (step === 5) return 'STEP 3 OF 3: STRIPE PAYMENT';
+                } else {
+                  if (step === 4) return 'STEP 1 OF 2: ORDER PREVIEW';
+                  if (step === 5) return 'STEP 2 OF 2: STRIPE PAYMENT';
+                }
+              }
+              return `STEP ${step} OF 5: ${
+                step === 1 ? 'CATEGORY SELECT' : 
+                step === 2 ? 'CUSTOM EXERCISES' : 
+                step === 3 ? 'ACCOUNT SIGNUP' : 
+                step === 4 ? 'ORDER PREVIEW' : 'STRIPE PAYMENT'
+              }`;
+            };
+
+            return (
+              <div className="flex items-center justify-between gap-2 mb-6 pb-4 border-b border-zinc-800/80">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (step === 4 && serviceType === 'custom') setStep(2);
-                      else if (step === 4 && serviceType === 'individual') setStep(1);
-                      else setStep(step - 1);
-                    }}
+                    onClick={handleBack}
                     className="flex items-center gap-1 text-xs font-black uppercase tracking-wider text-zinc-200 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg border border-zinc-700 transition-all cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4 text-[#CCFF00]" />
                     <span>Back</span>
                   </button>
-                )}
-                <span className="text-xs font-black uppercase tracking-widest text-zinc-300">
-                  STEP {step} OF 5: {step === 1 && 'CATEGORY SELECT'} {step === 2 && 'CUSTOM EXERCISES'} {step === 3 && 'ACCOUNT SIGNUP'} {step === 4 && 'ORDER PREVIEW'} {step === 5 && 'STRIPE PAYMENT'}
-                </span>
-              </div>
+                  <span className="text-xs font-black uppercase tracking-widest text-zinc-300">
+                    {getStepLabel()}
+                  </span>
+                </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#CCFF00]">${totalPrice}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#CCFF00]">${totalPrice}</span>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* STEP 1: CATEGORY SELECTION (INDIVIDUAL vs CUSTOM) */}
           {step === 1 && (
@@ -659,8 +714,8 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                 </div>
                 {serviceType === 'custom' && (
                   <div className="flex justify-between text-zinc-400">
-                    <span>Custom Exercise Additions ({selectedExercises.length})</span>
-                    <span>+${customExercisesPrice}.00</span>
+                    <span>Additional Training Additions ({additionalTrainingsCount})</span>
+                    <span>+${extraTrainingsCost}.00</span>
                   </div>
                 )}
                 <div className="flex justify-between text-[#CCFF00] font-bold">

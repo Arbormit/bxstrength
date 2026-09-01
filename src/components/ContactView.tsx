@@ -93,9 +93,9 @@ export const ContactView: React.FC = () => {
               <div className="flex items-start gap-4 p-5 bg-[#121214] border border-zinc-800 rounded-xl">
                 <MapPin className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-black text-white uppercase">LONDON HEADQUARTERS</p>
-                  <p className="mt-1 text-zinc-400">
-                    Mayfair Place, Mayfair, London W1J 8AJ, United Kingdom
+                  <p className="font-black text-white uppercase">HEADQUARTERS ADDRESS</p>
+                  <p className="mt-1 text-zinc-300 font-semibold leading-relaxed">
+                    185/A, Streetno. 3, Zakir nagar, Okhla, New Delhi - 110025
                   </p>
                 </div>
               </div>
@@ -104,20 +104,23 @@ export const ContactView: React.FC = () => {
                 <Mail className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-black text-white uppercase">EMAIL ADVISORY</p>
-                  <p className="mt-1 text-white font-bold">info@bxstrength.com</p>
-                  <p className="text-zinc-400 text-[11px]">24/7 Digital Form &amp; Client Support</p>
+                  <a href="mailto:support@bxstrength.com" className="mt-1 text-white font-bold hover:underline block">
+                    support@bxstrength.com
+                  </a>
+                  <p className="text-zinc-400 text-[11px]">24/7 Client Support &amp; Technical Queries</p>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-[#121214] text-white p-6 border border-zinc-800 rounded-xl space-y-2">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <p className="text-xs font-black text-white uppercase">UK GDPR & Data Privacy</p>
+              <div className="flex items-start gap-4 p-5 bg-[#121214] border border-zinc-800 rounded-xl">
+                <Phone className="w-5 h-5 text-[#CCFF00] flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-black text-white uppercase">CALL &amp; WHATSAPP SUPPORT</p>
+                  <a href="https://wa.me/918423594482" target="_blank" rel="noopener noreferrer" className="mt-1 text-[#CCFF00] font-black text-sm hover:underline block">
+                    8423594482
+                  </a>
+                  <p className="text-zinc-400 text-[11px]">Direct Line for Calls &amp; Instant WhatsApp Advisory</p>
+                </div>
               </div>
-              <p className="text-xs text-zinc-400">
-                Your personal assessment data and contact information are protected under UK GDPR standards and strictly confidential.
-              </p>
             </div>
           </div>
 

@@ -105,7 +105,7 @@ export const PrivacyView: React.FC = () => {
             5. Contact Our Data Protection Officer (DPO)
           </h2>
           <p className="text-xs text-gray-600">
-            If you have questions regarding this Privacy Policy or wish to exercise your data rights, reach out to our DPO at <a href="mailto:privacy@velocityfitness.com" className="text-[#E52165] font-bold underline">privacy@velocityfitness.com</a> or write to: Velocity Fitness Data Protection Office, New Delhi, India.
+            If you have questions regarding this Privacy Policy or wish to exercise your data rights, reach out to our DPO at <a href="mailto:support@bxstrength.com" className="text-emerald-600 font-bold underline">support@bxstrength.com</a> or write to: BxStrength Data Protection Office, 185/A, Streetno. 3, Zakir nagar, Okhla, New Delhi - 110025.
           </p>
         </section>
 

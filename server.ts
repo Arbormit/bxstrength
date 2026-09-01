@@ -536,10 +536,10 @@ app.post('/api/assessments', enquiryLimiter, async (req, res) => {
   }
 });
 
-// --- 30-MIN DISCOVERY CONSULTATION BOOKINGS ---
+// --- FREE CONSULTATION BOOKINGS ---
 app.post('/api/consultations', enquiryLimiter, async (req, res) => {
   try {
-    const { name, email, phone, goal, coachPreference, preferredDate, preferredTime } = req.body;
+    const { name, email, phone, goal, duration, coachPreference, preferredDate, preferredTime } = req.body;
     if (!name || !email) {
       return res.status(400).json({ error: 'Required booking parameters missing' });
     }
@@ -547,13 +547,14 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
     const leadName = sanitizeInput(name);
     const leadEmail = sanitizeInput(email).toLowerCase();
     const leadPhone = sanitizeInput(phone || '');
-    const leadGoal = sanitizeInput(goal || 'Strength');
+    const leadGoal = sanitizeInput(goal || 'Fitness Boxing');
+    const leadDuration = sanitizeInput(duration || '20 Min');
     const coach = sanitizeInput(coachPreference || 'Head Coach Assignment');
     const date = sanitizeInput(preferredDate || '');
     const time = sanitizeInput(preferredTime || '');
 
-    const bookingRef = `BX-${Math.floor(100000 + Math.random() * 900000)}`;
-    const consultationMessage = `[DISCOVERY CONSULTATION BOOKED]\nRef: ${bookingRef}\nGoal: ${leadGoal}\nCoach Preference: ${coach}\nRequested Slot: ${date} at ${time}`;
+    const bookingRef = `BX-CONS-${Math.floor(100000 + Math.random() * 900000)}`;
+    const consultationMessage = `[FREE CONSULTATION BOOKED]\nRef: ${bookingRef}\nPrimary Exercise / Goal: ${leadGoal}\nSession Duration: ${leadDuration}\nScheduled Date & Time Slot: ${date} at ${time}\nAssigned Coach: ${coach}`;
 
     const enquiryId = `enq-consult-${Date.now()}`;
     const newEnquiry: ServerEnquiry = {
@@ -561,7 +562,7 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
       name: leadName,
       email: leadEmail,
       phone: leadPhone,
-      subject: `30-Min Consultation: ${coach}`,
+      subject: `Free Consultation (${leadDuration}): ${leadGoal}`,
       message: consultationMessage,
       createdAt: new Date().toISOString(),
       status: 'new',
@@ -578,12 +579,152 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
           [enquiryId, leadName, leadEmail, leadPhone, newEnquiry.subject, consultationMessage]
         );
       } catch (e: any) {}
+
+      try {
+        await dbPool.query(
+          `CREATE TABLE IF NOT EXISTS consultations (
+            id VARCHAR(100) PRIMARY KEY,
+            client_name VARCHAR(255) NOT NULL,
+            client_email VARCHAR(255) NOT NULL,
+            client_phone VARCHAR(50),
+            goal VARCHAR(255),
+            duration VARCHAR(50),
+            preferred_date VARCHAR(50),
+            preferred_time VARCHAR(100),
+            status VARCHAR(50) DEFAULT 'Confirmed',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          )`
+        );
+        await dbPool.query(
+          `INSERT INTO consultations (id, client_name, client_email, client_phone, goal, duration, preferred_date, preferred_time, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Confirmed')`,
+          [bookingRef, leadName, leadEmail, leadPhone, leadGoal, leadDuration, date, time]
+        );
+      } catch (e: any) {}
     }
 
-    res.status(201).json({ message: 'Discovery consultation booked successfully', data: newEnquiry });
+    // Trigger Server-side Brevo Email Notifications to Client & Admin
+    const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+    const adminEmail = process.env.VITE_ADMIN_EMAIL || 'support@bxstrength.com';
+
+    if (brevoApiKey) {
+      // 1. Send Client Email
+      fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': brevoApiKey
+        },
+        body: JSON.stringify({
+          sender: { name: 'BxStrength Coaching', email: 'support@bxstrength.com' },
+          to: [{ email: leadEmail, name: leadName }],
+          subject: `[CONFIRMED] Your BxStrength Consultation (${bookingRef})`,
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+              <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">BXSTRENGTH CONSULTATION CONFIRMED</h2>
+              <p style="color: #a1a1aa; font-size: 13px;">Booking Ref: <strong>${bookingRef}</strong></p>
+              <p style="font-size: 14px;">Dear <strong>${leadName}</strong>,</p>
+              <p style="font-size: 14px; color: #a1a1aa;">Your 1-on-1 Strategy &amp; Assessment Session has been scheduled.</p>
+              <div style="background-color: #18181b; padding: 18px; border-radius: 8px; margin: 16px 0; border: 1px solid #27272a;">
+                <p style="margin: 4px 0;"><strong>Primary Goal:</strong> ${leadGoal}</p>
+                <p style="margin: 4px 0;"><strong>Session Duration:</strong> ${leadDuration}</p>
+                <p style="margin: 4px 0;"><strong>Scheduled Date:</strong> ${date}</p>
+                <p style="margin: 4px 0;"><strong>Time Slot:</strong> ${time}</p>
+              </div>
+              <p style="font-size: 12px; color: #71717a;">BxStrength Coaching | Support: support@bxstrength.com | Phone: 8423594482</p>
+            </div>
+          `
+        })
+      }).catch(() => {});
+
+      // 2. Send Admin Alert Email
+      fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': brevoApiKey
+        },
+        body: JSON.stringify({
+          sender: { name: 'BxStrength Booking System', email: 'support@bxstrength.com' },
+          to: [{ email: adminEmail, name: 'BxStrength Admin' }],
+          subject: `🚨 [NEW CONSULTATION] ${leadName} - ${leadGoal} (${date} at ${time})`,
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+              <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">NEW FREE CONSULTATION BOOKED</h2>
+              <p style="color: #a1a1aa; font-size: 13px;">Ref: <strong>${bookingRef}</strong></p>
+              <div style="background-color: #18181b; padding: 18px; border-radius: 8px; margin: 16px 0; border: 1px solid #27272a;">
+                <p style="margin: 4px 0;"><strong>Client Name:</strong> ${leadName}</p>
+                <p style="margin: 4px 0;"><strong>Email:</strong> ${leadEmail}</p>
+                <p style="margin: 4px 0;"><strong>Phone:</strong> ${leadPhone}</p>
+                <p style="margin: 4px 0;"><strong>Primary Goal:</strong> ${leadGoal}</p>
+                <p style="margin: 4px 0;"><strong>Session Duration:</strong> ${leadDuration}</p>
+                <p style="margin: 4px 0;"><strong>Scheduled Date &amp; Time:</strong> ${date} at ${time}</p>
+              </div>
+              <p style="font-size: 12px; color: #71717a;">This lead is saved in NeonDB Database and Admin CRM panel.</p>
+            </div>
+          `
+        })
+      }).catch(() => {});
+    }
+
+    res.status(201).json({ message: 'Free consultation booked successfully', bookingRef, data: newEnquiry });
   } catch (err: any) {
     console.error('Consultation booking error:', err.message);
-    res.status(500).json({ error: 'Failed to schedule discovery consultation' });
+    res.status(500).json({ error: 'Failed to schedule consultation' });
+  }
+});
+
+// Generic Brevo Mail Proxy Endpoint
+app.post('/api/send-email', async (req, res) => {
+  try {
+    const { toEmail, toName, subject, htmlContent } = req.body;
+    const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+
+    if (!brevoApiKey) {
+      return res.status(400).json({ error: 'Brevo API key is not configured on server' });
+    }
+
+    const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': brevoApiKey
+      },
+      body: JSON.stringify({
+        sender: { name: 'BxStrength Coaching', email: 'support@bxstrength.com' },
+        to: [{ email: toEmail, name: toName || toEmail }],
+        subject: subject,
+        htmlContent: htmlContent
+      })
+    });
+
+    if (brevoRes.ok) {
+      const data = await brevoRes.json();
+      return res.json({ success: true, message: 'Email sent successfully via Brevo API', data });
+    } else {
+      const errorData = await brevoRes.json();
+      return res.status(brevoRes.status).json({ error: 'Brevo API error', details: errorData });
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: 'Server email send failed', message: err.message });
+  }
+});
+
+app.get('/api/consultations', async (req, res) => {
+  try {
+    if (dbPool) {
+      try {
+        const result = await dbPool.query('SELECT * FROM consultations ORDER BY created_at DESC');
+        return res.json(result.rows);
+      } catch {}
+    }
+    const consultationEnquiries = enquiriesStore.filter(e => e.subject.includes('Consultation'));
+    res.json(consultationEnquiries);
+  } catch (err: any) {
+    res.json([]);
   }
 });
 

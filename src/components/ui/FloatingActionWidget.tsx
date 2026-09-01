@@ -33,13 +33,13 @@ export const FloatingActionWidget: React.FC<FloatingActionWidgetProps> = ({
   };
 
   const openWhatsApp = () => {
-    const phone = '15550192834'; // Business WhatsApp number
+    const phone = '918423594482'; // Business Call & WhatsApp number
     const text = encodeURIComponent('Hello BxStrength Team! I would like to inquire about training programs.');
     window.open(`https://wa.me/${phone}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
   const openEmail = () => {
-    window.location.href = 'mailto:info@bxstrength.com?subject=Inquiry%20from%20BxStrength%20Platform';
+    window.location.href = 'mailto:support@bxstrength.com?subject=Inquiry%20from%20BxStrength%20Platform';
   };
 
   return (

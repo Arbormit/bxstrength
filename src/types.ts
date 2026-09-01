@@ -248,11 +248,32 @@ export interface Trainer {
 }
 
 export interface ServiceItem {
-  id: string;
+  id?: string;
   title: string;
-  description: string;
-  iconName: 'personal' | 'boxing' | 'fitness' | 'nutrition' | 'crossfit';
-  benefits: string[];
+  category?: string;
+  servicePlan?: string;           // Service/plan
+  duration?: string;              // duration
+  price?: number | string;        // price
+  sessionType?: string;           // session type
+  goalPrimaryOutcome?: string;    // goal/primary outcome
+  whatYouGet?: string | string[]; // what you get
+  keyDifference?: string;         // key difference
+  totalSessions?: number | string;// total session
+  discount?: string | number;     // discount
+  validity?: string;              // validity
+  complimentary?: string;         // complimentary
+  // Display & Compatibility Helper Fields
+  icon?: any;
+  iconName?: 'personal' | 'boxing' | 'fitness' | 'nutrition' | 'crossfit';
+  description?: string;
+  problem?: string;
+  solution?: string;
+  result?: string;
+  discountTag?: string;
+  originalPrice?: number;
+  discountedPrice?: number;
+  priceUnit?: string;
+  benefits?: string[];
 }
 
 export interface Testimonial {

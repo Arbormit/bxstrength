@@ -1,20 +1,32 @@
 import React, { useState } from 'react';
 import { 
   Dumbbell, Flame, HeartPulse, Activity, Zap, CheckCircle2, AlertCircle, 
-  Target, ShieldCheck, RefreshCw, Home, Video, Trophy, Users, Award, Heart, ChevronDown, ChevronRight, Tag 
+  Target, ShieldCheck, RefreshCw, Home, Video, Trophy, Users, Award, Heart, ChevronDown, ChevronRight, Tag, Clock, Gift, Calendar, Sparkles, Check
 } from 'lucide-react';
 
 export interface ServiceItem {
   title: string;
-  icon: React.ElementType;
   category: string;
-  problem: string;
-  solution: string;
-  result: string;
+  servicePlan: string;            // Service/plan
+  duration: string;               // duration
+  price: number | string;         // price
+  sessionType: string;            // session type
+  goalPrimaryOutcome: string;     // goal/primary outcome
+  whatYouGet: string | string[];  // what you get
+  keyDifference: string;          // key difference
+  totalSessions: number | string; // total session
+  discount: string | number;      // discount
+  validity: string;               // validity
+  complimentary: string;          // complimentary
+  // UI Icon & Compatibility
+  icon?: React.ElementType;
   discountTag?: string;
   originalPrice?: number;
   discountedPrice?: number;
   priceUnit?: string;
+  problem?: string;
+  solution?: string;
+  result?: string;
 }
 
 interface ServicesSectionProps {
@@ -24,176 +36,234 @@ interface ServicesSectionProps {
 
 export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking, onSelectService }) => {
   const [showAllServices, setShowAllServices] = useState<boolean>(false);
+  const [expandedComplimentary, setExpandedComplimentary] = useState<Record<number, boolean>>({});
 
   const services: ServiceItem[] = [
     {
-      title: 'EXECUTIVE METABOLIC CONDITIONING',
-      icon: Flame,
-      category: 'FAT LOSS',
-      discountTag: '15% OFF',
-      originalPrice: 40,
-      discountedPrice: 34,
-      priceUnit: '/ session',
-      problem: 'High-stress business schedule leading to low energy, elevated cortisol, poor sleep quality, and sluggish metabolic rate.',
-      solution: 'Time-efficient, high-yield metabolic conditioning protocol engineered for maximum EPOC (Excess Post-Exercise Oxygen Consumption).',
-      result: 'Sustained daily mental clarity, rapid fat loss, improved HRV (Heart Rate Variability), and peak energy levels.',
+      title: 'Fitness Boxing',
+      category: 'Individual Service',
+      servicePlan: 'Fitness Boxing',
+      duration: '20Min / session',
+      price: 30,
+      sessionType: '1-on-1 Personal Session',
+      goalPrimaryOutcome: 'Technical Boxing, Conditioning, footwork, power and endurance.',
+      whatYouGet: 'Live 1:1 coaching focused on boxing technique, conditioning, footwork, power and endurance.',
+      keyDifference: 'Single specialist service; no multi-focus package structure.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / booking',
+      complimentary: 'Warm-up + cool-down included within booked time.',
     },
     {
-      title: 'PROFESSIONAL BOXING TECHNIQUE & MITTWORK',
-      icon: Target,
-      category: 'BOXING',
-      discountTag: '20% OFF',
-      originalPrice: 60,
-      discountedPrice: 48,
-      priceUnit: '/ session',
-      problem: 'Wanting to master authentic boxing footwork, punching mechanics, and head movement without injury or repetitive strain.',
-      solution: 'Pro boxing drills focusing on stance, weight distribution, punch combinations, defense, and high-tempo mittwork.',
-      result: 'Explosive cardiovascular endurance, razor-sharp reflexes, stress relief, and authentic combat sport skill development.',
+      title: 'Strength Training',
+      category: 'Individual Service',
+      servicePlan: 'Strength Training',
+      duration: '20Min / session',
+      price: 25,
+      sessionType: '1-on-1 Pro Coaching',
+      goalPrimaryOutcome: 'Build strength, muscle, endurance and overall fitness.',
+      whatYouGet: 'Live 1:1 strength focused coaching adapted to the clients goal and ability',
+      keyDifference: 'Single specialist strength service.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / booking',
+      complimentary: 'Warm-up + cool-down included within booked time.',
     },
     {
-      title: 'HYPERTROPHY & MUSCLE MASS PROTOCOL',
-      icon: Activity,
-      category: 'MUSCLE GAIN',
-      discountTag: '10% OFF',
-      originalPrice: 45,
-      discountedPrice: 40,
-      priceUnit: '/ session',
-      problem: 'Struggling to add lean muscle mass, uneven muscle development, or lack of structured hypertrophy progression.',
-      solution: 'Targeted volume optimization, time-under-tension training, and muscle-group specific hypertrophy programming.',
-      result: 'Measurable muscle girth gains, symmetrical physique aesthetics, and increased muscular endurance.',
+      title: 'Mobility & Recovery',
+      category: 'Individual Service',
+      servicePlan: 'Mobility & Recovery',
+      duration: '20Min / session',
+      price: 30,
+      sessionType: '1-on-1 Pro Coaching',
+      goalPrimaryOutcome: 'Improve joint mobility, reduce stiffness, enhance flexibility, and accelerate muscle recovery.',
+      whatYouGet: 'Targeted mobility drills, dynamic stretching, PNF techniques, and personalized recovery protocols.',
+      keyDifference: 'Focus on movement quality and recovery, not just strength or cardio.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / booking',
+      complimentary: 'Warm-up + cool-down included within booked time.',
     },
     {
-      title: 'PHYSIOTHERAPY & POST-INJURY REHABILITATION',
-      icon: HeartPulse,
-      category: 'REHAB',
-      discountTag: '20% OFF',
-      originalPrice: 80,
-      discountedPrice: 64,
-      priceUnit: '/ session',
-      problem: 'Chronic lower back stiffness, knee pain, shoulder impingement, or recovering from a recent surgical procedure.',
-      solution: 'In-depth joint biomechanics assessment, corrective muscle activation, kinetic chain realignment, and rehab exercises.',
-      result: 'Pain-free daily movement, restored joint range of motion, and reduced risk of re-injury during heavy lifts.',
+      title: 'Flexibility Training',
+      category: 'Individual Service',
+      servicePlan: 'Flexibility Training',
+      duration: '20Min / session',
+      price: 25,
+      sessionType: '1-on-1 Clinical Rehab',
+      goalPrimaryOutcome: 'Increase flexibility, reduce stiffness and enhance recovery.',
+      whatYouGet: 'Live 1:1 flexibility focused coaching adapted to the clients goal and ability',
+      keyDifference: 'Single specialist flexibility service.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / booking',
+      complimentary: 'Warm-up + cool-down included within booked time.',
     },
     {
-      title: 'CLINICAL NUTRITION & BODY FAT CUTTING',
-      icon: Heart,
-      category: 'NUTRITION',
-      discountTag: '15% OFF',
-      originalPrice: 35,
-      discountedPrice: 29,
-      priceUnit: '/ session',
-      problem: 'Confused by fad diets, extreme calorie restriction, energy crashes, and metabolic rebounding after stopping strict meal plans.',
-      solution: 'Flexible macronutrient architecture, circadian-aligned meal timing, and gut-health optimization tailored to your lifestyle.',
-      result: 'Zero food anxiety, steady daytime energy, sustained fat loss maintenance, and improved metabolic health markers.',
-    },
+      title: 'Mindset & Wellness',
+      category: 'Individual Service',
+      servicePlan: 'Mindset & Wellness',
+      duration: '20Min / session',
+      price: 30,
+      sessionType: '1-on-1 Pro Coaching',
+      goalPrimaryOutcome: 'Mindset coaching, stress relief and mental wellness support.',
+      whatYouGet: 'Live 1:1 coaching focused on mindset and mental wellness, stress relief and mental wellness support.',
+      keyDifference: 'Single specialist mindset and mental wellness service.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / booking',
+      complimentary: 'Warm-up + cool-down included within booked time.',
+     },
     {
-      title: 'MOBILITY, FLEXIBILITY & JOINT HEALTH',
-      icon: RefreshCw,
-      category: 'MOBILITY',
-      discountTag: '10% OFF',
-      originalPrice: 30,
-      discountedPrice: 27,
-      priceUnit: '/ session',
-      problem: 'Feeling stiff from long hours sitting at desk, restricted squat depth, tight hip flexors, or poor spinal articulation.',
-      solution: 'Dynamic mobility flows, PNF stretching protocols, joint capsule opening routines, and postural realignment.',
-      result: 'Fluid athletic movement, enhanced squat & deadlift depth, improved posture, and instant muscle tension release.',
-    },
+      title: 'Custom Basic',
+      category: 'Custom',
+      servicePlan: 'Custom Package',
+      duration: '15Min / session',
+      price: 30,
+      sessionType: 'fully personalised',
+      goalPrimaryOutcome: 'One tailored focus designed around the clients goal.',
+      whatYouGet: 'Goal based personalised coaching, technique/intensity control and tailored session structure.',
+      keyDifference: '10Euro above BX Basic care for additional personalisation.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / Booking',
+      complimentary: 'warm-up + cool-down included within booked time.',
+      },
     {
-      title: 'ATHLETIC SPEED & FOOTWORK CONDITIONING',
-      icon: Zap,
-      category: 'ATHLETICS',
-      discountTag: '20% OFF',
-      originalPrice: 50,
-      discountedPrice: 40,
-      priceUnit: '/ session',
-      problem: 'Sluggish lateral movement, slow deceleration, poor agility, or lack of explosive first-step quickness.',
-      solution: 'Ladder drills, plyometric bounding, change-of-direction mechanics, and fast-twitch muscle fiber stimulation.',
-      result: 'Light-on-feet agility, faster reaction time, explosive sprinting acceleration, and improved coordination.',
-    },
+      title: 'Custom Focus',
+      category: 'Custom',
+      servicePlan: 'Custom Package',
+      duration: '30Min / session',
+      price: 45,
+      sessionType: 'Fully personalised',
+      goalPrimaryOutcome: 'One tailored focus designed around the clients goal.',
+      whatYouGet: 'Tailored programme, extra attention to detail, individual goal mapping and supporting work.',
+      keyDifference: '10 Euro above BX Basic care for additional personalisation.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / Booking',
+      complimentary: 'Warm-up + cool-down included within booked time.',
+      },
     {
-      title: 'VIRTUAL ONLINE PERSONAL TRAINING (24/7 SUPPORT)',
-      icon: Video,
-      category: 'VIRTUAL',
-      discountTag: '20% OFF',
-      originalPrice: 25,
-      discountedPrice: 20,
-      priceUnit: '/ session',
-      problem: 'Frequent travel, unpredictable work shifts, or living far from top-tier professional combat & strength coaches.',
-      solution: 'Live 1-on-1 HD virtual sessions via interactive app, video technique breakdown, and 24/7 direct coach messaging support.',
-      result: 'Uncompromised workout consistency anywhere in the world with full accountability and expert guidance.',
-    },
+      title: 'Custom Performance',
+      category: 'Custom',
+      servicePlan: 'Custom Package',
+      duration: '45Min / session',
+      price: 65,
+      sessionType: 'Fully personalised',
+      goalPrimaryOutcome: 'Any two focus areas, custom-built around the client.',
+      whatYouGet: 'Fully personlisation, advanced programming, technique refinement, mobility/cool-down and session tracking.',
+      keyDifference: '10 Euro above BX Performance for additional personalisation.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / Booking',
+      complimentary: 'Warm-up + cool-down included within booked time.',
+      },
     {
-      title: 'HYBRID HOME & GYM FITNESS WORKOUTS',
-      icon: Home,
-      category: 'HYBRID',
-      discountTag: '15% OFF',
-      originalPrice: 35,
-      discountedPrice: 29,
-      priceUnit: '/ session',
-      problem: 'Limited workout gear at home, busy schedule, or wanting to blend home bodyweight training with weekly gym visits.',
-      solution: 'Adaptable workout plans structured around dumbbells, bands, or full commercial gym gear tailored to where you train.',
-      result: 'Seamless flexibility to workout anywhere without missing sessions or compromising fitness momentum.',
-    },
+      title: 'Custom Complete',
+      category: 'Custom',
+      servicePlan: 'Custom Complete',
+      duration: '60Min / session',
+      price: 85,
+      sessionType: 'Fully personalised',
+      goalPrimaryOutcome: 'Upto 4 focus areas combined into one bespoke session plan.',
+      whatYouGet: '100% tailored programming, advanced exercise selection and technique correction across all focus areas.',
+      keyDifference: '10 Euro above BX Complete for additional personalisation.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / Booking',
+      complimentary: 'Warm-up + cool-down included within booked time.',
+      },
     {
-      title: 'CORE STABILITY & POSTURAL REALIGNMENT',
-      icon: ShieldCheck,
-      category: 'CORE STABILITY',
-      discountTag: '10% OFF',
-      originalPrice: 40,
-      discountedPrice: 36,
-      priceUnit: '/ session',
-      problem: 'Weak deep core activation, anterior pelvic tilt, rounded shoulders, or lower back strain during compound movements.',
-      solution: 'Anti-extension & anti-rotation core conditioning, diaphragmatic breathing mechanics, and posterior chain strengthening.',
-      result: 'Rock-solid core stability, upright confident posture, and safer heavy lifting execution.',
-    },
+      title: 'BX Basic Care',
+      category: 'Core Package',
+      servicePlan: 'BX Basic Care',
+      duration: '15Min / session',
+      price: 20,
+      sessionType: 'Standard Package / best value',
+      goalPrimaryOutcome: 'One primary focus with an accessible coaching experience.',
+      whatYouGet: 'Basic warm-up, focused coaching, technique and guidance and cool-down',
+      keyDifference: 'Entry level standard package, lower price than custom basic.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'single session / booking',
+      complimentary: 'warm-up + cool-down included within booked time.',
+      },
     {
-      title: 'FIGHTER CONDITIONING & STAMINA BOOST',
-      icon: Trophy,
-      category: 'CONDITIONING',
-      discountTag: '20% OFF',
-      originalPrice: 55,
-      discountedPrice: 44,
-      priceUnit: '/ session',
-      problem: 'Gassing out quickly during intense rounds, slow recovery between sets, or lack of anaerobic fight capacity.',
-      solution: 'Tabata intervals, heavy bag conditioning rounds, anaerobic threshold pushing, and recovery zone training.',
-      result: 'Unshakeable stamina, rapid heart rate recovery, and high-level physical resilience under fatigue.',
-    },
+      title: 'BX Focus',
+      category: 'Core Package',
+      servicePlan: 'BX Focus',
+      duration: '30Min / session',
+      price: 35,
+      sessionType: 'Standard Package / best value',
+      goalPrimaryOutcome: 'One main focus plus supporting work.',
+      whatYouGet: 'Personalised warm-up, goal-based training, supporting exercises and cool-down.',
+      keyDifference: 'Standard package offering better value than individual services.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / booking',
+      complimentary: 'Warm-up + cool-down included within booked time.',
+      },
     {
-      title: 'BEGINNER FITNESS & FOUNDATIONAL HABITS',
-      icon: Users,
-      category: 'BEGINNERS',
-      discountTag: '20% OFF',
-      originalPrice: 30,
-      discountedPrice: 24,
-      priceUnit: '/ session',
-      problem: 'Gym intimidation, anxiety about where to start, or previous failed attempts due to overly aggressive programs.',
-      solution: 'Step-by-step foundational movement patterns, supportive coaching, positive habit building, and gradual intensity escalation.',
-      result: 'Unstoppable gym confidence, safe exercise mastery, consistent habit formation, and early visual progress.',
-    },
+      title: 'BX Performance',
+      category: 'Core Package',
+      servicePlan: 'BX Performance',
+      duration: '45Min / session',
+      price: 55,
+      sessionType: 'Standard Package / best value',
+      goalPrimaryOutcome: 'Any two focus area in a structured performance session.',
+      whatYouGet: 'Structured session, progressive training, technique corrections, mobility/cool-down and session notes.',
+      keyDifference: 'Standard package offering better value than individual services.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / booking',
+      complimentary: 'warm-up + cool-down included within booked time.',
+      },
     {
-      title: 'EXECUTIVE STRESS REDUCTION & WELLNESS',
-      icon: HeartPulse,
-      category: 'WELLNESS',
-      discountTag: '15% OFF',
-      originalPrice: 45,
-      discountedPrice: 38,
-      priceUnit: '/ session',
-      problem: 'Work burnout, mental fatigue, elevated anxiety, and poor nervous system recovery after high-pressure work weeks.',
-      solution: 'Parasympathetic recovery protocols, breathwork integration, moderate intensity movement, and sleep hygiene coaching.',
-      result: 'Lower stress levels, restored deep REM sleep, mental clarity, and improved work-life balance.',
-    },
+      title: 'BX Complete',
+      category: 'Core Package',
+      servicePlan: 'BX Complete',
+      duration: '60Min / session',
+      price: 75,
+      sessionType: 'Standard Package / best value',
+      goalPrimaryOutcome: 'upto 4 focus areas for comprehensive coaching.',
+      whatYouGet: 'Full-body training, personalised intensity, strength and conditioning, mobility and progress tracking.',
+      keyDifference: 'Flagship standard package, strongest overall package value.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session / Booking',
+      complimentary: 'warm-up + cool-down included within booked time.',
+      },
     {
-      title: 'LONG-TERM FAT LOSS MAINTENANCE PROTOCOL',
-      icon: Award,
-      category: 'FAT LOSS',
-      discountTag: '20% OFF',
-      originalPrice: 40,
-      discountedPrice: 32,
-      priceUnit: '/ session',
-      problem: 'Losing weight successfully but repeatedly regaining fat back within 3 to 6 months after completing a diet.',
-      solution: 'Reverse dieting strategies, metabolic rate restoration, self-monitoring tools, and sustainable lifestyle habit integration.',
-      result: 'Permanent body transformation, stable body weight, healthy relationship with food, and lifelong fitness freedom.',
-    },
+      title: 'BX weekly 3',
+      category: 'Programme',
+      servicePlan: 'BX Weekly 3',
+      duration: 'Varies by selected sessions',
+      price: 30,
+      sessionType: '3 session weekly programme',
+      goalPrimaryOutcome: 'build weekly consistency and maintain momentum.',
+      whatYouGet: 'choose any 3 sessions from boxing, strength, functional, mobility, flexibility or mindset and wellness.',
+      keyDifference: 'Programme level discount and structured weekly consistency.',
+      totalSessions: '3 Session',
+      discount: '10% OFF',
+      validity: '7 Days',
+      complimentary: 'warm-up + cool-down included within booked time.',
+      },
+    {
+      title: 'BX Monthly 12',
+      category: 'Programme',
+      servicePlan: 'BX Monthly 12',
+      duration: 'Varies by selected sessions',
+      price: 50,
+      sessionType: '12 session monthly programme',
+      goalPrimaryOutcome: 'Longer term consistency, progression and sustainable coaching support.',
+      whatYouGet: '12 sessions built with the coach around client goals, example mixes can combine boxing, strength, functional and mobility.',
+      keyDifference: 'Higher volume programme with 20% discount and 30 day validity.',
+      totalSessions: '12 Session Monthly',
+      discount: '20% OFF',
+      validity: '30 Days (1 day off per week)',
+      complimentary: 'warm-up + cool-down included within booked time.',
+      }
   ];
 
   const displayedServices = showAllServices ? services : services.slice(0, 6);
@@ -215,79 +285,172 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
         {/* Services Grid (Shows 6 cards initially, 15 on expansion) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {displayedServices.map((srv, idx) => {
-            const IconComp = srv.icon;
+            const IconComp = srv.icon || Dumbbell;
+            const displayDiscount = srv.discount || srv.discountTag;
+
             return (
               <div
                 key={idx}
                 className="relative bg-[#121214] border border-zinc-800 hover:border-zinc-600 rounded-2xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-300 group hover:-translate-y-1 shadow-xl overflow-hidden"
               >
                 {/* Visual Top-Left Diagonal Cross Discount Ribbon */}
-                {srv.discountTag && (
+                {displayDiscount && (
                   <div className="absolute top-3 -left-9 w-32 bg-[#CCFF00] text-black text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-center py-1 -rotate-45 shadow-xl border-y border-black/80 z-10 pointer-events-none select-none">
-                    {srv.discountTag}
+                    {displayDiscount}
                   </div>
                 )}
 
                 <div>
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-5">
                     <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[#CCFF00] group-hover:bg-[#CCFF00] group-hover:text-black transition-all">
                       <IconComp className="w-6 h-6" />
                     </div>
-                    <span className="text-[10px] font-black tracking-widest text-zinc-400 uppercase bg-zinc-800/80 border border-zinc-700 px-2.5 py-1 rounded-md">
-                      {srv.category}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {srv.servicePlan && (
+                        <span className="text-[9px] font-extrabold tracking-wider text-emerald-400 uppercase bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded">
+                          {srv.servicePlan}
+                        </span>
+                      )}
+                      <span className="text-[10px] font-black tracking-widest text-zinc-400 uppercase bg-zinc-800/80 border border-zinc-700 px-2.5 py-1 rounded-md">
+                        {srv.category}
+                      </span>
+                    </div>
                   </div>
 
                   <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-white mb-4 leading-snug">
                     {srv.title}
                   </h3>
 
-                  {/* Future-Ready Pricing Display Space */}
+                  {/* Pricing & Duration Banner */}
                   <div className="mb-6 p-3 bg-[#18181b] border border-zinc-800 rounded-xl flex items-center justify-between">
                     <div>
-                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">SESSION RATE</span>
+                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">
+                        PRICE / SESSION
+                      </span>
                       <div className="flex items-baseline gap-2 mt-0.5">
-                        {srv.discountedPrice ? (
-                          <>
-                            <span className="text-lg font-black text-[#CCFF00]">${srv.discountedPrice}</span>
-                            {srv.originalPrice && (
-                              <span className="text-xs text-zinc-500 line-through font-bold">${srv.originalPrice}</span>
-                            )}
-                            <span className="text-[10px] font-bold text-zinc-400">{srv.priceUnit || '/ session'}</span>
-                          </>
-                        ) : (
-                          <span className="text-xs font-bold text-zinc-400">Custom Package Rates</span>
+                        <span className="text-lg font-black text-[#CCFF00]">${srv.price}</span>
+                        {srv.originalPrice && (
+                          <span className="text-xs text-zinc-500 line-through font-bold">${srv.originalPrice}</span>
                         )}
+                        <span className="text-[10px] font-bold text-zinc-400">{srv.duration}</span>
                       </div>
                     </div>
+                    {srv.sessionType && (
+                      <span className="text-[10px] font-extrabold text-zinc-300 uppercase bg-zinc-800 px-2.5 py-1 rounded border border-zinc-700">
+                        {srv.sessionType}
+                      </span>
+                    )}
                   </div>
 
-                  <div className="space-y-3.5 text-xs">
-                    {/* Problem */}
-                    <div className="p-3.5 rounded-xl bg-red-950/20 border border-red-900/30 text-red-200">
-                      <div className="flex items-center gap-1.5 font-bold uppercase text-[10px] text-red-400 mb-1">
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        <span>PROBLEM</span>
+                  <div className="space-y-3 text-xs">
+                    {/* Goal / Primary Outcome */}
+                    {srv.goalPrimaryOutcome && (
+                      <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-900/30 text-emerald-200">
+                        <div className="flex items-center gap-1.5 font-bold uppercase text-[10px] text-emerald-400 mb-1">
+                          <Target className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>GOAL / PRIMARY OUTCOME</span>
+                        </div>
+                        <p className="leading-relaxed text-zinc-200">{srv.goalPrimaryOutcome}</p>
                       </div>
-                      <p className="leading-relaxed text-zinc-300">{srv.problem}</p>
-                    </div>
+                    )}
 
-                    {/* Solution */}
-                    <div className="p-3.5 rounded-xl bg-zinc-800/50 border border-zinc-700/60 text-zinc-200">
-                      <div className="flex items-center gap-1.5 font-bold uppercase text-[10px] text-[#CCFF00] mb-1">
-                        <Zap className="w-3.5 h-3.5 text-[#CCFF00]" />
-                        <span>SOLUTION</span>
+                    {/* What You Get */}
+                    {srv.whatYouGet && (
+                      <div className="p-3 rounded-xl bg-zinc-800/50 border border-zinc-700/60 text-zinc-200">
+                        <div className="flex items-center gap-1.5 font-bold uppercase text-[10px] text-[#CCFF00] mb-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#CCFF00]" />
+                          <span>WHAT YOU GET</span>
+                        </div>
+                        <p className="leading-relaxed text-zinc-200">
+                          {Array.isArray(srv.whatYouGet) ? srv.whatYouGet.join(', ') : srv.whatYouGet}
+                        </p>
                       </div>
-                      <p className="leading-relaxed text-zinc-200">{srv.solution}</p>
-                    </div>
+                    )}
 
-                    {/* Expected Result */}
-                    <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-900/30 text-emerald-200">
-                      <div className="flex items-center gap-1.5 font-bold uppercase text-[10px] text-emerald-400 mb-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>EXPECTED RESULT</span>
+                    {/* Key Difference */}
+                    {srv.keyDifference && (
+                      <div className="p-3 rounded-xl bg-purple-950/20 border border-purple-900/30 text-purple-200">
+                        <div className="flex items-center gap-1.5 font-bold uppercase text-[10px] text-purple-400 mb-1">
+                          <Award className="w-3.5 h-3.5 text-purple-400" />
+                          <span>KEY DIFFERENCE</span>
+                        </div>
+                        <p className="leading-relaxed text-zinc-200">{srv.keyDifference}</p>
                       </div>
-                      <p className="leading-relaxed text-zinc-200">{srv.result}</p>
+                    )}
+
+                    {/* Specifications Row: Total Sessions, Validity, Complimentary */}
+                    <div className="pt-2 border-t border-zinc-800/80 space-y-1.5 text-[11px] text-zinc-400">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-zinc-500" />
+                          <span>Total Sessions:</span>
+                        </span>
+                        <span className="font-bold text-white">{srv.totalSessions}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-zinc-500" />
+                          <span>Validity:</span>
+                        </span>
+                        <span className="font-bold text-white">{srv.validity}</span>
+                      </div>
+                      {srv.complimentary && (() => {
+                        const isExpanded = !!expandedComplimentary[idx];
+                        const text = srv.complimentary;
+                        const isLong = text.length > 32;
+                        const shortText = isLong ? text.slice(0, 30) : text;
+
+                        return (
+                          <div className="pt-2 border-t border-zinc-800/60 text-[11px]">
+                            <div className="flex items-start justify-between gap-3">
+                              <span className="flex items-center gap-1.5 text-zinc-400 font-medium shrink-0 mt-0.5">
+                                <Gift className="w-3.5 h-3.5 text-[#CCFF00]" />
+                                <span>Complimentary:</span>
+                              </span>
+
+                              {!isLong ? (
+                                <span className="font-semibold text-white text-right leading-snug">
+                                  {text}
+                                </span>
+                              ) : (
+                                <div className="text-right flex-1">
+                                  {!isExpanded ? (
+                                    <span className="font-semibold text-zinc-200 leading-snug">
+                                      {shortText}...{' '}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setExpandedComplimentary(prev => ({ ...prev, [idx]: true }));
+                                        }}
+                                        className="text-[#CCFF00] hover:text-[#b8e600] font-bold text-[10px] tracking-wide underline ml-1 cursor-pointer inline-block"
+                                      >
+                                        read more...
+                                      </button>
+                                    </span>
+                                  ) : (
+                                    <div className="text-left sm:text-right space-y-1">
+                                      <p className="font-semibold text-white leading-relaxed text-xs">
+                                        {text}
+                                      </p>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setExpandedComplimentary(prev => ({ ...prev, [idx]: false }));
+                                        }}
+                                        className="text-zinc-400 hover:text-[#CCFF00] font-bold text-[10px] tracking-wide underline cursor-pointer inline-block"
+                                      >
+                                        read less
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -320,3 +483,4 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
     </section>
   );
 };
+
