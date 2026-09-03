@@ -123,7 +123,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
       sessionType: 'fully personalised',
       goalPrimaryOutcome: 'One tailored focus designed around the clients goal.',
       whatYouGet: 'Goal based personalised coaching, technique/intensity control and tailored session structure.',
-      keyDifference: '10Euro above BX Basic care for additional personalisation.',
+      keyDifference: '£10 above BX Basic care for additional personalisation.',
       totalSessions: '1 Session',
       discount: '',
       validity: 'Single session / Booking',
@@ -138,7 +138,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
       sessionType: 'Fully personalised',
       goalPrimaryOutcome: 'One tailored focus designed around the clients goal.',
       whatYouGet: 'Tailored programme, extra attention to detail, individual goal mapping and supporting work.',
-      keyDifference: '10 Euro above BX Basic care for additional personalisation.',
+      keyDifference: '£10 above BX Basic care for additional personalisation.',
       totalSessions: '1 Session',
       discount: '',
       validity: 'Single session / Booking',
@@ -153,7 +153,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
       sessionType: 'Fully personalised',
       goalPrimaryOutcome: 'Any two focus areas, custom-built around the client.',
       whatYouGet: 'Fully personlisation, advanced programming, technique refinement, mobility/cool-down and session tracking.',
-      keyDifference: '10 Euro above BX Performance for additional personalisation.',
+      keyDifference: '£10 above BX Performance for additional personalisation.',
       totalSessions: '1 Session',
       discount: '',
       validity: 'Single session / Booking',
@@ -168,7 +168,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
       sessionType: 'Fully personalised',
       goalPrimaryOutcome: 'Upto 4 focus areas combined into one bespoke session plan.',
       whatYouGet: '100% tailored programming, advanced exercise selection and technique correction across all focus areas.',
-      keyDifference: '10 Euro above BX Complete for additional personalisation.',
+      keyDifference: '£10 above BX Complete for additional personalisation.',
       totalSessions: '1 Session',
       discount: '',
       validity: 'Single session / Booking',
@@ -328,9 +328,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
                         PRICE / SESSION
                       </span>
                       <div className="flex items-baseline gap-2 mt-0.5">
-                        <span className="text-lg font-black text-[#CCFF00]">${srv.price}</span>
+                        <span className="text-lg font-black text-[#CCFF00]">£{srv.price}</span>
                         {srv.originalPrice && (
-                          <span className="text-xs text-zinc-500 line-through font-bold">${srv.originalPrice}</span>
+                          <span className="text-xs text-zinc-500 line-through font-bold">£{srv.originalPrice}</span>
                         )}
                         <span className="text-[10px] font-bold text-zinc-400">{srv.duration}</span>
                       </div>

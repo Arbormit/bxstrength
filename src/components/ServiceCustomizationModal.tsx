@@ -342,7 +342,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[#CCFF00]">${totalPrice}</span>
+                  <span className="text-xs font-bold text-[#CCFF00]">£{totalPrice}</span>
                 </div>
               </div>
             );
@@ -384,7 +384,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                   </div>
 
                   <div className="mt-6 pt-4 border-t border-zinc-800/80 flex items-center justify-between text-xs">
-                    <span className="font-bold text-white">${basePrice} / Session</span>
+                    <span className="font-bold text-white">£{basePrice} / Session</span>
                     <span className="text-[#CCFF00] font-black uppercase tracking-wider flex items-center gap-1">
                       SELECT PRESET <ChevronRight className="w-4 h-4" />
                     </span>
@@ -687,7 +687,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                   onClick={() => setStep(5)}
                   className="w-full sm:flex-1 bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs uppercase tracking-widest py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xl cursor-pointer"
                 >
-                  <span>CONFIRM &amp; PAY ${totalPrice} WITH STRIPE</span>
+                  <span>CONFIRM &amp; PAY £{totalPrice} WITH STRIPE</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -710,12 +710,12 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
               <div className="bg-[#18181b] p-4 rounded-xl border border-zinc-800 space-y-2 text-xs">
                 <div className="flex justify-between text-zinc-400">
                   <span>Base Program Fee ({serviceType.toUpperCase()})</span>
-                  <span>${basePrice}.00</span>
+                  <span>£{basePrice}.00</span>
                 </div>
                 {serviceType === 'custom' && (
                   <div className="flex justify-between text-zinc-400">
                     <span>Additional Training Additions ({additionalTrainingsCount})</span>
-                    <span>+${extraTrainingsCost}.00</span>
+                    <span>+£{extraTrainingsCost}.00</span>
                   </div>
                 )}
                 <div className="flex justify-between text-[#CCFF00] font-bold">
@@ -724,7 +724,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                 </div>
                 <div className="pt-2 border-t border-zinc-800 flex justify-between text-base font-black text-white">
                   <span>TOTAL DUE TODAY:</span>
-                  <span className="text-[#CCFF00]">${totalPrice}.00</span>
+                  <span className="text-[#CCFF00]">£{totalPrice}.00</span>
                 </div>
               </div>
 
@@ -747,7 +747,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
 
                 <div className="pt-2 text-[11px] text-zinc-400 font-mono flex items-center justify-between border-t border-zinc-800/80">
                   <span>Merchant: BxStrength Ltd</span>
-                  <span>Currency: USD ($)</span>
+                  <span>Currency: GBP (£)</span>
                 </div>
               </div>
 
@@ -765,7 +765,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                 ) : (
                   <>
                     <ExternalLink className="w-4 h-4" />
-                    <span>PROCEED TO REAL STRIPE CHECKOUT (${totalPrice}.00)</span>
+                    <span>PROCEED TO REAL STRIPE CHECKOUT (£{totalPrice}.00)</span>
                   </>
                 )}
               </button>
@@ -799,7 +799,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-500 font-bold uppercase block">Price Paid</span>
-                  <span className="font-bold text-[#CCFF00] block">${createdSubscription.price}</span>
+                  <span className="font-bold text-[#CCFF00] block">£{createdSubscription.price}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-500 font-bold uppercase block">Start Date</span>

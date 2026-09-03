@@ -132,14 +132,14 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ user, onShow
           <td style="font-weight: 700;">${inv.description || user.subscriptionTier || 'Membership Subscription'}</td>
           <td style="font-family: monospace;">${inv.date}</td>
           <td style="color: #10b981; font-weight: 800;">${inv.status.toUpperCase()}</td>
-          <td style="text-align: right; font-family: monospace; font-weight: 800;">$${inv.amount}.00</td>
+          <td style="text-align: right; font-family: monospace; font-weight: 800;">£${inv.amount}.00</td>
         </tr>
       </tbody>
     </table>
 
     <div class="total-box">
       <div style="font-size: 10px; color: #a1a1aa; text-transform: uppercase; font-weight: 700;">TOTAL AMOUNT PAID</div>
-      <div class="total-val">$${inv.amount}.00 USD</div>
+      <div class="total-val">£${inv.amount}.00 GBP</div>
     </div>
 
     <div class="footer">
@@ -201,7 +201,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ user, onShow
                     </span>
                     <h4 className="text-sm font-black uppercase text-white mt-1.5">{sub.planName}</h4>
                   </div>
-                  <span className="text-sm font-black text-[#CCFF00] font-mono">${sub.price}</span>
+                  <span className="text-sm font-black text-[#CCFF00] font-mono">£{sub.price}</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs bg-[#121214] p-3 rounded-lg border border-zinc-800">
