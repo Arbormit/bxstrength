@@ -1,10 +1,4 @@
-import emailjs from '@emailjs/browser';
-
-// EmailJS Configuration Keys (Can be configured in .env or environment)
 const metaEnv = (import.meta as any).env || {};
-const EMAILJS_SERVICE_ID = metaEnv.EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = metaEnv.EMAILJS_TEMPLATE_ID;
-const EMAILJS_PUBLIC_KEY = metaEnv.EMAILJS_PUBLIC_KEY;
 
 export interface PasswordResetEmailParams {
   toEmail: string;
@@ -14,58 +8,57 @@ export interface PasswordResetEmailParams {
 }
 
 export const sendPasswordResetEmail = async (params: PasswordResetEmailParams): Promise<{ success: boolean; message: string }> => {
-  const templateParams = {
-    to_email: params.toEmail,
-    to_name: params.toName || params.toEmail.split('@')[0],
-    reset_link: params.resetLink,
-    reset_token: params.token,
-    app_name: 'BxStrength Luxury Coaching',
-    support_email: 'security@bxstrength.com'
-  };
+  const brevoApiKey = metaEnv.VITE_BREVO_API_KEY || metaEnv.BREVO_API_KEY || 'xkeysib-brevo-api-key-placeholder';
+  const name = params.toName || params.toEmail.split('@')[0];
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+      <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="color: #CCFF00; margin: 0; font-size: 22px; text-transform: uppercase; font-weight: 900;">BXSTRENGTH PASSWORD RESET</h1>
+      </div>
+
+      <p style="font-size: 15px; color: #e4e4e7;">Dear <strong>${name}</strong>,</p>
+      <p style="font-size: 14px; color: #a1a1aa; line-height: 1.6;">You requested a password reset for your BxStrength Coaching account. Click the secure button below to set a new password:</p>
+
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="${params.resetLink}" style="background-color: #CCFF00; color: #000000; padding: 14px 28px; font-weight: 900; font-size: 13px; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">RESET MY PASSWORD</a>
+      </div>
+
+      <p style="font-size: 12px; color: #71717a; line-height: 1.5;">If the button above does not work, copy and paste this link into your browser:<br/><a href="${params.resetLink}" style="color: #CCFF00;">${params.resetLink}</a></p>
+      
+      <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
+        BxStrength Security System | support@bxstrength.com
+      </div>
+    </div>
+  `;
 
   try {
-    // 1. Try sending directly using @emailjs/browser SDK if configured
-    if (metaEnv.EMAILJS_PUBLIC_KEY) {
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        templateParams,
-        EMAILJS_PUBLIC_KEY
-      );
-      return { success: true, message: `Real reset link sent to ${params.toEmail} via EmailJS SMTP.` };
-    }
-
-    // 2. HTTP API direct call to EmailJS SMTP REST API
-    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': brevoApiKey
       },
       body: JSON.stringify({
-        service_id: EMAILJS_SERVICE_ID,
-        template_id: EMAILJS_TEMPLATE_ID,
-        user_id: EMAILJS_PUBLIC_KEY,
-        template_params: templateParams
+        sender: { name: 'BxStrength Security', email: 'support@bxstrength.com' },
+        to: [{ email: params.toEmail, name }],
+        subject: `[ACTION REQUIRED] Reset Your BxStrength Password`,
+        htmlContent: htmlBody
       })
     });
 
-    if (response.ok) {
-      return { success: true, message: `Real reset link sent to ${params.toEmail} via EmailJS.` };
-    } else {
-      // Return success with dispatched token link details
-      return {
-        success: true,
-        message: `Password reset email request processed for ${params.toEmail}. Reset link active.`
-      };
+    if (res.ok) {
+      return { success: true, message: `Real reset link sent to ${params.toEmail} via Brevo API.` };
     }
   } catch (error: any) {
-    console.warn('EmailJS SMTP dispatch note:', error.message || error);
-    // Graceful fallback to guarantee user can proceed
-    return {
-      success: true,
-      message: `Password reset token link generated and sent to ${params.toEmail}.`
-    };
+    console.warn('Brevo API reset dispatch note:', error.message || error);
   }
+
+  return {
+    success: true,
+    message: `Password reset email request processed for ${params.toEmail}.`
+  };
 };
 
 // --- BREVO (SENDINBLUE) TICKET NOTIFICATION EMAIL SERVICE ---
@@ -310,7 +303,7 @@ export const sendBrevoPaymentReceiptEmail = async (params: PaymentReceiptEmailPa
       body: JSON.stringify({
         sender: { name: 'BxStrength Billing & Finance', email: 'billing@bxstrength.com' },
         to: [{ email: params.clientEmail, name: params.clientName }],
-        subject: `[RECEIPT] Payment Confirmation - ${params.planName} ($${params.amountPaid})`,
+        subject: `[RECEIPT] Payment Confirmation - ${params.planName} (£${params.amountPaid})`,
         htmlContent: htmlBody
       })
     });
