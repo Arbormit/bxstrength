@@ -276,14 +276,14 @@ export const sendBrevoPaymentReceiptEmail = async (params: PaymentReceiptEmailPa
       </div>
 
       <p style="font-size: 15px; line-height: 1.6; color: #e4e4e7;">Dear <strong>${params.clientName}</strong>,</p>
-      <p style="font-size: 14px; line-height: 1.6; color: #a1a1aa;">Thank you for your purchase! Your payment of <strong style="color: #CCFF00;">$${params.amountPaid}.00 USD</strong> has been successfully processed via Stripe.</p>
+      <p style="font-size: 14px; line-height: 1.6; color: #a1a1aa;">Thank you for your purchase! Your payment of <strong style="color: #CCFF00;">£${params.amountPaid}.00 GBP</strong> has been successfully processed via Stripe.</p>
 
       <div style="background-color: #18181b; border: 1px solid #27272a; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <h3 style="color: #CCFF00; margin-top: 0; font-size: 14px; text-transform: uppercase;">PURCHASED SERVICE PLAN SUMMARY</h3>
+        <h3 style="color: #CCFF00; margin-top: 0; font-size: 14px; text-transform: uppercase;">PAYMENT TRANSACTION RECEIPT</h3>
         <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #e4e4e7;">
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Service Plan:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.planName}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Category Mode:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.serviceType.toUpperCase()} MODE</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Amount Paid:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">$${params.amountPaid}.00 USD</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Client Name:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.clientName}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Purchased Service:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.planName}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Amount Paid:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">£${params.amountPaid}.00 GBP</td></tr>
           <tr><td style="padding: 6px 0; color: #a1a1aa;">Payment Method:</td><td style="padding: 6px 0; font-weight: bold;">Stripe Secure Gateway</td></tr>
           <tr><td style="padding: 6px 0; color: #a1a1aa;">Expiry Date:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.expiryDate}</td></tr>
           <tr><td style="padding: 6px 0; color: #a1a1aa;">Client Account:</td><td style="padding: 6px 0; font-weight: bold;">${params.clientEmail}</td></tr>

@@ -163,7 +163,7 @@ export const ClassScheduleManager: React.FC<ClassScheduleManagerProps> = ({
                 <span className="text-[10px] font-black uppercase tracking-widest bg-[#8C532B] text-white px-2 py-0.5">
                   {cls.category}
                 </span>
-                <span className="text-xs font-mono font-bold text-emerald-400">${cls.price}</span>
+                <span className="text-xs font-mono font-bold text-emerald-400">£{cls.price}</span>
               </div>
 
               <h3 className="text-lg font-black uppercase text-white mb-1">{cls.title}</h3>
@@ -367,7 +367,7 @@ export const ClassScheduleManager: React.FC<ClassScheduleManagerProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                    Price ($)
+                    Price (£)
                   </label>
                   <input
                     type="number"

@@ -64,7 +64,7 @@ export const FinancialSubscriptions: React.FC<FinancialSubscriptionsProps> = ({
         status
       });
 
-      onShowToast(`Assigned ${sub.planName} billing ($${sub.price}/${sub.billingCycle}) for ${sub.userName}!`);
+      onShowToast(`Assigned ${sub.planName} billing (£${sub.price}/${sub.billingCycle}) for ${sub.userName}!`);
       setShowCreateModal(false);
       setSelectedUserId('');
       onSubscriptionsUpdated();
@@ -131,7 +131,7 @@ export const FinancialSubscriptions: React.FC<FinancialSubscriptionsProps> = ({
                     </span>
                   </td>
                   <td className="py-3.5 px-4 uppercase text-gray-400">{s.billingCycle}</td>
-                  <td className="py-3.5 px-4 font-mono font-bold text-white">${s.price}.00</td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-white">£{s.price}.00</td>
                   <td className="py-3.5 px-4 font-mono text-gray-400">{s.nextBillingDate}</td>
                   <td className="py-3.5 px-4">
                     <select
@@ -224,7 +224,7 @@ export const FinancialSubscriptions: React.FC<FinancialSubscriptionsProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1">Price ($ USD)</label>
+                  <label className="block text-xs font-bold uppercase text-gray-300 mb-1">Price (£ GBP)</label>
                   <input
                     type="number"
                     value={price}
