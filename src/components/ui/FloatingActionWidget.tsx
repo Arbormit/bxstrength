@@ -44,41 +44,31 @@ export const FloatingActionWidget: React.FC<FloatingActionWidgetProps> = ({
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-2.5 sm:gap-3 pointer-events-auto select-none">
-      {/* 1. AI CHATBOT FLOATING BUTTON WITH FLOATING TEXT PILL */}
+      {/* 1. AI CHATBOT FLOATING BUTTON */}
       {onToggleChatbot && (
-        <div className="flex items-center gap-2 sm:gap-2.5">
-          {!isChatbotOpen && (
-            <div
-              onClick={onToggleChatbot}
-              className="cursor-pointer bg-[#18181b] hover:bg-zinc-800 text-white text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-3 sm:px-3.5 py-1.5 rounded-full border border-zinc-700 hover:border-[#CCFF00] shadow-xl flex items-center gap-1.5 animate-bounce transition-all"
-            >
-              <span>Need help? Chat with AI</span>
-            </div>
+        <button
+          onClick={onToggleChatbot}
+          aria-label="Toggle AI Chat Assistant"
+          title="AI Fitness Assistant"
+          className="relative w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#CCFF00]/90 hover:bg-[#CCFF00] backdrop-blur-md text-black shadow-xl shadow-lime-950/40 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 group border-2 border-black flex-shrink-0 cursor-pointer"
+        >
+          {isChatbotOpen ? (
+            <X className="w-6 h-6 text-black" />
+          ) : (
+            <>
+              <Bot className="w-6 h-6 text-black" />
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-black animate-pulse" />
+            </>
           )}
-
-          <button
-            onClick={onToggleChatbot}
-            aria-label="Toggle AI Chat Assistant"
-            title="AI Fitness Assistant"
-            className="relative w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#CCFF00] hover:bg-[#b8e600] text-black shadow-xl shadow-lime-950/40 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 group border-2 border-black flex-shrink-0 cursor-pointer"
-          >
-            {isChatbotOpen ? (
-              <X className="w-6 h-6 text-black" />
-            ) : (
-              <>
-                <Bot className="w-6 h-6 text-black" />
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-black animate-pulse" />
-              </>
-            )}
-          </button>
-        </div>
+        </button>
       )}
-      {/* 1. WHATSAPP FLOATING BUTTON WITH OFFICIAL WHATSAPP SVG ICON */}
+
+      {/* 2. WHATSAPP FLOATING BUTTON WITH GLASSMORPHISM BACKGROUND */}
       <button
         onClick={openWhatsApp}
         aria-label="Chat on WhatsApp"
         title="Chat on WhatsApp"
-        className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-lg shadow-emerald-950/50 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 group border border-emerald-300/40"
+        className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#25D366]/85 hover:bg-[#25D366] backdrop-blur-md text-white shadow-xl shadow-emerald-950/40 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 group border border-emerald-300/50 cursor-pointer"
       >
         <svg
           className="w-6 h-6 fill-current"
@@ -87,34 +77,34 @@ export const FloatingActionWidget: React.FC<FloatingActionWidgetProps> = ({
         >
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.461c-1.802 0-3.57-.484-5.127-1.401l-.367-.218-3.807.999 1.017-3.712-.239-.38c-1.01-1.606-1.545-3.469-1.545-5.378 0-5.414 4.406-9.82 9.821-9.82 2.624 0 5.09 1.023 6.946 2.879 1.856 1.856 2.878 4.323 2.878 6.947.001 5.415-4.406 9.821-9.821 9.821m0-18.016c-4.52 0-8.201 3.68-8.201 8.196 0 1.62.47 3.197 1.357 4.566l.21.325-.66 2.408 2.463-.646.314.187c1.32.784 2.836 1.198 4.517 1.198 4.52 0 8.202-3.681 8.202-8.197 0-2.19-.852-4.248-2.4-5.795-1.548-1.547-3.606-2.399-5.797-2.399" />
         </svg>
-        <span className="absolute right-14 bg-gray-900 text-white text-[11px] font-bold px-2.5 py-1 rounded shadow-md border border-gray-800 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none hidden sm:block">
+        <span className="absolute right-14 bg-black/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded shadow-md border border-white/20 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none hidden sm:block">
           WhatsApp Support
         </span>
       </button>
 
-      {/* 2. EMAIL FLOATING BUTTON */}
+      {/* 3. EMAIL FLOATING BUTTON WITH GLASSMORPHISM */}
       <button
         onClick={openEmail}
         aria-label="Send Email Inquiry"
         title="Send Email Inquiry"
-        className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#8C532B] hover:bg-[#70401E] text-white shadow-lg shadow-amber-950/50 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 group border border-amber-500/30"
+        className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#8C532B]/85 hover:bg-[#8C532B] backdrop-blur-md text-white shadow-lg shadow-amber-950/40 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 group border border-amber-500/40 cursor-pointer"
       >
         <Mail className="w-5 h-5" />
-        <span className="absolute right-14 bg-gray-900 text-white text-[11px] font-bold px-2.5 py-1 rounded shadow-md border border-gray-800 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none hidden sm:block">
+        <span className="absolute right-14 bg-black/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded shadow-md border border-white/20 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none hidden sm:block">
           Email Us
         </span>
       </button>
 
-      {/* 3. GO TO TOP FLOATING BUTTON */}
+      {/* 4. GO TO TOP FLOATING BUTTON WITH GLASSMORPHISM */}
       {showScrollTop && (
         <button
           onClick={scrollToTop}
           aria-label="Scroll back to top"
           title="Scroll to Top"
-          className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gray-900 hover:bg-gray-800 text-white shadow-lg shadow-black/80 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 border border-gray-700 animate-in fade-in zoom-in-75 duration-200 group"
+          className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white shadow-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 border border-white/20 animate-in fade-in zoom-in-75 duration-200 group cursor-pointer"
         >
-          <ChevronUp className="w-6 h-6 text-[#8C532B] group-hover:animate-bounce" />
-          <span className="absolute right-14 bg-gray-900 text-white text-[11px] font-bold px-2.5 py-1 rounded shadow-md border border-gray-800 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none hidden sm:block">
+          <ChevronUp className="w-6 h-6 text-[#CCFF00] group-hover:animate-bounce" />
+          <span className="absolute right-14 bg-black/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded shadow-md border border-white/20 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none hidden sm:block">
             Back to Top
           </span>
         </button>
