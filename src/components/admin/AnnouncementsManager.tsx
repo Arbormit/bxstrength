@@ -175,35 +175,47 @@ export const AnnouncementsManager: React.FC<AnnouncementsManagerProps> = ({
             </h3>
 
             <div className="space-y-3 mt-4">
-              {announcements.map((a) => (
-                <div key={a.id} className="bg-gray-900 border border-gray-800 p-4 space-y-2 text-xs">
-                  <div className="flex items-center justify-between text-gray-400">
-                    <span className="font-bold text-white text-sm">{a.title}</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleEditOpen(a)}
-                        className="p-1 text-gray-400 hover:text-white transition-colors"
-                        title="Edit Announcement"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTrigger(a.id, a.title)}
-                        className="p-1 text-red-400 hover:text-red-300 transition-colors"
-                        title="Delete Announcement"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                      <span className="text-[10px] font-mono ml-1">{new Date(a.createdAt).toLocaleDateString()}</span>
+              {announcements.length === 0 ? (
+                <div className="text-center py-12 px-4 border border-dashed border-gray-800 rounded-xl bg-gray-950/50 space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 text-[#CCFF00] flex items-center justify-center mx-auto">
+                    <ShieldAlert className="w-6 h-6 text-[#CCFF00]" />
+                  </div>
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">No Active Broadcast Notices</h4>
+                  <p className="text-xs text-gray-400 max-w-sm mx-auto">
+                    Use the dispatch form on the left to broadcast club updates, workout news, or emergency announcements to your athletes.
+                  </p>
+                </div>
+              ) : (
+                announcements.map((a) => (
+                  <div key={a.id} className="bg-gray-900 border border-gray-800 p-4 space-y-2 text-xs">
+                    <div className="flex items-center justify-between text-gray-400">
+                      <span className="font-bold text-white text-sm">{a.title}</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEditOpen(a)}
+                          className="p-1 text-gray-400 hover:text-white transition-colors"
+                          title="Edit Announcement"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTrigger(a.id, a.title)}
+                          className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                          title="Delete Announcement"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-[10px] font-mono ml-1">{new Date(a.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <p className="text-gray-300 leading-relaxed">{a.message}</p>
+                    <div className="pt-2 flex items-center justify-between text-[10px] text-gray-500 border-t border-gray-800/80">
+                      <span>Target: <strong className="text-gray-300 uppercase">{a.targetRole}</strong></span>
+                      <span>Author: <strong className="text-pink-400">{a.authorName}</strong></span>
                     </div>
                   </div>
-                  <p className="text-gray-300 leading-relaxed">{a.message}</p>
-                  <div className="pt-2 flex items-center justify-between text-[10px] text-gray-500 border-t border-gray-800/80">
-                    <span>Target: <strong className="text-gray-300 uppercase">{a.targetRole}</strong></span>
-                    <span>Author: <strong className="text-pink-400">{a.authorName}</strong></span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>

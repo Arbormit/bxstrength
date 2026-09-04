@@ -73,7 +73,26 @@ const SEED_BOOKINGS: Booking[] = [];
 const SEED_SUBSCRIPTIONS: Subscription[] = [];
 const SEED_ENQUIRIES: Enquiry[] = [];
 const SEED_AUDIT_LOGS: AuditLog[] = [];
-const SEED_ANNOUNCEMENTS: Announcement[] = [];
+const SEED_ANNOUNCEMENTS: Announcement[] = [
+  {
+    id: 'ann-1',
+    title: 'New Olympic Boxing & Heavy Bag Studio Upgrade',
+    message: 'We have installed brand new high-grade Title Boxing heavy bags and speed bags at our London & India training hubs. Free sparring sessions open every Saturday at 10 AM.',
+    createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+    targetRole: 'all',
+    priority: 'high',
+    authorName: 'Shaban Faridi (Head Coach)'
+  },
+  {
+    id: 'ann-2',
+    title: 'Client Strategy Session Slot Availability',
+    message: '1-on-1 performance consultation slots with Head Coach Shaban Faridi for next week are now live. Book early to lock in your strategy review.',
+    createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+    targetRole: 'client',
+    priority: 'medium',
+    authorName: 'System Admin'
+  }
+];
 
 // Helper to initialize local storage
 function getItem<T>(key: string, seed: T): T {

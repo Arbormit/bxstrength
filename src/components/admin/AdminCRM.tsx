@@ -339,7 +339,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
               />
             )}
 
-            {isAdmin && activeTab === 'enquiries' && (
+            {activeTab === 'enquiries' && (
               <EnquiriesManager
                 enquiries={enquiries}
                 onEnquiriesUpdated={loadCRMData}
@@ -355,7 +355,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
               <TicketManagement onShowToast={showToast} />
             )}
 
-            {isAdmin && activeTab === 'announcements' && (
+            {activeTab === 'announcements' && (
               <AnnouncementsManager
                 announcements={announcements}
                 onAnnouncementsUpdated={loadCRMData}
