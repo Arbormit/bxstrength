@@ -245,21 +245,6 @@ if (dbPool) {
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
 
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS coach_position VARCHAR(100) DEFAULT 'SENIOR COACH';
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS headline TEXT;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS secondary_bio TEXT;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS specialties TEXT;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS experience_years INT DEFAULT 5;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS clients_served INT DEFAULT 1000;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS rating NUMERIC(3,1) DEFAULT 5.0;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS languages TEXT;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS availability VARCHAR(255);
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS certification TEXT;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS certifications TEXT;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS achievements TEXT;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS socials TEXT;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS gallery_photos TEXT;
-          ALTER TABLE trainers ADD COLUMN IF NOT EXISTS gallery_videos TEXT;
           ALTER TABLE users ADD COLUMN IF NOT EXISTS coach_position VARCHAR(100) DEFAULT 'Senior Coach';
           ALTER TABLE users ADD COLUMN IF NOT EXISTS height_cm INTEGER DEFAULT 175;
           ALTER TABLE users ADD COLUMN IF NOT EXISTS age INTEGER DEFAULT 25;
@@ -267,6 +252,8 @@ if (dbPool) {
           ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(100) DEFAULT 'Normal User';
           ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_statements TEXT DEFAULT '[]';
         `);
+
+        await ensureTrainerColumnsExist();
       } catch {
         // Table initialization complete
       }
@@ -1087,26 +1074,27 @@ const mapRowToTrainer = (row: any): ServerTrainer => {
 
 const ensureTrainerColumnsExist = async () => {
   if (!dbPool) return;
-  try {
-    await dbPool.query(`
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS coach_position VARCHAR(100) DEFAULT 'SENIOR COACH';
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS headline TEXT;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS secondary_bio TEXT;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS specialties TEXT;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS experience_years INT DEFAULT 5;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS clients_served INT DEFAULT 1000;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS rating NUMERIC(3,1) DEFAULT 5.0;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS languages TEXT;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS availability VARCHAR(255);
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS certification TEXT;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS certifications TEXT;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS achievements TEXT;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS socials TEXT;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS gallery_photos TEXT;
-      ALTER TABLE trainers ADD COLUMN IF NOT EXISTS gallery_videos TEXT;
-    `);
-  } catch (e: any) {
-    console.error('Migration notice for trainers table:', e.message);
+  const alterStatements = [
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS coach_position VARCHAR(100) DEFAULT 'SENIOR COACH'`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS headline TEXT`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS secondary_bio TEXT`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS specialties TEXT`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS experience_years INT DEFAULT 5`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS clients_served INT DEFAULT 1000`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS rating NUMERIC(3,1) DEFAULT 5.0`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS languages TEXT`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS availability VARCHAR(255)`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS certification TEXT`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS certifications TEXT`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS achievements TEXT`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS socials TEXT`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS gallery_photos TEXT`,
+    `ALTER TABLE trainers ADD COLUMN IF NOT EXISTS gallery_videos TEXT`
+  ];
+  for (const stmt of alterStatements) {
+    try {
+      await dbPool.query(stmt);
+    } catch {}
   }
 };
 
@@ -1192,6 +1180,7 @@ app.post('/api/trainers', authenticateToken, async (req: any, res: any) => {
 
     if (dbPool) {
       try {
+        await ensureTrainerColumnsExist();
         await dbPool.query(
           `INSERT INTO trainers (id, name, role, coach_position, headline, image, bio, secondary_bio, specialties, experience_years, clients_served, rating, languages, availability, certification, certifications, achievements, gallery_photos, gallery_videos, socials, created_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())`,
@@ -1204,23 +1193,6 @@ app.post('/api/trainers', authenticateToken, async (req: any, res: any) => {
         );
       } catch (e: any) {
         console.error('NeonDB add trainer error:', e.message);
-        if (e.message && (e.message.includes('does not exist') || e.message.includes('column'))) {
-          await ensureTrainerColumnsExist();
-          try {
-            await dbPool.query(
-              `INSERT INTO trainers (id, name, role, coach_position, headline, image, bio, secondary_bio, specialties, experience_years, clients_served, rating, languages, availability, certification, certifications, achievements, gallery_photos, gallery_videos, socials, created_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())`,
-              [
-                trainerId, cleanName, cleanRole, cleanPos, cleanHeadline, cleanImage, cleanBio, cleanSecondaryBio,
-                JSON.stringify(parsedSpecialties), newTrainer.experienceYears, newTrainer.clientsServed, newTrainer.rating, JSON.stringify(parsedLanguages), cleanAvail,
-                cleanCert, JSON.stringify(parsedCerts), JSON.stringify(parsedAch),
-                JSON.stringify(parsedPhotos), JSON.stringify(parsedVideos), JSON.stringify(parsedSocials)
-              ]
-            );
-          } catch (retryErr: any) {
-            console.error('NeonDB add trainer retry error:', retryErr.message);
-          }
-        }
       }
     }
 
@@ -1259,56 +1231,47 @@ app.put('/api/trainers/:id', authenticateToken, async (req: any, res: any) => {
     const parsedVideos = Array.isArray(galleryVideos) ? galleryVideos : (typeof galleryVideos === 'string' ? galleryVideos.split('\n').map(v => v.trim()).filter(Boolean) : []);
     const parsedSocials = typeof socials === 'object' && socials !== null ? socials : { instagram: '#', linkedin: '#' };
 
-    const doUpdateQuery = () => dbPool?.query(
-      `INSERT INTO trainers (
-        id, name, role, coach_position, headline, image, bio, secondary_bio,
-        specialties, experience_years, clients_served, rating, languages, availability,
-        certification, certifications, achievements, gallery_photos, gallery_videos, socials, created_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8,
-        $9, $10, $11, $12, $13, $14,
-        $15, $16, $17, $18, $19, $20, NOW()
-      ) ON CONFLICT (id) DO UPDATE SET
-        name = EXCLUDED.name,
-        role = EXCLUDED.role,
-        coach_position = EXCLUDED.coach_position,
-        headline = EXCLUDED.headline,
-        image = EXCLUDED.image,
-        bio = EXCLUDED.bio,
-        secondary_bio = EXCLUDED.secondary_bio,
-        specialties = EXCLUDED.specialties,
-        experience_years = EXCLUDED.experience_years,
-        clients_served = EXCLUDED.clients_served,
-        rating = EXCLUDED.rating,
-        languages = EXCLUDED.languages,
-        availability = EXCLUDED.availability,
-        certification = EXCLUDED.certification,
-        certifications = EXCLUDED.certifications,
-        achievements = EXCLUDED.achievements,
-        gallery_photos = EXCLUDED.gallery_photos,
-        gallery_videos = EXCLUDED.gallery_videos,
-        socials = EXCLUDED.socials`,
-      [
-        id, cleanName, cleanRole, cleanPos, cleanHeadline, cleanImage, cleanBio, cleanSecondaryBio,
-        JSON.stringify(parsedSpecialties), Number(experienceYears) || 5, Number(clientsServed) || 1000, Number(rating) || 5.0,
-        JSON.stringify(parsedLanguages), cleanAvail, cleanCert, JSON.stringify(parsedCerts),
-        JSON.stringify(parsedAch), JSON.stringify(parsedPhotos), JSON.stringify(parsedVideos), JSON.stringify(parsedSocials)
-      ]
-    );
-
     if (dbPool) {
       try {
-        await doUpdateQuery();
+        await ensureTrainerColumnsExist();
+        await dbPool.query(
+          `INSERT INTO trainers (
+            id, name, role, coach_position, headline, image, bio, secondary_bio,
+            specialties, experience_years, clients_served, rating, languages, availability,
+            certification, certifications, achievements, gallery_photos, gallery_videos, socials, created_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8,
+            $9, $10, $11, $12, $13, $14,
+            $15, $16, $17, $18, $19, $20, NOW()
+          ) ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            role = EXCLUDED.role,
+            coach_position = EXCLUDED.coach_position,
+            headline = EXCLUDED.headline,
+            image = EXCLUDED.image,
+            bio = EXCLUDED.bio,
+            secondary_bio = EXCLUDED.secondary_bio,
+            specialties = EXCLUDED.specialties,
+            experience_years = EXCLUDED.experience_years,
+            clients_served = EXCLUDED.clients_served,
+            rating = EXCLUDED.rating,
+            languages = EXCLUDED.languages,
+            availability = EXCLUDED.availability,
+            certification = EXCLUDED.certification,
+            certifications = EXCLUDED.certifications,
+            achievements = EXCLUDED.achievements,
+            gallery_photos = EXCLUDED.gallery_photos,
+            gallery_videos = EXCLUDED.gallery_videos,
+            socials = EXCLUDED.socials`,
+          [
+            id, cleanName, cleanRole, cleanPos, cleanHeadline, cleanImage, cleanBio, cleanSecondaryBio,
+            JSON.stringify(parsedSpecialties), Number(experienceYears) || 5, Number(clientsServed) || 1000, Number(rating) || 5.0,
+            JSON.stringify(parsedLanguages), cleanAvail, cleanCert, JSON.stringify(parsedCerts),
+            JSON.stringify(parsedAch), JSON.stringify(parsedPhotos), JSON.stringify(parsedVideos), JSON.stringify(parsedSocials)
+          ]
+        );
       } catch (e: any) {
         console.error('NeonDB update trainer error:', e.message);
-        if (e.message && (e.message.includes('does not exist') || e.message.includes('column'))) {
-          await ensureTrainerColumnsExist();
-          try {
-            await doUpdateQuery();
-          } catch (retryErr: any) {
-            console.error('NeonDB update trainer retry error:', retryErr.message);
-          }
-        }
       }
     }
 
@@ -1349,7 +1312,7 @@ app.put('/api/trainers/:id', authenticateToken, async (req: any, res: any) => {
   }
 });
 
-app.delete('/api/trainers/:id', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
+app.delete('/api/trainers/:id', authenticateToken, authorizeRoles('admin', 'coach'), async (req: any, res: any) => {
   try {
     const { id } = req.params;
 
