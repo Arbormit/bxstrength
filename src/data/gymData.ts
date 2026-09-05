@@ -107,35 +107,62 @@ export interface BxTrainer extends Trainer {
   headline?: string;
   secondaryBio?: string;
   clientsServed?: number;
+  internationalReach?: string[];
+  qualifications?: string[];
+  coreExpertise?: string[];
+  specialPopulations?: string[];
+  professionalExperience?: string[];
+  virtualCoachingSkills?: string[];
 }
 
 export const TRAINERS_DATA: BxTrainer[] = [
   {
     id: 'shaban-faridi',
     name: 'Shaban Faridi',
-    role: 'Head Coach & Boxing Specialist',
+    role: 'Head Coach | Boxing Instructor | Physiotherapy Professional',
     coachPosition: 'HEAD COACH & FOUNDER',
     headline: 'HEAD COACH | BOXING INSTRUCTOR | PHYSIOTHERAPY PROFESSIONAL',
     image: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&q=80&w=800',
-    bio: 'Head Coach Shaban Faridi holds a Diploma in Physiotherapy from Singhania University and Boxing Techniques certification from IG Stadium. With 10+ years of high-yield coaching experience, he has transformed over 1,000+ athletes across India, Canada, UK, Australia, Saudi Arabia, and UAE.',
+    bio: 'Head Coach with over 10 years of industry experience combining boxing instruction, strength & conditioning, and physiotherapy-based rehabilitation. Trained at IG Stadium to master boxing technique and athlete development. Brings 6+ years of entrepreneurial experience as a gym owner/operator, delivering personalized transformations to over 1,000 clients worldwide.',
     secondaryBio: 'His methodology bridges the gap between traditional strength training and the chaotic demands of high-performance conditioning. Whether peaking for elite competition or building a foundation for sustainable power, Head Coach Shaban applies a data-driven, precision-focused approach to every session.',
-    specialties: ['Boxing Power & Mittwork', 'Physiotherapy Rehab', 'Strength & Conditioning', 'Body Transformation'],
+    specialties: ['Boxing Instruction', 'Physiotherapy & Rehab', 'Strength & Conditioning', 'Chronic Back Pain Rehab', 'Post-Knee Surgery Recovery', 'Athletic Performance'],
     experienceYears: 10,
     clientsServed: 1000,
     rating: 5.0,
-    languages: ['English', 'Hindi', 'Urdu'],
+    languages: ['English', 'Hindi'],
+    internationalReach: ['Canada', 'UK', 'Australia', 'Saudi Arabia', 'UAE'],
     availability: 'Mon - Sat (Morning & Evening Sessions)',
-    certification: 'Diploma in Physiotherapy & IG Stadium Boxing Master',
+    certification: 'Diploma in Physiotherapy (Singhania University) & IG Stadium Boxing Master',
+    qualifications: [
+      'Diploma in Physiotherapy – Singhania University (Rajasthan, India)',
+      'Boxing Techniques & Coaching Methods – IG Stadium'
+    ],
     certifications: [
-      'Diploma in Physiotherapy (Singhania University)',
-      'IG Stadium Certified Boxing Master Coach',
+      'Diploma in Physiotherapy – Singhania University (Rajasthan, India)',
+      'Boxing Techniques & Coaching Methods – IG Stadium',
       'CIMSPA Level 4 Master Fitness Specialist',
       'First Aid & CPR Certified'
     ],
+    coreExpertise: [
+      'Boxing Instructor: Beginner techniques through competitive athlete coaching for beginners and intermediate.',
+      'Rehab & Corrective Exercise: Physiotherapy-focused recovery and mobility training.',
+      'Fitness & Conditioning: Strength & conditioning, weight loss, and athletic performance enhancement.'
+    ],
+    specialPopulations: [
+      'Chronic back pain management',
+      'Post-knee replacement rehabilitation',
+      'Injury recovery & severe mobility limitations',
+      'Mental health and wellness support via structured exercise & boxing'
+    ],
+    professionalExperience: [
+      'Gym Owner & Head Coach | Self-Owned Gym (6+ Years)',
+      'Business Developer & Fitness Trainer | WOW Gym (Sept 2017 – Oct 2018)'
+    ],
     achievements: [
-      '1,000+ Global Athlete Transformations',
-      'Head Coach at BxStrength Performance Hub',
-      'Former Regional Boxing Heavyweight Competitor'
+      '1,000+ Global Athlete Transformations (Canada, UK, Australia, Saudi Arabia, UAE)',
+      '6+ Years Gym Owner & Operator Experience',
+      'IG Stadium Master Boxing Instructor',
+      'Former Business Developer & Fitness Trainer at WOW Gym'
     ],
     galleryPhotos: [
       'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800',
@@ -148,27 +175,44 @@ export const TRAINERS_DATA: BxTrainer[] = [
   },
   {
     id: 'sadeem',
-    name: 'Sadeem',
-    role: 'Senior Strength & Hypertrophy Coach',
-    coachPosition: 'SENIOR STRENGTH COACH',
+    name: 'Trainer Sadeem',
+    role: 'Fitness Trainer | Strength & Conditioning Coach | Virtual Fitness Coach',
+    coachPosition: 'SENIOR STRENGTH & CONDITIONING COACH',
     headline: 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
     image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&q=80&w=800',
-    bio: 'Sadeem specializes in compound powerlifting, muscle hypertrophy, and posture correction. With 8 years of intensive athletic coaching experience, Sadeem designs periodized strength routines tailored to individual bone leverage.',
-    secondaryBio: 'Focused on maximizing lean muscle gain while eliminating lower back and knee pain through anatomical posture alignment.',
-    specialties: ['Compound Powerlifting', 'Hypertrophy', 'Biomechanics', 'Posture Correction'],
-    experienceYears: 8,
+    bio: 'Dedicated and experienced Fitness Trainer with strong practical knowledge of strength training, functional fitness, conditioning, mobility, and general fitness. Experienced in working with clients of different fitness levels and helping them improve strength, endurance, mobility, body composition, and overall physical performance. Experienced in both in-person and virtual coaching.',
+    secondaryBio: 'Specializes in live 1-on-1 virtual training sessions with clear video exercise demonstrations, real-time online form observation & movement correction, custom workout plans adapted to home or gym equipment, and consistent communication & accountability tracking.',
+    specialties: ['Strength & Resistance Training', 'Functional Fitness & Muscle Building', 'Fat Loss & Cardio Conditioning', 'Exercise Technique & Form Correction', 'Personalized & Virtual Coaching'],
+    experienceYears: 6,
     clientsServed: 750,
     rating: 4.9,
-    languages: ['English', 'Urdu'],
-    availability: 'Tue - Sun (Flexible Slots)',
-    certification: 'Certified UK Strength & Conditioning Coach',
+    languages: ['English', 'Hindi'],
+    availability: 'Tue - Sun (In-Person & Virtual Coaching)',
+    certification: 'Certified Fitness Trainer & Strength Specialist',
     certifications: [
-      'NSCA Certified Strength & Conditioning Specialist (CSCS)',
-      'UK Athletics Level 3 Coach'
+      'Certified Strength & Functional Conditioning Specialist',
+      'Exercise Technique & Biomechanics Certified',
+      'Virtual & Remote Personal Coaching Master'
+    ],
+    coreExpertise: [
+      'Strength & Functional Training: Strength & Resistance Training, Functional Fitness, Core Strengthening, Muscle Building',
+      'Conditioning & Weight Management: Fat Loss Training, Weight Management, Cardiovascular Conditioning',
+      'Form & Mobility: Exercise Technique & Form Correction, Mobility & Flexibility Training',
+      'Client Care: Beginner & Intermediate Client Training, Personalized Workout Programming, Online/Virtual Coaching, Progress Tracking'
+    ],
+    professionalExperience: [
+      'Fitness Trainer | Box & Strength / Private Training (Delhi Zakir Nagar)'
+    ],
+    virtualCoachingSkills: [
+      'Live 1-on-1 virtual training sessions with clear video exercise demonstrations',
+      'Form observation and real-time movement corrections online',
+      'Custom workout plans adapted to available home or gym equipment',
+      'Consistent communication and accountability tracking for online clients'
     ],
     achievements: [
-      'Over 750+ Muscle Hypertrophy Successes',
-      'State Powerlifting Gold Medalist'
+      'Conduct personalized fitness training sessions for clients across varying fitness levels (Delhi Zakir Nagar)',
+      '750+ In-Person & Remote Client Successes',
+      'Specialist in Tailored Home & Gym Equipment Adaptations'
     ],
     galleryPhotos: [
       'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=800'
@@ -178,27 +222,44 @@ export const TRAINERS_DATA: BxTrainer[] = [
   },
   {
     id: 'moheeb-khan',
-    name: 'Moheeb Khan',
-    role: 'High-Intensity Metabolic Specialist',
-    coachPosition: 'ENDURANCE & METABOLIC COACH',
+    name: 'Trainer Moheeb Khan',
+    role: 'Fitness Trainer | Strength & Conditioning Coach | Virtual Fitness Coach',
+    coachPosition: 'ENDURANCE & METABOLIC SPECIALIST',
     headline: 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
     image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800',
-    bio: 'Moheeb Khan delivers tactical metabolic conditioning, high-yield cardio protocols, and rapid fat burn programs. Dedicated to elevating endurance for athletes and busy professionals.',
-    secondaryBio: 'High-yield EPOC protocol specialist for quick 20-minute and 45-minute transformation sessions.',
-    specialties: ['Tactical HIIT', 'Fat Loss EPOC', 'Cardiovascular Endurance', 'Stamina Training'],
-    experienceYears: 7,
+    bio: 'Fitness Trainer with hands-on experience in strength training, conditioning, mobility, and general fitness. Dedicated to guiding clients through effective workout routines while maintaining a strong emphasis on exercise technique, consistency, motivation, and personalized goal setting. Capable of delivering coaching both on-site and remotely.',
+    secondaryBio: 'Delivers 1-on-1 live online coaching sessions with real-time video demonstrations, remote technique evaluation and movement guidance, tailored home/gym workout planning, and remote motivation with ongoing client accountability.',
+    specialties: ['Strength & Muscle Building', 'Fat Loss & Weight Management', 'Cardiovascular Conditioning', 'Exercise Technique & Form', 'Online Personal Training'],
+    experienceYears: 5,
     clientsServed: 600,
     rating: 4.9,
     languages: ['English', 'Hindi'],
-    availability: 'Mon - Sat (Evening Sessions)',
-    certification: 'Certified Metabolic & Endurance Trainer',
+    availability: 'Mon - Sat (On-Site & Virtual Sessions)',
+    certification: 'Certified Personal Trainer & Remote Coaching Specialist',
     certifications: [
-      'ACE Certified Personal Trainer',
-      'Precision Metabolic Specialist'
+      'Certified Fitness Trainer & Functional Fitness Specialist',
+      'Cardiovascular & High-Intensity Conditioning Coach',
+      'Online Personal Training & Remote Motivation Certified'
+    ],
+    coreExpertise: [
+      'Strength & Muscle Building: Strength Training, Resistance Training, Muscle Building, Core Training',
+      'Fat Loss & Fitness: Fat Loss & Weight Management, Functional Training, Cardiovascular Conditioning',
+      'Coaching & Programming: Exercise Technique & Form Correction, Workout Programming, Beginner Fitness Training',
+      'Virtual Support: Online Personal Training, Client Motivation & Accountability'
+    ],
+    professionalExperience: [
+      'Fitness Trainer | Box & Strength / Private Training'
+    ],
+    virtualCoachingSkills: [
+      '1-on-1 live online coaching sessions with real-time video demonstrations',
+      'Remote technique evaluation and movement guidance',
+      'Tailored home and gym workout planning with progress monitoring',
+      'Remote motivation and ongoing client accountability'
     ],
     achievements: [
-      'Trained 600+ Fat Loss Transformations',
-      'Crossfit Regional Finalist'
+      'Conduct individual and group training sessions aimed at strength, conditioning, and weight management goals',
+      '600+ In-Person & Virtual Transformations',
+      'Interactive Live Remote Form Evaluation & Progress Monitoring'
     ],
     galleryPhotos: [
       'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&q=80&w=800'

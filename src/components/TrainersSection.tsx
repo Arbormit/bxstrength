@@ -180,6 +180,80 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
               </div>
             </div>
 
+            {/* Languages & International Reach */}
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-zinc-400 font-bold uppercase">Languages Spoken:</span>
+              {selectedTrainerForProfile.languages.map((lang, idx) => (
+                <span key={idx} className="bg-zinc-800 text-zinc-200 font-bold px-2 py-0.5 rounded border border-zinc-700">
+                  {lang}
+                </span>
+              ))}
+              {selectedTrainerForProfile.internationalReach && selectedTrainerForProfile.internationalReach.length > 0 && (
+                <div className="w-full flex flex-wrap items-center gap-1.5 mt-2">
+                  <span className="text-[#CCFF00] font-bold uppercase text-[10px]">Global Reach:</span>
+                  {selectedTrainerForProfile.internationalReach.map((country, idx) => (
+                    <span key={idx} className="bg-emerald-950/80 text-emerald-400 border border-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                      🌐 {country}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Core Skills & Expertise */}
+            {selectedTrainerForProfile.coreExpertise && selectedTrainerForProfile.coreExpertise.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2 border-b border-zinc-800 pb-2">
+                  <Award className="w-4 h-4 text-[#CCFF00]" />
+                  CORE EXPERTISE &amp; SKILLS
+                </h4>
+                <div className="space-y-2">
+                  {selectedTrainerForProfile.coreExpertise.map((item, idx) => (
+                    <div key={idx} className="bg-zinc-900/90 border border-zinc-800 p-3 rounded-xl flex items-start gap-3">
+                      <span className="text-[#CCFF00] font-bold text-xs mt-0.5">•</span>
+                      <span className="text-xs font-medium text-zinc-200 leading-relaxed">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Specializations / Special Populations */}
+            {selectedTrainerForProfile.specialPopulations && selectedTrainerForProfile.specialPopulations.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2 border-b border-zinc-800 pb-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  SPECIALIZATIONS &amp; REHABILITATION
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {selectedTrainerForProfile.specialPopulations.map((item, idx) => (
+                    <div key={idx} className="bg-zinc-900/90 border border-zinc-800 p-2.5 rounded-xl flex items-center gap-2 text-xs font-semibold text-zinc-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Virtual Coaching Skills */}
+            {selectedTrainerForProfile.virtualCoachingSkills && selectedTrainerForProfile.virtualCoachingSkills.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2 border-b border-zinc-800 pb-2">
+                  <Globe className="w-4 h-4 text-sky-400" />
+                  VIRTUAL &amp; REMOTE COACHING CAPABILITIES
+                </h4>
+                <div className="space-y-2">
+                  {selectedTrainerForProfile.virtualCoachingSkills.map((skill, idx) => (
+                    <div key={idx} className="bg-zinc-900/90 border border-zinc-800 p-2.5 rounded-xl flex items-center gap-2.5 text-xs font-medium text-zinc-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                      <span>{skill}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Verified Certifications List */}
             <div className="space-y-3">
               <h4 className="text-xs font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2 border-b border-zinc-800 pb-2">
@@ -196,11 +270,29 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
               </div>
             </div>
 
+            {/* Professional Experience */}
+            {selectedTrainerForProfile.professionalExperience && selectedTrainerForProfile.professionalExperience.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2 border-b border-zinc-800 pb-2">
+                  <Clock className="w-4 h-4 text-purple-400" />
+                  PROFESSIONAL EXPERIENCE
+                </h4>
+                <div className="space-y-2">
+                  {selectedTrainerForProfile.professionalExperience.map((exp, idx) => (
+                    <div key={idx} className="bg-zinc-900/90 border border-zinc-800 p-3 rounded-xl flex items-center gap-3 text-xs font-semibold text-zinc-200">
+                      <span className="text-purple-400 font-bold">•</span>
+                      <span>{exp}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Verified Achievements List */}
             <div className="space-y-3">
               <h4 className="text-xs font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2 border-b border-zinc-800 pb-2">
                 <Trophy className="w-4 h-4 text-amber-400" />
-                KEY ACHIEVEMENTS & MILESTONES
+                KEY ACHIEVEMENTS &amp; MILESTONES
               </h4>
               <div className="space-y-2">
                 {(selectedTrainerForProfile.achievements || ['Over 98% Client Goal Success Rate', 'Verified UK Master Coach']).map((ach, idx) => (
