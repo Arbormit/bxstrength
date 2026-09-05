@@ -109,7 +109,104 @@ export interface BxTrainer extends Trainer {
   clientsServed?: number;
 }
 
-export const TRAINERS_DATA: BxTrainer[] = [];
+export const TRAINERS_DATA: BxTrainer[] = [
+  {
+    id: 'shaban-faridi',
+    name: 'Shaban Faridi',
+    role: 'Head Coach & Boxing Specialist',
+    coachPosition: 'HEAD COACH & FOUNDER',
+    headline: 'HEAD COACH | BOXING INSTRUCTOR | PHYSIOTHERAPY PROFESSIONAL',
+    image: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&q=80&w=800',
+    bio: 'Head Coach Shaban Faridi holds a Diploma in Physiotherapy from Singhania University and Boxing Techniques certification from IG Stadium. With 10+ years of high-yield coaching experience, he has transformed over 1,000+ athletes across India, Canada, UK, Australia, Saudi Arabia, and UAE.',
+    secondaryBio: 'His methodology bridges the gap between traditional strength training and the chaotic demands of high-performance conditioning. Whether peaking for elite competition or building a foundation for sustainable power, Head Coach Shaban applies a data-driven, precision-focused approach to every session.',
+    specialties: ['Boxing Power & Mittwork', 'Physiotherapy Rehab', 'Strength & Conditioning', 'Body Transformation'],
+    experienceYears: 10,
+    clientsServed: 1000,
+    rating: 5.0,
+    languages: ['English', 'Hindi', 'Urdu'],
+    availability: 'Mon - Sat (Morning & Evening Sessions)',
+    certification: 'Diploma in Physiotherapy & IG Stadium Boxing Master',
+    certifications: [
+      'Diploma in Physiotherapy (Singhania University)',
+      'IG Stadium Certified Boxing Master Coach',
+      'CIMSPA Level 4 Master Fitness Specialist',
+      'First Aid & CPR Certified'
+    ],
+    achievements: [
+      '1,000+ Global Athlete Transformations',
+      'Head Coach at BxStrength Performance Hub',
+      'Former Regional Boxing Heavyweight Competitor'
+    ],
+    galleryPhotos: [
+      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=80&w=800'
+    ],
+    galleryVideos: [
+      'https://assets.mixkit.co/videos/preview/mixkit-boxer-getting-ready-for-a-fight-42994-large.mp4'
+    ],
+    socials: { instagram: 'https://instagram.com/bxstrength', linkedin: 'https://linkedin.com/' }
+  },
+  {
+    id: 'sadeem',
+    name: 'Sadeem',
+    role: 'Senior Strength & Hypertrophy Coach',
+    coachPosition: 'SENIOR STRENGTH COACH',
+    headline: 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
+    image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&q=80&w=800',
+    bio: 'Sadeem specializes in compound powerlifting, muscle hypertrophy, and posture correction. With 8 years of intensive athletic coaching experience, Sadeem designs periodized strength routines tailored to individual bone leverage.',
+    secondaryBio: 'Focused on maximizing lean muscle gain while eliminating lower back and knee pain through anatomical posture alignment.',
+    specialties: ['Compound Powerlifting', 'Hypertrophy', 'Biomechanics', 'Posture Correction'],
+    experienceYears: 8,
+    clientsServed: 750,
+    rating: 4.9,
+    languages: ['English', 'Urdu'],
+    availability: 'Tue - Sun (Flexible Slots)',
+    certification: 'Certified UK Strength & Conditioning Coach',
+    certifications: [
+      'NSCA Certified Strength & Conditioning Specialist (CSCS)',
+      'UK Athletics Level 3 Coach'
+    ],
+    achievements: [
+      'Over 750+ Muscle Hypertrophy Successes',
+      'State Powerlifting Gold Medalist'
+    ],
+    galleryPhotos: [
+      'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=800'
+    ],
+    galleryVideos: [],
+    socials: { instagram: 'https://instagram.com/', linkedin: 'https://linkedin.com/' }
+  },
+  {
+    id: 'moheeb-khan',
+    name: 'Moheeb Khan',
+    role: 'High-Intensity Metabolic Specialist',
+    coachPosition: 'ENDURANCE & METABOLIC COACH',
+    headline: 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800',
+    bio: 'Moheeb Khan delivers tactical metabolic conditioning, high-yield cardio protocols, and rapid fat burn programs. Dedicated to elevating endurance for athletes and busy professionals.',
+    secondaryBio: 'High-yield EPOC protocol specialist for quick 20-minute and 45-minute transformation sessions.',
+    specialties: ['Tactical HIIT', 'Fat Loss EPOC', 'Cardiovascular Endurance', 'Stamina Training'],
+    experienceYears: 7,
+    clientsServed: 600,
+    rating: 4.9,
+    languages: ['English', 'Hindi'],
+    availability: 'Mon - Sat (Evening Sessions)',
+    certification: 'Certified Metabolic & Endurance Trainer',
+    certifications: [
+      'ACE Certified Personal Trainer',
+      'Precision Metabolic Specialist'
+    ],
+    achievements: [
+      'Trained 600+ Fat Loss Transformations',
+      'Crossfit Regional Finalist'
+    ],
+    galleryPhotos: [
+      'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&q=80&w=800'
+    ],
+    galleryVideos: [],
+    socials: { instagram: 'https://instagram.com/', linkedin: 'https://linkedin.com/' }
+  }
+];
 
 export const SCHEDULE_DATA: ScheduleSlot[] = [
   { id: '1', day: 'Monday', time: '07:00 AM - 08:00 AM', className: 'Boxing Power & Technique', trainer: 'Shaban Faridi', room: 'Ring Arena B', spotsLeft: 4 },

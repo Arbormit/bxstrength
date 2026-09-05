@@ -4,7 +4,7 @@ import {
   Enquiry, AuditLog, Announcement, BlogPost, Testimonial,
   SupportTicket, TicketStatus, TicketCategory, TicketPriority
 } from '../types';
-import { BxTrainer } from '../data/gymData';
+import { BxTrainer, TRAINERS_DATA } from '../data/gymData';
 
 const STORAGE_KEYS = {
   USERS: 'velocity_users',
@@ -1239,23 +1239,7 @@ export const VelocityAPI = {
 
   // --- REAL-TIME TRAINERS / COACH CARDS API ---
   async getTrainersAsync(): Promise<BxTrainer[]> {
-    try {
-      const res = await fetch('/api/trainers');
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          localStorage.setItem('bxstrength_trainers_local_store', JSON.stringify(data));
-          return data;
-        }
-      }
-    } catch {
-      // Fallback to local store
-    }
-    const local = localStorage.getItem('bxstrength_trainers_local_store');
-    if (local) {
-      try { return JSON.parse(local); } catch {}
-    }
-    return [];
+    return TRAINERS_DATA;
   },
 
   async addTrainerAsync(trainerData: Partial<BxTrainer>): Promise<{ success: boolean; data?: BxTrainer; error?: string }> {

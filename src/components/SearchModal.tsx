@@ -4,7 +4,8 @@ import {
   CLASSES_DATA, 
   SERVICES_DATA, 
   BLOG_POSTS_DATA, 
-  MEMBERSHIP_PLANS 
+  MEMBERSHIP_PLANS,
+  TRAINERS_DATA
 } from '../data/gymData';
 import { FitnessClass, Trainer, ServiceItem, BlogPost, MembershipPlan, ViewPage, User } from '../types';
 import { VelocityAPI } from '../services/api';
@@ -296,12 +297,13 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       matchesQuery(cls.trainerName)
     );
 
-    // Filter Real Database Coaches (No static dummy data)
-    const matchedTrainers = dbCoaches.filter(coach => 
+    // Filter Expert Coaches
+    const matchedTrainers = TRAINERS_DATA.filter(coach => 
       matchesQuery(coach.name) || 
+      matchesQuery(coach.role) || 
       matchesQuery(coach.coachPosition || '') || 
-      matchesQuery(coach.email) ||
-      matchesQuery(coach.fitnessGoals || '')
+      matchesQuery(coach.bio) ||
+      (coach.specialties && coach.specialties.some(s => matchesQuery(s)))
     );
 
     // Filter Services

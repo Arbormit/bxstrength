@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trainer, ViewPage } from '../types';
-import { BxTrainer } from '../data/gymData';
+import { BxTrainer, TRAINERS_DATA } from '../data/gymData';
 import { Star, Calendar, ShieldCheck, Globe, Clock, Award, Trophy, CheckCircle2, X, ExternalLink, Database, RefreshCw } from 'lucide-react';
 
 interface TrainersSectionProps {
@@ -15,28 +15,11 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
   onOpenBookingWithTrainer
 }) => {
   const [selectedTrainerForProfile, setSelectedTrainerForProfile] = useState<BxTrainer | null>(null);
-  const [trainers, setTrainers] = useState<BxTrainer[]>([]);
+  const [trainers, setTrainers] = useState<BxTrainer[]>(TRAINERS_DATA);
   const [lightboxMedia, setLightboxMedia] = useState<{ type: 'photo' | 'video'; url: string } | null>(null);
 
-  const fetchLiveTrainers = () => {
-    fetch('/api/trainers')
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setTrainers(data);
-        }
-      })
-      .catch(() => {
-        setTrainers([]);
-      });
-  };
-
   useEffect(() => {
-    fetchLiveTrainers();
-    window.addEventListener('bxstrength_trainers_updated', fetchLiveTrainers);
-    return () => {
-      window.removeEventListener('bxstrength_trainers_updated', fetchLiveTrainers);
-    };
+    setTrainers(TRAINERS_DATA);
   }, []);
 
   return (
