@@ -222,7 +222,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
               className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black tracking-widest px-4 py-3 uppercase transition-all shadow-md flex items-center gap-2 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ ADD COACH</span>
+              <span>ADD COACH</span>
             </button>
           )}
 
@@ -231,7 +231,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
             className="bg-[#8C532B] hover:bg-[#70401E] text-white text-xs font-black tracking-widest px-4 py-3 uppercase transition-all shadow-md shadow-amber-950/20 flex items-center gap-2 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>{isCoach ? 'ADD CLIENT' : '+ ADD CLIENT / USER'}</span>
+            <span>{isCoach ? 'ADD CLIENT' : 'ADD CLIENT / USER'}</span>
           </button>
         </div>
       </div>

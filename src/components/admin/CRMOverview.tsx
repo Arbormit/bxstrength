@@ -541,7 +541,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                 className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest px-6 py-3 rounded-lg uppercase transition-all shadow-md inline-flex items-center gap-2 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ ADD FIRST LEAD</span>
+                <span>ADD FIRST LEAD</span>
               </button>
             </div>
           </div>

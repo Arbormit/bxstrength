@@ -126,7 +126,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({ user, onShow
           className="bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-black tracking-widest px-5 py-3 rounded uppercase transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>+ ADD NEW ACHIEVEMENT</span>
+          <span>ADD NEW ACHIEVEMENT</span>
         </button>
       </div>
 
