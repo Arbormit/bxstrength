@@ -150,6 +150,46 @@ CREATE TABLE IF NOT EXISTS announcements (
   author_name VARCHAR(255) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS trainers (
+  id VARCHAR(64) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  role VARCHAR(255) NOT NULL,
+  coach_position VARCHAR(100) DEFAULT 'SENIOR COACH',
+  headline TEXT,
+  image TEXT NOT NULL,
+  bio TEXT NOT NULL,
+  secondary_bio TEXT,
+  specialties TEXT,
+  experience_years INT DEFAULT 5,
+  clients_served INT DEFAULT 1000,
+  rating NUMERIC(3,1) DEFAULT 5.0,
+  languages TEXT,
+  availability VARCHAR(255),
+  certification TEXT,
+  certifications TEXT,
+  achievements TEXT,
+  socials TEXT,
+  gallery_photos TEXT,
+  gallery_videos TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS coach_position VARCHAR(100) DEFAULT 'SENIOR COACH';
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS headline TEXT;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS secondary_bio TEXT;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS specialties TEXT;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS experience_years INT DEFAULT 5;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS clients_served INT DEFAULT 1000;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS rating NUMERIC(3,1) DEFAULT 5.0;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS languages TEXT;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS availability VARCHAR(255);
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS certification TEXT;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS certifications TEXT;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS achievements TEXT;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS socials TEXT;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS gallery_photos TEXT;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS gallery_videos TEXT;
+
 -- HIGH PERFORMANCE B-TREE INDEXES FOR 5 LAKH (500,000) ACTIVE USERS
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
@@ -163,3 +203,4 @@ CREATE INDEX IF NOT EXISTS idx_nutrition_plans_assigned ON nutrition_plans(assig
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_status ON subscriptions(user_id, status);
 CREATE INDEX IF NOT EXISTS idx_enquiries_status ON enquiries(status);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+
