@@ -6,7 +6,7 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     base: './',
-    envPrefix: ['VITE_', 'API_', 'BREVO_'],
+    envPrefix: ['VITE_', 'API_', 'BREVO_', 'GOOGLE_'],
     plugins: [
       react({
         babel: {
