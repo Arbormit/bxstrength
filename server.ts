@@ -605,6 +605,7 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
 
     // Trigger Server-side Brevo Email Notifications to Client & Admin
     const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
     const adminEmail = process.env.VITE_ADMIN_EMAIL || 'support@bxstrength.com';
 
     if (brevoApiKey) {
@@ -617,7 +618,7 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
           'api-key': brevoApiKey
         },
         body: JSON.stringify({
-          sender: { name: 'BxStrength Coaching', email: 'support@bxstrength.com' },
+          sender: { name: 'BxStrength Coaching', email: senderEmail },
           to: [{ email: leadEmail, name: leadName }],
           subject: `[CONFIRMED] Your BxStrength Consultation (${bookingRef})`,
           htmlContent: `
@@ -632,7 +633,7 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
                 <p style="margin: 4px 0;"><strong>Scheduled Date:</strong> ${date}</p>
                 <p style="margin: 4px 0;"><strong>Time Slot:</strong> ${time}</p>
               </div>
-              <p style="font-size: 12px; color: #71717a;">BxStrength Coaching | Support: support@bxstrength.com | Phone: 8423594482</p>
+              <p style="font-size: 12px; color: #71717a;">BxStrength Coaching | Support: ${senderEmail} | Phone: 8423594482</p>
             </div>
           `
         })
@@ -647,7 +648,7 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
           'api-key': brevoApiKey
         },
         body: JSON.stringify({
-          sender: { name: 'BxStrength Booking System', email: 'support@bxstrength.com' },
+          sender: { name: 'BxStrength Booking Bot', email: senderEmail },
           to: [{ email: adminEmail, name: 'BxStrength Admin' }],
           subject: `🚨 [NEW CONSULTATION] ${leadName} - ${leadGoal} (${date} at ${time})`,
           htmlContent: `
@@ -681,6 +682,7 @@ app.post('/api/send-email', async (req, res) => {
   try {
     const { toEmail, toName, subject, htmlContent } = req.body;
     const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
 
     if (!brevoApiKey) {
       return res.status(400).json({ error: 'Brevo API key is not configured on server' });
@@ -694,7 +696,7 @@ app.post('/api/send-email', async (req, res) => {
         'api-key': brevoApiKey
       },
       body: JSON.stringify({
-        sender: { name: 'BxStrength Coaching', email: 'support@bxstrength.com' },
+        sender: { name: 'BxStrength Coaching', email: senderEmail },
         to: [{ email: toEmail, name: toName || toEmail }],
         subject: subject,
         htmlContent: htmlContent

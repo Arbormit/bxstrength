@@ -1,5 +1,12 @@
 const metaEnv = (import.meta as any).env || {};
 
+const getBrevoConfig = () => {
+  const apiKey = metaEnv.VITE_BREVO_API_KEY || metaEnv.BREVO_API_KEY || '';
+  const senderEmail = metaEnv.VITE_SENDER_EMAIL || metaEnv.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
+  const adminEmail = metaEnv.VITE_ADMIN_EMAIL || 'admin@bxstrength.com';
+  return { apiKey, senderEmail, adminEmail };
+};
+
 export interface PasswordResetEmailParams {
   toEmail: string;
   toName?: string;
@@ -8,7 +15,7 @@ export interface PasswordResetEmailParams {
 }
 
 export const sendPasswordResetEmail = async (params: PasswordResetEmailParams): Promise<{ success: boolean; message: string }> => {
-  const brevoApiKey = metaEnv.VITE_BREVO_API_KEY || metaEnv.BREVO_API_KEY || 'xkeysib-brevo-api-key-placeholder';
+  const { apiKey: brevoApiKey, senderEmail } = getBrevoConfig();
   const name = params.toName || params.toEmail.split('@')[0];
 
   const htmlBody = `
@@ -27,7 +34,7 @@ export const sendPasswordResetEmail = async (params: PasswordResetEmailParams): 
       <p style="font-size: 12px; color: #71717a; line-height: 1.5;">If the button above does not work, copy and paste this link into your browser:<br/><a href="${params.resetLink}" style="color: #CCFF00;">${params.resetLink}</a></p>
       
       <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
-        BxStrength Security System | support@bxstrength.com
+        BxStrength Security System | ${senderEmail}
       </div>
     </div>
   `;
@@ -41,7 +48,7 @@ export const sendPasswordResetEmail = async (params: PasswordResetEmailParams): 
         'api-key': brevoApiKey
       },
       body: JSON.stringify({
-        sender: { name: 'BxStrength Security', email: 'support@bxstrength.com' },
+        sender: { name: 'BxStrength Security', email: senderEmail },
         to: [{ email: params.toEmail, name }],
         subject: `[ACTION REQUIRED] Reset Your BxStrength Password`,
         htmlContent: htmlBody
@@ -73,8 +80,7 @@ export interface BrevoTicketEmailParams {
 }
 
 export const sendBrevoTicketEmail = async (params: BrevoTicketEmailParams): Promise<{ success: boolean; message: string }> => {
-  const brevoApiKey = metaEnv.VITE_BREVO_API_KEY || metaEnv.BREVO_API_KEY || 'xkeysib-brevo-api-key-placeholder';
-  const adminEmail = metaEnv.VITE_ADMIN_EMAIL || 'admin@velocity.com';
+  const { apiKey: brevoApiKey, senderEmail, adminEmail } = getBrevoConfig();
 
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; background-color: #0a0a0a; color: #ffffff; padding: 30px; border-radius: 8px;">
@@ -110,7 +116,7 @@ export const sendBrevoTicketEmail = async (params: BrevoTicketEmailParams): Prom
         'api-key': brevoApiKey
       },
       body: JSON.stringify({
-        sender: { name: 'BxStrength Support Desk', email: 'support@bxstrength.com' },
+        sender: { name: 'BxStrength Support Desk', email: senderEmail },
         to: [{ email: adminEmail, name: 'BxStrength Admin Team' }],
         subject: `[TICKET ${params.ticketId}] ${params.category.toUpperCase()}: ${params.subject}`,
         htmlContent: htmlBody
@@ -142,8 +148,7 @@ export interface ConsultationEmailParams {
 }
 
 export const sendConsultationConfirmationEmail = async (params: ConsultationEmailParams): Promise<{ success: boolean; message: string }> => {
-  const brevoApiKey = metaEnv.VITE_BREVO_API_KEY || metaEnv.BREVO_API_KEY || 'xkeysib-brevo-api-key-placeholder';
-  const adminEmail = metaEnv.VITE_ADMIN_EMAIL || 'support@bxstrength.com';
+  const { apiKey: brevoApiKey, senderEmail, adminEmail } = getBrevoConfig();
 
   const clientHtmlBody = `
     <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
@@ -171,7 +176,7 @@ export const sendConsultationConfirmationEmail = async (params: ConsultationEmai
       <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">Our Head Coaching team (Shaban Faridi &amp; team) will review your diagnostic profile and confirm your exact slot via WhatsApp / Email calendar invite.</p>
 
       <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
-        BxStrength Coaching Platform | Support: support@bxstrength.com | Phone: 8423594482
+        BxStrength Coaching Platform | Support: ${senderEmail}
       </div>
     </div>
   `;
@@ -213,7 +218,7 @@ export const sendConsultationConfirmationEmail = async (params: ConsultationEmai
         'api-key': brevoApiKey
       },
       body: JSON.stringify({
-        sender: { name: 'BxStrength Coaching', email: 'support@bxstrength.com' },
+        sender: { name: 'BxStrength Coaching', email: senderEmail },
         to: [{ email: params.clientEmail, name: params.clientName }],
         subject: `[CONFIRMED] Your BxStrength 1-on-1 Consultation (${params.bookingId})`,
         htmlContent: clientHtmlBody
@@ -229,7 +234,7 @@ export const sendConsultationConfirmationEmail = async (params: ConsultationEmai
         'api-key': brevoApiKey
       },
       body: JSON.stringify({
-        sender: { name: 'BxStrength Booking Bot', email: 'support@bxstrength.com' },
+        sender: { name: 'BxStrength Booking Bot', email: senderEmail },
         to: [{ email: adminEmail, name: 'BxStrength Admin' }],
         subject: `🚨 [NEW BOOKING] ${params.clientName} - ${params.goal} (${params.date} at ${params.timeSlot})`,
         htmlContent: adminHtmlBody
@@ -255,7 +260,7 @@ export interface PaymentReceiptEmailParams {
 }
 
 export const sendBrevoPaymentReceiptEmail = async (params: PaymentReceiptEmailParams): Promise<{ success: boolean; message: string }> => {
-  const brevoApiKey = metaEnv.VITE_BREVO_API_KEY || metaEnv.BREVO_API_KEY || 'xkeysib-brevo-api-key-placeholder';
+  const { apiKey: brevoApiKey, senderEmail } = getBrevoConfig();
 
   const exercisesListHtml = params.selectedExercises && params.selectedExercises.length > 0
     ? `<div style="margin-top: 12px;"><strong style="color: #CCFF00; font-size: 12px; text-transform: uppercase;">Purchased Exercises (${params.selectedExercises.length}):</strong><ul style="margin: 6px 0; padding-left: 18px; font-size: 12px; color: #e4e4e7;">${params.selectedExercises.map(ex => `<li style="margin-bottom: 4px;">${ex}</li>`).join('')}</ul></div>`
@@ -287,7 +292,7 @@ export const sendBrevoPaymentReceiptEmail = async (params: PaymentReceiptEmailPa
       <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">Your plan is now active on your client dashboard. Log in anytime to view your custom exercises, workout logs, and coach messaging.</p>
 
       <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
-        BxStrength Performance Coaching | Official Support: info@bxstrength.com
+        BxStrength Performance Coaching | Official Support: ${senderEmail}
       </div>
     </div>
   `;
@@ -301,7 +306,7 @@ export const sendBrevoPaymentReceiptEmail = async (params: PaymentReceiptEmailPa
         'api-key': brevoApiKey
       },
       body: JSON.stringify({
-        sender: { name: 'BxStrength Billing & Finance', email: 'billing@bxstrength.com' },
+        sender: { name: 'BxStrength Billing & Finance', email: senderEmail },
         to: [{ email: params.clientEmail, name: params.clientName }],
         subject: `[RECEIPT] Payment Confirmation - ${params.planName} (£${params.amountPaid})`,
         htmlContent: htmlBody
