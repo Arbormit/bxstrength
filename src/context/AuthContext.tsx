@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithGoogle = async (email?: string, name?: string, avatarUrl?: string): Promise<User> => {
-    const res = VelocityAPI.loginWithGoogle(email, name, avatarUrl);
+    const res = await VelocityAPI.loginWithGoogle(email, name, avatarUrl);
     setUser(res.user);
     setToken(res.token);
     return res.user;

@@ -339,8 +339,87 @@ export const VelocityAPI = {
     return { user: newUser, token };
   },
 
-  loginWithGoogle(email = 'athlete.google@gmail.com', name = 'Google Athlete', avatarUrl?: string): { user: User; token: string } {
+  async loginWithGoogle(email = 'athlete.google@gmail.com', name = 'Google Athlete', avatarUrl?: string): Promise<{ user: User; token: string }> {
     initStore();
+    
+    // Try to register/login via backend API to save user in NeonDB
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          email: email,
+          password: `GoogleAuthPass@${email}`,
+          phone: '',
+          role: 'client'
+        })
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        const serverUser: User = {
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          role: result.user.role,
+          phone: result.user.phone || '',
+          avatarUrl: avatarUrl || result.user.avatar_url || result.user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+          isVerified: true,
+          status: 'active',
+          createdAt: result.user.created_at || new Date().toISOString(),
+          lastLoginAt: new Date().toISOString()
+        };
+
+        const users = getItem<User[]>(STORAGE_KEYS.USERS, SEED_USERS);
+        const existingIdx = users.findIndex(u => u.email.toLowerCase() === serverUser.email.toLowerCase());
+        if (existingIdx !== -1) {
+          users[existingIdx] = serverUser;
+        } else {
+          users.push(serverUser);
+        }
+        setItem(STORAGE_KEYS.USERS, users);
+        setItem(STORAGE_KEYS.CURRENT_USER, serverUser);
+        setItem(STORAGE_KEYS.TOKEN, result.token);
+
+        this.addAuditLog(serverUser.id, serverUser.name, serverUser.role, 'USER_GOOGLE_REGISTER_NEONDB', `Google user registered & saved into NeonDB (${serverUser.email})`);
+        return { user: serverUser, token: result.token };
+      } else {
+        // If user already exists in NeonDB, attempt backend login
+        const loginRes = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email,
+            password: `GoogleAuthPass@${email}`
+          })
+        });
+
+        if (loginRes.ok) {
+          const loginResult = await loginRes.json();
+          const serverUser: User = {
+            id: loginResult.user.id,
+            name: loginResult.user.name,
+            email: loginResult.user.email,
+            role: loginResult.user.role,
+            phone: loginResult.user.phone || '',
+            avatarUrl: avatarUrl || loginResult.user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+            isVerified: true,
+            status: 'active',
+            createdAt: loginResult.user.created_at || new Date().toISOString(),
+            lastLoginAt: new Date().toISOString()
+          };
+          setItem(STORAGE_KEYS.CURRENT_USER, serverUser);
+          setItem(STORAGE_KEYS.TOKEN, loginResult.token);
+          this.addAuditLog(serverUser.id, serverUser.name, serverUser.role, 'USER_GOOGLE_LOGIN_NEONDB', `Google user logged in from NeonDB (${serverUser.email})`);
+          return { user: serverUser, token: loginResult.token };
+        }
+      }
+    } catch (err: any) {
+      console.warn('Backend Google SSO sync notice:', err);
+    }
+
+    // Fallback to local storage if backend is unreachable
     const users = this.getUsers();
     let found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 
