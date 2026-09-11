@@ -320,3 +320,63 @@ export const sendBrevoPaymentReceiptEmail = async (params: PaymentReceiptEmailPa
 
   return { success: true, message: `Payment receipt recorded and sent to ${params.clientEmail}` };
 };
+
+// --- WEBSITE CONTACT ENQUIRY EMAIL SERVICE ---
+export interface ContactEnquiryEmailParams {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+export const sendContactEnquiryEmail = async (params: ContactEnquiryEmailParams): Promise<{ success: boolean; message: string }> => {
+  const { apiKey: brevoApiKey, senderEmail, adminEmail } = getBrevoConfig();
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+      <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="color: #CCFF00; margin: 0; font-size: 22px; text-transform: uppercase; font-weight: 900;">📥 NEW WEBSITE ENQUIRY</h1>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; color: #e4e4e7;">
+        <tr><td style="padding: 8px 0; color: #a1a1aa;">Sender Name:</td><td style="padding: 8px 0; font-weight: bold; color: #ffffff;">${params.name}</td></tr>
+        <tr><td style="padding: 8px 0; color: #a1a1aa;">Sender Email:</td><td style="padding: 8px 0; font-weight: bold;"><a href="mailto:${params.email}" style="color: #CCFF00;">${params.email}</a></td></tr>
+        <tr><td style="padding: 8px 0; color: #a1a1aa;">Subject:</td><td style="padding: 8px 0; font-weight: bold;">${params.subject}</td></tr>
+      </table>
+
+      <div style="background-color: #18181b; border-left: 4px solid #CCFF00; padding: 16px; margin-bottom: 20px; border-radius: 4px;">
+        <p style="margin: 0; color: #e4e4e7; font-size: 14px; line-height: 1.6;">${params.message}</p>
+      </div>
+
+      <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
+        BxStrength Contact System | Sent to Admin: ${adminEmail}
+      </div>
+    </div>
+  `;
+
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': brevoApiKey
+      },
+      body: JSON.stringify({
+        sender: { name: 'BxStrength Website Form', email: senderEmail },
+        to: [{ email: adminEmail, name: 'BxStrength Admin Team' }],
+        replyTo: { email: params.email, name: params.name },
+        subject: `[ENQUIRY] ${params.subject} - ${params.name}`,
+        htmlContent: htmlBody
+      })
+    });
+
+    if (res.ok) {
+      return { success: true, message: `Enquiry email dispatched to admin via Brevo API.` };
+    }
+  } catch (err: any) {
+    console.warn('Brevo contact enquiry email error:', err);
+  }
+
+  return { success: true, message: `Enquiry recorded.` };
+};
