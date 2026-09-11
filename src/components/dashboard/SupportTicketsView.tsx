@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, SupportTicket, TicketCategory, TicketPriority } from '../../types';
-import { VelocityAPI } from '../../services/api';
+import { VelocityAPI, getApiUrl } from '../../services/api';
 import { sendBrevoTicketEmail } from '../../services/emailService';
 import { LifeBuoy, Plus, CheckCircle2, Clock, AlertCircle, MessageSquare, Tag, X, ShieldAlert, Send, UserCheck } from 'lucide-react';
 
@@ -13,19 +13,27 @@ interface SupportTicketsViewProps {
 
 export const SupportTicketsView: React.FC<SupportTicketsViewProps> = ({ user, onShowToast }) => {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
-  // New Ticket Form State with Draft Persistence across page refresh
+  // Form states initialized from draft storage if present
   const [subject, setSubject] = useState(() => sessionStorage.getItem('bxstrength_ticket_draft_subj') || '');
-  const [category, setCategory] = useState<TicketCategory>('Training');
-  const [priority, setPriority] = useState<TicketPriority>('medium');
+  const [category, setCategory] = useState<TicketCategory>(() => (sessionStorage.getItem('bxstrength_ticket_draft_cat') as TicketCategory) || 'Technical Issue');
+  const [priority, setPriority] = useState<TicketPriority>(() => (sessionStorage.getItem('bxstrength_ticket_draft_prio') as TicketPriority) || 'medium');
   const [description, setDescription] = useState(() => sessionStorage.getItem('bxstrength_ticket_draft_desc') || '');
 
   useEffect(() => {
     sessionStorage.setItem('bxstrength_ticket_draft_subj', subject);
   }, [subject]);
+
+  useEffect(() => {
+    sessionStorage.setItem('bxstrength_ticket_draft_cat', category);
+  }, [category]);
+
+  useEffect(() => {
+    sessionStorage.setItem('bxstrength_ticket_draft_prio', priority);
+  }, [priority]);
 
   useEffect(() => {
     sessionStorage.setItem('bxstrength_ticket_draft_desc', description);
@@ -34,7 +42,7 @@ export const SupportTicketsView: React.FC<SupportTicketsViewProps> = ({ user, on
   const fetchUserTickets = async () => {
     try {
       const localTickets = VelocityAPI.getTickets(user.id);
-      const res = await fetch(`/api/tickets?userId=${encodeURIComponent(user.id)}&userEmail=${encodeURIComponent(user.email)}`);
+      const res = await fetch(getApiUrl(`/api/tickets?userId=${encodeURIComponent(user.id)}&userEmail=${encodeURIComponent(user.email)}`));
       if (res.ok) {
         const serverTickets: SupportTicket[] = await res.json();
         const map = new Map<string, SupportTicket>();
@@ -65,7 +73,7 @@ export const SupportTicketsView: React.FC<SupportTicketsViewProps> = ({ user, on
       let createdTicket: SupportTicket | null = null;
 
       // 1. Persist to PostgreSQL database endpoint
-      const res = await fetch('/api/tickets', {
+      const res = await fetch(getApiUrl('/api/tickets'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

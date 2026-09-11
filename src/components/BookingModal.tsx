@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useId } from 'react';
 import { ConsultationBooking } from '../types';
-import { VelocityAPI } from '../services/api';
+import { VelocityAPI, getApiUrl } from '../services/api';
 import { sendConsultationConfirmationEmail } from '../services/emailService';
 import { useAuth } from '../context/AuthContext';
 import { Calendar, Clock, User, CheckCircle2, X, Dumbbell, ShieldCheck, Bell, Info, ArrowLeft, Phone, Mail, Award, Check, Flame } from 'lucide-react';
@@ -210,7 +210,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     }
 
     // POST to backend API server
-    fetch('/api/consultations', {
+    fetch(getApiUrl('/api/consultations'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

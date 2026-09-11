@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { sendPasswordResetEmail } from '../../services/emailService';
+import { getApiUrl } from '../../services/api';
 import { X, Mail, CheckCircle2, ArrowRight, ShieldCheck, KeyRound, Lock, Eye, EyeOff, Dumbbell, ExternalLink } from 'lucide-react';
 
 interface ForgotPasswordModalProps {
@@ -53,7 +54,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       await forgotPassword(cleanEmail);
 
       // Post to backend Express server API
-      fetch('/api/auth/forgot-password', {
+      fetch(getApiUrl('/api/auth/forgot-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail })
@@ -92,7 +93,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       await resetPassword(email, newPassword);
 
       // Call backend API endpoint if present
-      fetch('/api/auth/reset-password', {
+      fetch(getApiUrl('/api/auth/reset-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, newPassword })

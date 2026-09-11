@@ -5,7 +5,7 @@ import {
   Zap, Layers, RefreshCw, Check, AlertCircle, ShoppingBag, Eye, EyeOff, ExternalLink 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { VelocityAPI } from '../services/api';
+import { VelocityAPI, getApiUrl } from '../services/api';
 import { sendBrevoPaymentReceiptEmail } from '../services/emailService';
 import { Subscription } from '../types';
 
@@ -235,7 +235,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
       }).catch(() => {});
 
       // 3. Initiate Real Stripe Checkout Session Redirect
-      const res = await fetch('/api/create-stripe-checkout-session', {
+      const res = await fetch(getApiUrl('/api/create-stripe-checkout-session'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

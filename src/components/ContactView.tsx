@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useId } from 'react';
-import { VelocityAPI } from '../services/api';
+import { VelocityAPI, getApiUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { sendContactEnquiryEmail } from '../services/emailService';
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle2, ShieldCheck, UserCheck } from 'lucide-react';
@@ -47,7 +47,7 @@ export const ContactView: React.FC = () => {
         message: message.trim()
       }).catch((err) => console.warn('Brevo contact email dispatch note:', err));
 
-      fetch('/api/enquiries', {
+      fetch(getApiUrl('/api/enquiries'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

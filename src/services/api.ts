@@ -6,6 +6,25 @@ import {
 } from '../types';
 import { BxTrainer, TRAINERS_DATA } from '../data/gymData';
 
+const metaEnv = (import.meta as any).env || {};
+
+export const getApiUrl = (path: string): string => {
+  const configured = metaEnv.VITE_API_URL || metaEnv.API_URL || '';
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  if (configured) {
+    return `${configured.replace(/\/$/, '')}${cleanPath}`;
+  }
+
+  if (typeof window !== 'undefined') {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isLocal) {
+      return cleanPath;
+    }
+  }
+
+  return `https://bxstrength-api.onrender.com${cleanPath}`;
+};
+
 const STORAGE_KEYS = {
   USERS: 'velocity_users',
   CURRENT_USER: 'velocity_current_user',
@@ -183,7 +202,7 @@ export const VelocityAPI = {
     };
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(getApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -257,7 +276,7 @@ export const VelocityAPI = {
     const assignedRole = (data.role === 'coach' || data.role === 'user') ? data.role : 'client';
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(getApiUrl('/api/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -344,7 +363,7 @@ export const VelocityAPI = {
     
     // Try to register/login via backend API to save user in NeonDB
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(getApiUrl('/api/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -386,7 +405,7 @@ export const VelocityAPI = {
         return { user: serverUser, token: result.token };
       } else {
         // If user already exists in NeonDB, attempt backend login
-        const loginRes = await fetch('/api/auth/login', {
+        const loginRes = await fetch(getApiUrl('/api/auth/login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
