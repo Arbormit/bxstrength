@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, CheckCircle2, ArrowRight, Sparkles, Activity, ShieldCheck, Dumbbell } from 'lucide-react';
+import { Target, CheckCircle2, ArrowRight, Activity, ShieldCheck, Dumbbell } from 'lucide-react';
 
 interface AssessmentSectionProps {
   onOpenAssessment: () => void;
@@ -17,7 +17,7 @@ export const AssessmentSection: React.FC<AssessmentSectionProps> = ({ onOpenAsse
           {/* Top Decorative Tag */}
           <div className="flex justify-center sm:justify-start mb-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 text-[#CCFF00] text-xs font-black uppercase tracking-widest">
-              <Sparkles className="w-3.5 h-3.5 text-[#CCFF00]" />
+              <Target className="w-3.5 h-3.5 text-[#CCFF00]" />
               <span>60-SECOND INTERACTIVE QUIZ</span>
             </div>
           </div>

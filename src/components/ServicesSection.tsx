@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Dumbbell, Flame, HeartPulse, Activity, Zap, CheckCircle2, AlertCircle, 
-  Target, ShieldCheck, RefreshCw, Home, Video, Trophy, Users, Award, Heart, ChevronDown, ChevronRight, Tag, Clock, Gift, Calendar, Sparkles, Check, Filter, ArrowRight
+  Target, ShieldCheck, RefreshCw, Home, Video, Trophy, Users, Award, Heart, ChevronDown, ChevronRight, Tag, Clock, Gift, Calendar, Check, Filter, ArrowRight
 } from 'lucide-react';
 
 export interface ServiceItem {
@@ -119,7 +119,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
       discount: '',
       validity: 'Single session booking',
       complimentary: 'Warm-up + cool-down included within booked time.',
-      icon: Sparkles
+      icon: Heart
     },
     {
       title: 'Custom Basic',
@@ -311,7 +311,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-10">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 text-[#CCFF00] text-xs font-black uppercase tracking-widest mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
+            <ShieldCheck className="w-3.5 h-3.5" />
             <span>TRANSPARENT PRICING & CUSTOM PROTOCOLS</span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
