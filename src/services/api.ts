@@ -65,24 +65,8 @@ export const DEFAULT_COACH_PERMISSIONS: CoachPermissions = {
   showUserCommunityFeed: true,
 };
 
-// Seed initial data (Only essential system admin for initial setup)
-const SEED_USERS: User[] = [
-  {
-    id: 'user-admin-1',
-    name: 'System Administrator',
-    email: 'admin@velocity.com',
-    role: 'admin',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
-    phone: '+44 20 7946 0912',
-    age: 38,
-    gender: 'Male',
-    fitnessGoals: 'Overall fitness, business ops, peak strength',
-    isVerified: true,
-    status: 'active',
-    createdAt: '2025-01-10T09:00:00Z',
-    lastLoginAt: new Date().toISOString()
-  }
-];
+// Seed initial data (Strict Clean Setup: Zero dummy data loaded)
+const SEED_USERS: User[] = [];
 
 const SEED_BODY_STATS: BodyStat[] = [];
 const SEED_CLASSES: ClassSchedule[] = [];
