@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
-import { loadGoogleGsiScript, decodeGoogleJwt, GOOGLE_CLIENT_ID } from '../../services/googleAuthService';
+import { loadGoogleGsiScript, decodeGoogleJwt, promptGoogleAccountSelect, GOOGLE_CLIENT_ID } from '../../services/googleAuthService';
 import { X, Lock, Mail, Eye, EyeOff, Dumbbell, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
+
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -66,35 +67,27 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setGoogleLoading(true);
     setError(null);
 
-    // 1. If real GOOGLE_CLIENT_ID is configured in .env
-    if (GOOGLE_CLIENT_ID && (window as any).google?.accounts?.id) {
+    // 1. Try Google Account Chooser popup
+    const selectedProfile = await promptGoogleAccountSelect();
+    if (selectedProfile) {
       try {
-        (window as any).google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: async (response: any) => {
-            if (response.credential) {
-              const googleProfile = decodeGoogleJwt(response.credential);
-              if (googleProfile) {
-                const user = await loginWithGoogle(
-                  googleProfile.email,
-                  googleProfile.name,
-                  googleProfile.picture
-                );
-                onClose();
-                if (onSuccessNavigate) onSuccessNavigate(user.role);
-              }
-            }
-          }
-        });
-        (window as any).google.accounts.id.prompt();
-        setGoogleLoading(false);
+        const user = await loginWithGoogle(
+          selectedProfile.email,
+          selectedProfile.name,
+          selectedProfile.picture
+        );
+        onClose();
+        if (onSuccessNavigate) onSuccessNavigate(user.role);
         return;
       } catch (err: any) {
-        console.warn('Google GSI prompt notice:', err);
+        setError(err.message || 'Google Single Sign-On failed.');
+      } finally {
+        setGoogleLoading(false);
       }
+      return;
     }
 
-    // 2. Interactive popup prompt to enter real Google email
+    // 2. Interactive account selection prompt for entering user's own Gmail account if popup is closed or blocked
     setShowGooglePrompt(true);
     setGoogleLoading(false);
   };

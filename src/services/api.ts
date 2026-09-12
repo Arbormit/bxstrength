@@ -342,8 +342,9 @@ export const VelocityAPI = {
     return { user: newUser, token };
   },
 
-  async loginWithGoogle(email = 'athlete.google@gmail.com', name = 'Google Athlete', avatarUrl?: string): Promise<{ user: User; token: string }> {
+  async loginWithGoogle(email: string, name?: string, avatarUrl?: string): Promise<{ user: User; token: string }> {
     initStore();
+    const nameToUse = name || email.split('@')[0];
     
     // Try to register/login via backend API to save user in NeonDB
     try {
@@ -351,7 +352,7 @@ export const VelocityAPI = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name,
+          name: nameToUse,
           email: email,
           password: `GoogleAuthPass@${email}`,
           phone: '',
@@ -367,7 +368,7 @@ export const VelocityAPI = {
           email: result.user.email,
           role: result.user.role,
           phone: result.user.phone || '',
-          avatarUrl: avatarUrl || result.user.avatar_url || result.user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+          avatarUrl: avatarUrl || result.user.avatar_url || result.user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nameToUse)}`,
           isVerified: true,
           status: 'active',
           createdAt: result.user.created_at || new Date().toISOString(),
@@ -406,7 +407,7 @@ export const VelocityAPI = {
             email: loginResult.user.email,
             role: loginResult.user.role,
             phone: loginResult.user.phone || '',
-            avatarUrl: avatarUrl || loginResult.user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+            avatarUrl: avatarUrl || loginResult.user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nameToUse)}`,
             isVerified: true,
             status: 'active',
             createdAt: loginResult.user.created_at || new Date().toISOString(),
@@ -429,11 +430,11 @@ export const VelocityAPI = {
     if (!found) {
       found = {
         id: `user-google-${Date.now()}`,
-        name: name,
+        name: nameToUse,
         email: email,
         role: 'client',
-        phone: '+44 7700 900888',
-        avatarUrl: avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+        phone: '',
+        avatarUrl: avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nameToUse)}`,
         isVerified: true,
         status: 'active',
         createdAt: new Date().toISOString(),
