@@ -504,7 +504,7 @@ export const VelocityAPI = {
     return getItem<User[]>(STORAGE_KEYS.USERS, SEED_USERS);
   },
 
-  createUser(userData: Partial<User> & { name: string; email: string; role: UserRole }): User {
+  async createUser(userData: Partial<User> & { name: string; email: string; role: UserRole }): Promise<User> {
     const users = this.getUsers();
     const newUser: User = {
       id: `user-${Date.now()}`,
@@ -522,6 +522,20 @@ export const VelocityAPI = {
     };
     users.push(newUser);
     setItem(STORAGE_KEYS.USERS, users);
+
+    try {
+      const token = getItem<string>(STORAGE_KEYS.TOKEN, '');
+      await fetch(getApiUrl('/api/users'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(userData)
+      });
+    } catch (err: any) {
+      console.error('NeonDB Create User Error:', err.message);
+    }
 
     const currentUser = this.getCurrentUser();
     if (currentUser) {
@@ -568,7 +582,7 @@ export const VelocityAPI = {
     // Real-Time NeonDB Database Sync via REST API
     try {
       const token = getItem<string>(STORAGE_KEYS.TOKEN, '');
-      await fetch(`/api/users/${id}`, {
+      await fetch(getApiUrl(`/api/users/${id}`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -576,7 +590,9 @@ export const VelocityAPI = {
         },
         body: JSON.stringify(updates)
       });
-    } catch (err: any) {}
+    } catch (err: any) {
+      console.error('NeonDB Update User Error:', err.message);
+    }
 
     this.addAuditLog(
       current?.id || targetUser.id, 
@@ -601,11 +617,23 @@ export const VelocityAPI = {
     return true; // Return true to avoid user enumeration leaking
   },
 
-  deleteUser(id: string): void {
+  async deleteUser(id: string): Promise<void> {
     let users = this.getUsers();
     const target = users.find((u) => u.id === id);
     users = users.filter((u) => u.id !== id);
     setItem(STORAGE_KEYS.USERS, users);
+
+    try {
+      const token = getItem<string>(STORAGE_KEYS.TOKEN, '');
+      await fetch(getApiUrl(`/api/users/${id}`), {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+    } catch (err: any) {
+      console.error('NeonDB Delete User Error:', err.message);
+    }
 
     const current = this.getCurrentUser();
     if (current && target) {

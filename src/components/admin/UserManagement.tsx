@@ -150,7 +150,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
         onShowToast(`Updated ${targetRole.toUpperCase()} profile for ${name}`);
       } else {
-        VelocityAPI.createUser({
+        await VelocityAPI.createUser({
           name,
           email,
           phone,
@@ -159,13 +159,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           coachPosition: finalCoachPos,
           fitnessGoals
         });
-
-        // Sync with PostgreSQL database via API
-        fetch(getApiUrl('/api/users'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, phone, heightCm: numHeight, role: targetRole, coachPosition: finalCoachPos, fitnessGoals })
-        }).catch(() => {});
 
         onShowToast(`Created new ${targetRole.toUpperCase()} account for ${name}`);
       }
@@ -183,10 +176,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setDeletingUser({ id, name: userName });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingUser) {
-      VelocityAPI.deleteUser(deletingUser.id);
-      fetch(getApiUrl(`/api/users/${deletingUser.id}`), { method: 'DELETE' }).catch(() => {});
+      await VelocityAPI.deleteUser(deletingUser.id);
       onShowToast(`Deleted account "${deletingUser.name}" permanently from database`);
       setDeletingUser(null);
       onUsersUpdated();

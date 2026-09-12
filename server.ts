@@ -359,7 +359,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         if (e.code === '23505') {
           return res.status(400).json({ error: 'An account with this email address already exists in NeonDB.' });
         }
-        console.error('NeonDB Registration Error:', e.message);
+        console.error('NeonDB Registration Query Error:', e.message);
+        return res.status(500).json({ error: `NeonDB error: ${e.message}` });
       }
     }
 
@@ -797,7 +798,9 @@ app.post('/api/users', authenticateToken, async (req: any, res: any) => {
            VALUES ($1, $2, $3, 'HASHED_PASS', $4, $5, $6, $7, $8, $9, $10, true, NOW())`,
           [userId, cleanName, cleanEmail, cleanRole, cleanPos, cleanPhone, height, Number(age) || 25, sanitizeInput(gender || 'Other'), sanitizeInput(fitnessGoals || '')]
         );
-      } catch (e: any) {}
+      } catch (e: any) {
+        console.error('NeonDB POST /api/users Error:', e.message);
+      }
     }
 
     res.status(201).json({ message: `User/Coach ${cleanName} created successfully in database`, id: userId });
@@ -852,7 +855,9 @@ app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
             id
           ]
         );
-      } catch (e: any) {}
+      } catch (e: any) {
+        console.error('NeonDB PATCH /api/users Error:', e.message);
+      }
     }
 
     res.json({ message: `User profile ${id} updated in NeonDB database!` });
@@ -868,7 +873,9 @@ app.delete('/api/users/:id', authenticateToken, authorizeRoles('admin'), async (
     if (dbPool) {
       try {
         await dbPool.query('DELETE FROM users WHERE id = $1', [id]);
-      } catch (e: any) {}
+      } catch (e: any) {
+        console.error('NeonDB DELETE /api/users Error:', e.message);
+      }
     }
     res.json({ message: `User ${id} permanently deleted from database!` });
   } catch (err: any) {
