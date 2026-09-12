@@ -8,6 +8,7 @@ import rateLimit from 'express-rate-limit';
 import { Pool } from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import nodemailer from 'nodemailer';
 
 dotenv.config({ quiet: true });
 
@@ -161,6 +162,125 @@ function sanitizeInput(str: string): string {
     .replace(/'/g, '&#x27;')
     .replace(/\//g, '&#x2F;')
     .trim();
+}
+
+interface SendEmailOptions {
+  toEmail: string;
+  toName: string;
+  subject: string;
+  htmlContent: string;
+  senderName?: string;
+}
+
+async function sendServerEmail(options: SendEmailOptions): Promise<{ success: boolean; provider?: string; error?: string; messageId?: string }> {
+  const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || process.env.GMAIL_USER || 'support@bxstrength.com';
+  const senderName = options.senderName || 'BxStrength Coaching';
+
+  // 1. Try Gmail / Custom SMTP (Nodemailer) if configured
+  const smtpHost = process.env.SMTP_HOST || (process.env.GMAIL_USER || process.env.GMAIL_APP_PASSWORD ? 'smtp.gmail.com' : null);
+  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
+
+  if (smtpHost && smtpUser && smtpPass) {
+    try {
+      const port = parseInt(process.env.SMTP_PORT || (smtpHost === 'smtp.gmail.com' ? '465' : '587'), 10);
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: port,
+        secure: port === 465,
+        auth: {
+          user: smtpUser,
+          pass: smtpPass
+        }
+      });
+
+      const info = await transporter.sendMail({
+        from: `"${senderName}" <${smtpUser}>`,
+        to: options.toName ? `"${options.toName}" <${options.toEmail}>` : options.toEmail,
+        subject: options.subject,
+        html: options.htmlContent
+      });
+
+      console.log(`[EMAIL SENT - SMTP (${smtpHost})] Delivered to ${options.toEmail} | Subject: "${options.subject}" | MessageId: ${info.messageId}`);
+      return { success: true, provider: `SMTP (${smtpHost})`, messageId: info.messageId };
+    } catch (smtpErr: any) {
+      console.error(`❌ [EMAIL SMTP ERROR] Failed sending to ${options.toEmail}: ${smtpErr.message}`);
+    }
+  }
+
+  // 2. Try Brevo API (v3)
+  const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+  if (brevoApiKey) {
+    try {
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': brevoApiKey
+        },
+        body: JSON.stringify({
+          sender: { name: senderName, email: senderEmail },
+          to: [{ email: options.toEmail, name: options.toName || options.toEmail }],
+          subject: options.subject,
+          htmlContent: options.htmlContent
+        })
+      });
+
+      const responseText = await res.text();
+      if (res.ok) {
+        let data: any = {};
+        try { data = JSON.parse(responseText); } catch {}
+        console.log(`[EMAIL SENT - BREVO] Delivered to ${options.toEmail} | Subject: "${options.subject}" | MessageId: ${data.messageId || 'OK'}`);
+        return { success: true, provider: 'Brevo', messageId: data.messageId };
+      } else {
+        console.error(`❌ [EMAIL BREVO ERROR ${res.status}] Failed sending to ${options.toEmail}: ${responseText}`);
+        if (responseText.includes('API Key is not enabled') || responseText.includes('unauthorized')) {
+          console.error(`👉 Brevo Action Required: Your BREVO_API_KEY is currently disabled in your Brevo account. Log into https://app.brevo.com/settings/keys/api and activate your v3 API key, OR configure GMAIL_USER and GMAIL_APP_PASSWORD in .env for direct Gmail SMTP delivery.`);
+        }
+      }
+    } catch (err: any) {
+      console.error(`❌ [EMAIL BREVO EXCEPTION] ${err.message}`);
+    }
+  }
+
+  // 3. Try Resend API (Fallback)
+  const resendApiKey = process.env.VITE_RESEND_API_KEY || process.env.RESEND_API_KEY;
+  if (resendApiKey) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: `${senderName} <${senderEmail}>`,
+          to: [options.toEmail],
+          subject: options.subject,
+          html: options.htmlContent
+        })
+      });
+
+      const responseText = await res.text();
+      if (res.ok) {
+        let data: any = {};
+        try { data = JSON.parse(responseText); } catch {}
+        console.log(`[EMAIL SENT - RESEND] Delivered to ${options.toEmail} | Subject: "${options.subject}"`);
+        return { success: true, provider: 'Resend', messageId: data.id };
+      } else {
+        console.error(`❌ [EMAIL RESEND ERROR ${res.status}] ${responseText}`);
+      }
+    } catch (err: any) {
+      console.error(`❌ [EMAIL RESEND EXCEPTION] ${err.message}`);
+    }
+  }
+
+  console.error(`⚠️ [EMAIL DISPATCH FAILED] Could not send email to ${options.toEmail}.`);
+  return {
+    success: false,
+    error: 'No active email provider succeeded. Please enable BREVO_API_KEY at https://app.brevo.com/settings/keys/api or add GMAIL_USER & GMAIL_APP_PASSWORD to .env.'
+  };
 }
 
 // Database Connection Setup for NeonDB / PostgreSQL
@@ -376,91 +496,69 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       };
     }
 
-    // Trigger Professional Brevo Welcome Email to User & Admin Notification
-    const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+    // Trigger Professional Welcome Email to User & Admin Notification via Unified Email Service
     const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
     const adminEmail = process.env.VITE_ADMIN_EMAIL || 'support@bxstrength.com';
 
-    if (brevoApiKey) {
-      // 1. Send Professional Welcome Email to New User
-      fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': brevoApiKey
-        },
-        body: JSON.stringify({
-          sender: { name: 'BxStrength Coaching', email: senderEmail },
-          to: [{ email: email, name: name }],
-          subject: 'WELCOME TO BXSTRENGTH | Your Account Is Active 🥊',
-          htmlContent: `
-            <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
-              <div style="text-align: center; margin-bottom: 24px;">
-                <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 48px; width: auto; border-radius: 8px; margin: 0 auto;" />
-              </div>
-              <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase; text-align: center; font-size: 20px; font-weight: 900;">WELCOME TO BXSTRENGTH</h2>
-              <p style="text-align: center; color: #a1a1aa; font-size: 13px; margin-top: 4px;">Premier Digital Boxing, Strength &amp; Fitness Coaching</p>
-              
-              <div style="margin-top: 24px; font-size: 14px; line-height: 1.6; color: #e4e4e7;">
-                <p>Dear <strong>${name}</strong>,</p>
-                <p>Welcome to BxStrength! Your athlete profile has been successfully created and activated.</p>
-              </div>
+    // 1. Send Professional Welcome Email to New User
+    sendServerEmail({
+      toEmail: email,
+      toName: name,
+      subject: 'WELCOME TO BXSTRENGTH | Your Account Is Active 🥊',
+      senderName: 'BxStrength Coaching',
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 48px; width: auto; border-radius: 8px; margin: 0 auto;" />
+          </div>
+          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase; text-align: center; font-size: 20px; font-weight: 900;">WELCOME TO BXSTRENGTH</h2>
+          <p style="text-align: center; color: #a1a1aa; font-size: 13px; margin-top: 4px;">Premier Digital Boxing, Strength &amp; Fitness Coaching</p>
+          
+          <div style="margin-top: 24px; font-size: 14px; line-height: 1.6; color: #e4e4e7;">
+            <p>Dear <strong>${name}</strong>,</p>
+            <p>Welcome to BxStrength! Your athlete profile has been successfully created and activated.</p>
+          </div>
 
-              <div style="background-color: #18181b; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #27272a; font-size: 13px; line-height: 1.7;">
-                <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Registered Name:</strong> ${name}</p>
-                <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Email Address:</strong> ${email}</p>
-                <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Authentication Method:</strong> ${signupMethod}</p>
-                <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Account Status:</strong> <span style="color: #CCFF00; font-weight: bold;">VERIFIED &amp; ACTIVE</span></p>
-              </div>
+          <div style="background-color: #18181b; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #27272a; font-size: 13px; line-height: 1.7;">
+            <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Registered Name:</strong> ${name}</p>
+            <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Email Address:</strong> ${email}</p>
+            <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Authentication Method:</strong> ${signupMethod}</p>
+            <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Account Status:</strong> <span style="color: #CCFF00; font-weight: bold;">VERIFIED &amp; ACTIVE</span></p>
+          </div>
 
-              <div style="text-align: center; margin: 28px 0;">
-                <a href="${req.headers.origin || 'https://bxstrength.com'}" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 4px 14px rgba(204, 255, 0, 0.3);">
-                  ACCESS YOUR ATHLETE PORTAL
-                </a>
-              </div>
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${req.headers.origin || 'https://bxstrength.com'}" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 4px 14px rgba(204, 255, 0, 0.3);">
+              ACCESS YOUR ATHLETE PORTAL
+            </a>
+          </div>
 
-              <div style="border-t: 1px solid #27272a; margin-top: 24px; padding-top: 16px; font-size: 12px; color: #71717a; line-height: 1.5;">
-                <p style="margin: 2px 0;">Engineered by <strong>Head Coach Shaban Faridi</strong></p>
-                <p style="margin: 2px 0;">BxStrength HQ | Support: <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: underline;">${senderEmail}</a> | Phone: +91 8423594482</p>
-              </div>
-            </div>
-          `
-        })
-      })
-        .then(async (r) => {
-          if (r.ok) console.log(`[WELCOME EMAIL SENT] Dispatched welcome email to ${email}`);
-          else console.error(`[WELCOME EMAIL FAILED] Brevo status ${r.status}:`, await r.text());
-        })
-        .catch((err) => console.error('[WELCOME EMAIL ERROR] Brevo exception:', err.message));
+          <div style="border-top: 1px solid #27272a; margin-top: 24px; padding-top: 16px; font-size: 12px; color: #71717a; line-height: 1.5;">
+            <p style="margin: 2px 0;">Engineered by <strong>Head Coach Shaban Faridi</strong></p>
+            <p style="margin: 2px 0;">BxStrength HQ | Support: <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: underline;">${senderEmail}</a> | Phone: +91 8423594482</p>
+          </div>
+        </div>
+      `
+    }).catch((err) => console.error('[WELCOME EMAIL EXCEPTION]', err.message));
 
-      // 2. Send Admin Alert Email
-      fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': brevoApiKey
-        },
-        body: JSON.stringify({
-          sender: { name: 'BxStrength Security Bot', email: senderEmail },
-          to: [{ email: adminEmail, name: 'BxStrength Admin' }],
-          subject: `🔔 [NEW ATHLETE REGISTRATION] ${name} (${email})`,
-          htmlContent: `
-            <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 24px; border-radius: 10px; max-width: 500px; margin: 0 auto; border: 1px solid #27272a;">
-              <h3 style="color: #CCFF00; margin: 0; text-transform: uppercase;">NEW USER SIGNUP DETECTED</h3>
-              <div style="background-color: #18181b; padding: 14px; border-radius: 6px; margin: 14px 0; font-size: 13px;">
-                <p style="margin: 4px 0;"><strong>Name:</strong> ${name}</p>
-                <p style="margin: 4px 0;"><strong>Email:</strong> ${email}</p>
-                <p style="margin: 4px 0;"><strong>Signup Method:</strong> ${signupMethod}</p>
-                <p style="margin: 4px 0;"><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
-              </div>
-              <p style="font-size: 11px; color: #71717a;">Stored in NeonDB PostgreSQL database.</p>
-            </div>
-          `
-        })
-      }).catch(() => {});
-    }
+    // 2. Send Admin Alert Email
+    sendServerEmail({
+      toEmail: adminEmail,
+      toName: 'BxStrength Admin',
+      subject: `🔔 [NEW ATHLETE REGISTRATION] ${name} (${email})`,
+      senderName: 'BxStrength Security Bot',
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 24px; border-radius: 10px; max-width: 500px; margin: 0 auto; border: 1px solid #27272a;">
+          <h3 style="color: #CCFF00; margin: 0; text-transform: uppercase;">NEW USER SIGNUP DETECTED</h3>
+          <div style="background-color: #18181b; padding: 14px; border-radius: 6px; margin: 14px 0; font-size: 13px;">
+            <p style="margin: 4px 0;"><strong>Name:</strong> ${name}</p>
+            <p style="margin: 4px 0;"><strong>Email:</strong> ${email}</p>
+            <p style="margin: 4px 0;"><strong>Signup Method:</strong> ${signupMethod}</p>
+            <p style="margin: 4px 0;"><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
+          </div>
+          <p style="font-size: 11px; color: #71717a;">Stored in NeonDB PostgreSQL database.</p>
+        </div>
+      `
+    }).catch(() => {});
 
     const token = jwt.sign({ id: registeredUser.id, email: registeredUser.email, role: registeredUser.role, name: registeredUser.name }, JWT_SECRET, { expiresIn: '7d' });
     return res.status(201).json({ user: registeredUser, token });
@@ -711,82 +809,55 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
       } catch (e: any) {}
     }
 
-    // Trigger Server-side Brevo Email Notifications to Client & Admin
-    const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+    // Trigger Email Notifications to Client & Admin via Unified Email Service
     const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
     const adminEmail = process.env.VITE_ADMIN_EMAIL || 'support@bxstrength.com';
 
-    if (brevoApiKey) {
-      // 1. Send Client Email
-      fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': brevoApiKey
-        },
-        body: JSON.stringify({
-          sender: { name: 'BxStrength Coaching', email: senderEmail },
-          to: [{ email: leadEmail, name: leadName }],
-          subject: `[CONFIRMED] Your BxStrength Consultation (${bookingRef})`,
-          htmlContent: `
-            <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
-              <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">BXSTRENGTH CONSULTATION CONFIRMED</h2>
-              <p style="color: #a1a1aa; font-size: 13px;">Booking Ref: <strong>${bookingRef}</strong></p>
-              <p style="font-size: 14px;">Dear <strong>${leadName}</strong>,</p>
-              <p style="font-size: 14px; color: #a1a1aa;">Your 1-on-1 Strategy &amp; Assessment Session has been scheduled.</p>
-              <div style="background-color: #18181b; padding: 18px; border-radius: 8px; margin: 16px 0; border: 1px solid #27272a;">
-                <p style="margin: 4px 0;"><strong>Primary Goal:</strong> ${leadGoal}</p>
-                <p style="margin: 4px 0;"><strong>Session Duration:</strong> ${leadDuration}</p>
-                <p style="margin: 4px 0;"><strong>Scheduled Date:</strong> ${date}</p>
-                <p style="margin: 4px 0;"><strong>Time Slot:</strong> ${time}</p>
-              </div>
-              <p style="font-size: 12px; color: #71717a;">BxStrength Coaching | Support: ${senderEmail} | Phone: 8423594482</p>
-            </div>
-          `
-        })
-      })
-        .then(async (r) => {
-          if (r.ok) console.log(`[EMAIL SENT] Client consultation confirmation to ${leadEmail}`);
-          else console.error(`[EMAIL FAILED] Client email status ${r.status}:`, await r.text());
-        })
-        .catch((err) => console.error('[EMAIL ERROR] Client email exception:', err.message));
+    // 1. Send Client Email
+    sendServerEmail({
+      toEmail: leadEmail,
+      toName: leadName,
+      subject: `[CONFIRMED] Your BxStrength Consultation (${bookingRef})`,
+      senderName: 'BxStrength Coaching',
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">BXSTRENGTH CONSULTATION CONFIRMED</h2>
+          <p style="color: #a1a1aa; font-size: 13px;">Booking Ref: <strong>${bookingRef}</strong></p>
+          <p style="font-size: 14px;">Dear <strong>${leadName}</strong>,</p>
+          <p style="font-size: 14px; color: #a1a1aa;">Your 1-on-1 Strategy &amp; Assessment Session has been scheduled.</p>
+          <div style="background-color: #18181b; padding: 18px; border-radius: 8px; margin: 16px 0; border: 1px solid #27272a;">
+            <p style="margin: 4px 0;"><strong>Primary Goal:</strong> ${leadGoal}</p>
+            <p style="margin: 4px 0;"><strong>Session Duration:</strong> ${leadDuration}</p>
+            <p style="margin: 4px 0;"><strong>Scheduled Date:</strong> ${date}</p>
+            <p style="margin: 4px 0;"><strong>Time Slot:</strong> ${time}</p>
+          </div>
+          <p style="font-size: 12px; color: #71717a;">BxStrength Coaching | Support: ${senderEmail} | Phone: 8423594482</p>
+        </div>
+      `
+    }).catch((err) => console.error('[CONSULTATION CLIENT EMAIL ERROR]', err.message));
 
-      // 2. Send Admin Alert Email
-      fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': brevoApiKey
-        },
-        body: JSON.stringify({
-          sender: { name: 'BxStrength Booking Bot', email: senderEmail },
-          to: [{ email: adminEmail, name: 'BxStrength Admin' }],
-          subject: `🚨 [NEW CONSULTATION] ${leadName} - ${leadGoal} (${date} at ${time})`,
-          htmlContent: `
-            <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
-              <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">NEW FREE CONSULTATION BOOKED</h2>
-              <p style="color: #a1a1aa; font-size: 13px;">Ref: <strong>${bookingRef}</strong></p>
-              <div style="background-color: #18181b; padding: 18px; border-radius: 8px; margin: 16px 0; border: 1px solid #27272a;">
-                <p style="margin: 4px 0;"><strong>Client Name:</strong> ${leadName}</p>
-                <p style="margin: 4px 0;"><strong>Email:</strong> ${leadEmail}</p>
-                <p style="margin: 4px 0;"><strong>Phone:</strong> ${leadPhone}</p>
-                <p style="margin: 4px 0;"><strong>Primary Goal:</strong> ${leadGoal}</p>
-                <p style="margin: 4px 0;"><strong>Session Duration:</strong> ${leadDuration}</p>
-                <p style="margin: 4px 0;"><strong>Scheduled Date &amp; Time:</strong> ${date} at ${time}</p>
-              </div>
-              <p style="font-size: 12px; color: #71717a;">This lead is saved in NeonDB Database and Admin CRM panel.</p>
-            </div>
-          `
-        })
-      })
-        .then(async (r) => {
-          if (r.ok) console.log(`[EMAIL SENT] Admin notification for lead ${leadName}`);
-          else console.error(`[EMAIL FAILED] Admin email status ${r.status}:`, await r.text());
-        })
-        .catch((err) => console.error('[EMAIL ERROR] Admin email exception:', err.message));
-    }
+    // 2. Send Admin Alert Email
+    sendServerEmail({
+      toEmail: adminEmail,
+      toName: 'BxStrength Admin',
+      subject: `🚨 [NEW CONSULTATION] ${leadName} - ${leadGoal} (${date} at ${time})`,
+      senderName: 'BxStrength Booking Bot',
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">NEW FREE CONSULTATION BOOKED</h2>
+          <p style="color: #a1a1aa; font-size: 13px;">Ref: <strong>${bookingRef}</strong></p>
+          <div style="background-color: #18181b; padding: 18px; border-radius: 8px; margin: 16px 0; border: 1px solid #27272a;">
+            <p style="margin: 4px 0;"><strong>Client Name:</strong> ${leadName}</p>
+            <p style="margin: 4px 0;"><strong>Email:</strong> ${leadEmail}</p>
+            <p style="margin: 4px 0;"><strong>Phone:</strong> ${leadPhone}</p>
+            <p style="margin: 4px 0;"><strong>Primary Goal:</strong> ${leadGoal}</p>
+            <p style="margin: 4px 0;"><strong>Session Duration:</strong> ${leadDuration}</p>
+            <p style="margin: 4px 0;"><strong>Scheduled Date &amp; Time:</strong> ${date} at ${time}</p>
+          </div>
+          <p style="font-size: 12px; color: #71717a;">This lead is saved in NeonDB Database and Admin CRM panel.</p>
+        </div>
+      `
+    }).catch((err) => console.error('[CONSULTATION ADMIN EMAIL ERROR]', err.message));
 
     res.status(201).json({ message: 'Free consultation booked successfully', bookingRef, data: newEnquiry });
   } catch (err: any) {
@@ -799,47 +870,49 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
 app.get('/api/email/status', async (req, res) => {
   try {
     const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
-    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
+    const resendApiKey = process.env.VITE_RESEND_API_KEY || process.env.RESEND_API_KEY;
+    const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
+    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || process.env.GMAIL_USER || 'support@bxstrength.com';
 
-    if (!brevoApiKey) {
-      return res.json({
-        status: 'OFFLINE',
-        configured: false,
-        message: 'BREVO_API_KEY is not configured in server environment variables.',
-        senderEmail,
-        timestamp: new Date().toISOString()
-      });
-    }
+    let brevoStatus = 'NOT_CONFIGURED';
+    let brevoError = null;
 
-    const accountRes = await fetch('https://api.brevo.com/v3/account', {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'api-key': brevoApiKey
+    if (brevoApiKey) {
+      try {
+        const accountRes = await fetch('https://api.brevo.com/v3/account', {
+          method: 'GET',
+          headers: { 'Accept': 'application/json', 'api-key': brevoApiKey }
+        });
+        if (accountRes.ok) {
+          brevoStatus = 'ACTIVE';
+        } else {
+          const errData = await accountRes.json().catch(() => ({}));
+          brevoStatus = 'UNAUTHORIZED_OR_DISABLED';
+          brevoError = errData.message || 'API Key is not enabled in Brevo Dashboard';
+        }
+      } catch (e: any) {
+        brevoStatus = 'ERROR';
+        brevoError = e.message;
       }
-    });
-
-    if (accountRes.ok) {
-      const accountData = await accountRes.json();
-      return res.json({
-        status: 'HEALTHY',
-        configured: true,
-        provider: 'Brevo (Transactional SMTP API)',
-        accountEmail: accountData.email,
-        planType: accountData.planType || 'active',
-        senderEmail,
-        timestamp: new Date().toISOString()
-      });
-    } else {
-      const errData = await accountRes.json().catch(() => ({}));
-      return res.status(accountRes.status).json({
-        status: 'UNHEALTHY',
-        configured: true,
-        message: 'Brevo API key was rejected or invalid',
-        details: errData,
-        timestamp: new Date().toISOString()
-      });
     }
+
+    const smtpConfigured = !!smtpUser;
+    const resendConfigured = !!resendApiKey;
+    const isHealthy = smtpConfigured || brevoStatus === 'ACTIVE' || resendConfigured;
+
+    return res.json({
+      status: isHealthy ? 'HEALTHY' : 'ATTENTION_REQUIRED',
+      configured: smtpConfigured || !!brevoApiKey || resendConfigured,
+      activeProvider: smtpConfigured ? 'Gmail / Custom SMTP' : (brevoStatus === 'ACTIVE' ? 'Brevo API' : (resendConfigured ? 'Resend API' : 'None')),
+      providers: {
+        smtp: { configured: smtpConfigured, user: smtpUser || null },
+        brevo: { configured: !!brevoApiKey, status: brevoStatus, error: brevoError },
+        resend: { configured: resendConfigured }
+      },
+      senderEmail,
+      actionRequired: !isHealthy ? 'Brevo API Key is currently disabled or unactivated. Please turn ON your key at https://app.brevo.com/settings/keys/api or add GMAIL_USER & GMAIL_APP_PASSWORD to .env' : null,
+      timestamp: new Date().toISOString()
+    });
   } catch (err: any) {
     res.status(500).json({ status: 'ERROR', message: err.message });
   }
@@ -853,48 +926,31 @@ app.post('/api/email/test', async (req, res) => {
       return res.status(400).json({ error: 'targetEmail is required to dispatch test email.' });
     }
 
-    const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
-    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
+    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || process.env.GMAIL_USER || 'support@bxstrength.com';
 
-    if (!brevoApiKey) {
-      return res.status(400).json({ error: 'BREVO_API_KEY environment variable is missing on server.' });
-    }
-
-    const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'api-key': brevoApiKey
-      },
-      body: JSON.stringify({
-        sender: { name: 'BxStrength Security System', email: senderEmail },
-        to: [{ email: targetEmail }],
-        subject: '✅ [BxStrength] Email Service Health & Verification Test',
-        htmlContent: `
-          <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
-            <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">EMAIL SERVICE ACTIVE</h2>
-            <p style="font-size: 14px; color: #a1a1aa;">This automated test message confirms that BxStrength transactional email service is working properly.</p>
-            <div style="background-color: #18181b; padding: 16px; border-radius: 8px; margin: 16px 0; border: 1px solid #27272a; font-size: 13px;">
-              <p style="margin: 4px 0;"><strong>Sender:</strong> ${senderEmail}</p>
-              <p style="margin: 4px 0;"><strong>Recipient:</strong> ${targetEmail}</p>
-              <p style="margin: 4px 0;"><strong>Protocol:</strong> HTTPS TLS 1.3 via Brevo REST API</p>
-              <p style="margin: 4px 0;"><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
-            </div>
-            <p style="font-size: 12px; color: #71717a;">BxStrength System Diagnostic Service</p>
+    const result = await sendServerEmail({
+      toEmail: targetEmail,
+      toName: targetEmail.split('@')[0],
+      subject: '✅ [BxStrength] Email Service Health & Verification Test',
+      senderName: 'BxStrength Security System',
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">EMAIL SERVICE ACTIVE</h2>
+          <p style="font-size: 14px; color: #a1a1aa;">This automated test message confirms that BxStrength transactional email service is working properly.</p>
+          <div style="background-color: #18181b; padding: 16px; border-radius: 8px; margin: 16px 0; border: 1px solid #27272a; font-size: 13px;">
+            <p style="margin: 4px 0;"><strong>Sender:</strong> ${senderEmail}</p>
+            <p style="margin: 4px 0;"><strong>Recipient:</strong> ${targetEmail}</p>
+            <p style="margin: 4px 0;"><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
           </div>
-        `
-      })
+          <p style="font-size: 12px; color: #71717a;">BxStrength System Diagnostic Service</p>
+        </div>
+      `
     });
 
-    if (brevoRes.ok) {
-      const data = await brevoRes.json();
-      console.log(`[EMAIL TEST SUCCESS] Dispatched test email to ${targetEmail} (messageId: ${data.messageId})`);
-      return res.json({ success: true, message: 'Test email successfully sent!', messageId: data.messageId });
+    if (result.success) {
+      return res.json({ success: true, message: `Test email successfully sent via ${result.provider}!`, provider: result.provider, messageId: result.messageId });
     } else {
-      const errorData = await brevoRes.json().catch(() => ({}));
-      console.error(`[EMAIL TEST FAILED] Brevo returned ${brevoRes.status}:`, errorData);
-      return res.status(brevoRes.status).json({ error: 'Brevo email dispatch failed', details: errorData });
+      return res.status(400).json({ error: 'Email test dispatch failed', details: result.error });
     }
   } catch (err: any) {
     console.error('[EMAIL TEST ERROR]', err.message);
@@ -902,38 +958,26 @@ app.post('/api/email/test', async (req, res) => {
   }
 });
 
-// Generic Brevo Mail Proxy Endpoint
+// Generic Mail Proxy Endpoint for Frontend Services
 app.post('/api/send-email', async (req, res) => {
   try {
-    const { toEmail, toName, subject, htmlContent } = req.body;
-    const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
-    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
-
-    if (!brevoApiKey) {
-      return res.status(400).json({ error: 'Brevo API key is not configured on server' });
+    const { toEmail, toName, subject, htmlContent, senderName } = req.body;
+    if (!toEmail || !subject || !htmlContent) {
+      return res.status(400).json({ error: 'toEmail, subject, and htmlContent are required.' });
     }
 
-    const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'api-key': brevoApiKey
-      },
-      body: JSON.stringify({
-        sender: { name: 'BxStrength Coaching', email: senderEmail },
-        to: [{ email: toEmail, name: toName || toEmail }],
-        subject: subject,
-        htmlContent: htmlContent
-      })
+    const result = await sendServerEmail({
+      toEmail,
+      toName: toName || toEmail,
+      subject,
+      htmlContent,
+      senderName
     });
 
-    if (brevoRes.ok) {
-      const data = await brevoRes.json();
-      return res.json({ success: true, message: 'Email sent successfully via Brevo API', data });
+    if (result.success) {
+      return res.json({ success: true, message: `Email sent successfully via ${result.provider}`, data: result });
     } else {
-      const errorData = await brevoRes.json();
-      return res.status(brevoRes.status).json({ error: 'Brevo API error', details: errorData });
+      return res.status(400).json({ error: 'Email send failed', details: result.error });
     }
   } catch (err: any) {
     res.status(500).json({ error: 'Server email send failed', message: err.message });
@@ -1692,39 +1736,26 @@ app.post('/api/tickets', enquiryLimiter, async (req, res) => {
     // 2. Also keep in memory store
     ticketsStore.unshift(newTicket);
 
-    // Trigger Brevo Real Email Dispatch to Admin
-    const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
-    if (brevoApiKey) {
-      try {
-        await fetch('https://api.brevo.com/v3/smtp/email', {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'api-key': brevoApiKey
-          },
-          body: JSON.stringify({
-            sender: { name: 'BxStrength Support System', email: 'support@bxstrength.com' },
-            to: [{ email: process.env.VITE_ADMIN_EMAIL || 'admin@velocity.com', name: 'BxStrength Admin Team' }],
-            subject: `🚨 TICKET [${ticketId}]: ${cleanSubject}`,
-            htmlContent: `
-              <div style="font-family: Arial, sans-serif; background-color: #0a0a0a; color: #ffffff; padding: 25px; border-radius: 8px;">
-                <h2 style="color: #10b981;">New Support Ticket #${ticketId}</h2>
-                <p><strong>Customer:</strong> ${cleanName} (${cleanEmail})</p>
-                <p><strong>Category:</strong> ${cleanCategory} | <strong>Priority:</strong> ${cleanPriority.toUpperCase()}</p>
-                <p><strong>Subject:</strong> ${cleanSubject}</p>
-                <div style="background-color: #18181b; padding: 15px; border-left: 4px solid #10b981; margin: 15px 0;">
-                  <p style="margin:0; font-style: italic;">"${cleanDesc}"</p>
-                </div>
-                <p style="color: #a1a1aa; font-size: 12px;">This ticket has been saved to the database and is ready for admin resolution.</p>
-              </div>
-            `
-          })
-        });
-      } catch {
-        // Fallback silently
-      }
-    }
+    // Trigger Real Email Dispatch to Admin via Unified Email Service
+    const adminEmail = process.env.VITE_ADMIN_EMAIL || 'khanshadan96@gmail.com';
+    sendServerEmail({
+      toEmail: adminEmail,
+      toName: 'BxStrength Admin Team',
+      subject: `🚨 TICKET [${ticketId}]: ${cleanSubject}`,
+      senderName: 'BxStrength Support System',
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0a0a0a; color: #ffffff; padding: 25px; border-radius: 8px;">
+          <h2 style="color: #10b981;">New Support Ticket #${ticketId}</h2>
+          <p><strong>Customer:</strong> ${cleanName} (${cleanEmail})</p>
+          <p><strong>Category:</strong> ${cleanCategory} | <strong>Priority:</strong> ${cleanPriority.toUpperCase()}</p>
+          <p><strong>Subject:</strong> ${cleanSubject}</p>
+          <div style="background-color: #18181b; padding: 15px; border-left: 4px solid #10b981; margin: 15px 0;">
+            <p style="margin:0; font-style: italic;">"${cleanDesc}"</p>
+          </div>
+          <p style="color: #a1a1aa; font-size: 12px;">This ticket has been saved to the database and is ready for admin resolution.</p>
+        </div>
+      `
+    }).catch((err) => console.error('[TICKET ADMIN EMAIL ERROR]', err.message));
 
     res.status(201).json({
       message: `Support ticket ${ticketId} raised successfully and saved to database. Admin email alert dispatched!`,

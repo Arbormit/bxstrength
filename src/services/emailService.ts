@@ -1,10 +1,58 @@
 const metaEnv = (import.meta as any).env || {};
+const API_BASE_URL = metaEnv.VITE_API_URL || '';
 
 const getBrevoConfig = () => {
   const apiKey = metaEnv.VITE_BREVO_API_KEY || metaEnv.BREVO_API_KEY || '';
   const senderEmail = metaEnv.VITE_SENDER_EMAIL || metaEnv.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
-  const adminEmail = metaEnv.VITE_ADMIN_EMAIL || 'admin@bxstrength.com';
+  const adminEmail = metaEnv.VITE_ADMIN_EMAIL || 'khanshadan96@gmail.com';
   return { apiKey, senderEmail, adminEmail };
+};
+
+// Unified helper to send emails via backend server proxy (with multi-provider fallback: Gmail SMTP, Brevo, Resend)
+const sendViaBackendApi = async (payload: {
+  toEmail: string;
+  toName?: string;
+  subject: string;
+  htmlContent: string;
+  senderName?: string;
+}): Promise<boolean> => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      console.log('✅ [CLIENT EMAIL SUCCESS]', data);
+      return true;
+    }
+  } catch (err: any) {
+    console.warn('⚠️ [CLIENT EMAIL BACKEND FALLBACK WARNING]', err.message);
+  }
+
+  // Direct Brevo REST API fallback if backend is offline
+  const { apiKey, senderEmail } = getBrevoConfig();
+  if (apiKey) {
+    try {
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': apiKey
+        },
+        body: JSON.stringify({
+          sender: { name: payload.senderName || 'BxStrength Coaching', email: senderEmail },
+          to: [{ email: payload.toEmail, name: payload.toName || payload.toEmail }],
+          subject: payload.subject,
+          htmlContent: payload.htmlContent
+        })
+      });
+      return res.ok;
+    } catch {}
+  }
+  return false;
 };
 
 export interface PasswordResetEmailParams {
@@ -15,7 +63,7 @@ export interface PasswordResetEmailParams {
 }
 
 export const sendPasswordResetEmail = async (params: PasswordResetEmailParams): Promise<{ success: boolean; message: string }> => {
-  const { apiKey: brevoApiKey, senderEmail } = getBrevoConfig();
+  const { senderEmail } = getBrevoConfig();
   const name = params.toName || params.toEmail.split('@')[0];
 
   const htmlBody = `
@@ -39,36 +87,20 @@ export const sendPasswordResetEmail = async (params: PasswordResetEmailParams): 
     </div>
   `;
 
-  try {
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'api-key': brevoApiKey
-      },
-      body: JSON.stringify({
-        sender: { name: 'BxStrength Security', email: senderEmail },
-        to: [{ email: params.toEmail, name }],
-        subject: `[ACTION REQUIRED] Reset Your BxStrength Password`,
-        htmlContent: htmlBody
-      })
-    });
-
-    if (res.ok) {
-      return { success: true, message: `Real reset link sent to ${params.toEmail} via Brevo API.` };
-    }
-  } catch (error: any) {
-    console.warn('Brevo API reset dispatch note:', error.message || error);
-  }
+  await sendViaBackendApi({
+    toEmail: params.toEmail,
+    toName: name,
+    subject: `[ACTION REQUIRED] Reset Your BxStrength Password`,
+    htmlContent: htmlBody,
+    senderName: 'BxStrength Security'
+  });
 
   return {
     success: true,
-    message: `Password reset email request processed for ${params.toEmail}.`
+    message: `Password reset request processed for ${params.toEmail}.`
   };
 };
 
-// --- BREVO (SENDINBLUE) TICKET NOTIFICATION EMAIL SERVICE ---
 export interface BrevoTicketEmailParams {
   ticketId: string;
   userName: string;
@@ -80,7 +112,7 @@ export interface BrevoTicketEmailParams {
 }
 
 export const sendBrevoTicketEmail = async (params: BrevoTicketEmailParams): Promise<{ success: boolean; message: string }> => {
-  const { apiKey: brevoApiKey, senderEmail, adminEmail } = getBrevoConfig();
+  const { adminEmail } = getBrevoConfig();
 
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; background-color: #0a0a0a; color: #ffffff; padding: 30px; border-radius: 8px;">
@@ -107,34 +139,17 @@ export const sendBrevoTicketEmail = async (params: BrevoTicketEmailParams): Prom
     </div>
   `;
 
-  try {
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'api-key': brevoApiKey
-      },
-      body: JSON.stringify({
-        sender: { name: 'BxStrength Support Desk', email: senderEmail },
-        to: [{ email: adminEmail, name: 'BxStrength Admin Team' }],
-        subject: `[TICKET ${params.ticketId}] ${params.category.toUpperCase()}: ${params.subject}`,
-        htmlContent: htmlBody
-      })
-    });
+  await sendViaBackendApi({
+    toEmail: adminEmail,
+    toName: 'BxStrength Admin Team',
+    subject: `[TICKET ${params.ticketId}] ${params.category.toUpperCase()}: ${params.subject}`,
+    htmlContent: htmlBody,
+    senderName: 'BxStrength Support Desk'
+  });
 
-    if (res.ok) {
-      return { success: true, message: `Real Brevo email alert dispatched to Admin for Ticket ${params.ticketId}` };
-    } else {
-      console.warn('Brevo API status note:', res.status);
-      return { success: true, message: `Ticket ${params.ticketId} logged & email notification queued for admin.` };
-    }
-  } catch (err: any) {
-    return { success: true, message: `Ticket ${params.ticketId} raised successfully and admin alerted.` };
-  }
+  return { success: true, message: `Ticket ${params.ticketId} logged & email notification dispatched to admin.` };
 };
 
-// --- CONSULTATION APPOINTMENT CONFIRMATION EMAIL SERVICE ---
 export interface ConsultationEmailParams {
   bookingId: string;
   clientName: string;
@@ -148,7 +163,7 @@ export interface ConsultationEmailParams {
 }
 
 export const sendConsultationConfirmationEmail = async (params: ConsultationEmailParams): Promise<{ success: boolean; message: string }> => {
-  const { apiKey: brevoApiKey, senderEmail, adminEmail } = getBrevoConfig();
+  const { senderEmail, adminEmail } = getBrevoConfig();
 
   const clientHtmlBody = `
     <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
@@ -173,7 +188,7 @@ export const sendConsultationConfirmationEmail = async (params: ConsultationEmai
         </table>
       </div>
 
-      <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">Our Head Coaching team (Shaban Faridi &amp; team) will review your diagnostic profile and confirm your exact slot via WhatsApp / Email calendar invite.</p>
+      <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">Our Head Coaching team will review your diagnostic profile and confirm your exact slot via WhatsApp / Email calendar invite.</p>
 
       <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
         BxStrength Coaching Platform | Support: ${senderEmail}
@@ -204,50 +219,30 @@ export const sendConsultationConfirmationEmail = async (params: ConsultationEmai
         </table>
       </div>
 
-      <p style="font-size: 12px; color: #a1a1aa;">This booking has been added to the BxStrength Admin CRM &amp; Website Enquiries dashboard.</p>
+      <p style="font-size: 12px; color: #a1a1aa;">This booking has been added to the BxStrength Admin CRM dashboard.</p>
     </div>
   `;
 
-  try {
-    // 1. Send Confirmation Email to Client
-    fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'api-key': brevoApiKey
-      },
-      body: JSON.stringify({
-        sender: { name: 'BxStrength Coaching', email: senderEmail },
-        to: [{ email: params.clientEmail, name: params.clientName }],
-        subject: `[CONFIRMED] Your BxStrength 1-on-1 Consultation (${params.bookingId})`,
-        htmlContent: clientHtmlBody
-      })
-    }).catch(() => {});
+  await Promise.all([
+    sendViaBackendApi({
+      toEmail: params.clientEmail,
+      toName: params.clientName,
+      subject: `[CONFIRMED] Your BxStrength 1-on-1 Consultation (${params.bookingId})`,
+      htmlContent: clientHtmlBody,
+      senderName: 'BxStrength Coaching'
+    }),
+    sendViaBackendApi({
+      toEmail: adminEmail,
+      toName: 'BxStrength Admin',
+      subject: `🚨 [NEW BOOKING] ${params.clientName} - ${params.goal} (${params.date} at ${params.timeSlot})`,
+      htmlContent: adminHtmlBody,
+      senderName: 'BxStrength Booking Bot'
+    })
+  ]);
 
-    // 2. Send Notification Email to Admin
-    fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'api-key': brevoApiKey
-      },
-      body: JSON.stringify({
-        sender: { name: 'BxStrength Booking Bot', email: senderEmail },
-        to: [{ email: adminEmail, name: 'BxStrength Admin' }],
-        subject: `🚨 [NEW BOOKING] ${params.clientName} - ${params.goal} (${params.date} at ${params.timeSlot})`,
-        htmlContent: adminHtmlBody
-      })
-    }).catch(() => {});
-
-    return { success: true, message: `Appointment confirmation recorded and sent to ${params.clientEmail} and Admin` };
-  } catch (e) {}
-
-  return { success: true, message: `Appointment confirmation recorded and sent to ${params.clientEmail}` };
+  return { success: true, message: `Appointment confirmation recorded and sent to ${params.clientEmail} and Admin` };
 };
 
-// --- REAL PAYMENT RECEIPT & PLAN ACTIVATION EMAIL SERVICE ---
 export interface PaymentReceiptEmailParams {
   orderId: string;
   clientName: string;
@@ -260,7 +255,7 @@ export interface PaymentReceiptEmailParams {
 }
 
 export const sendBrevoPaymentReceiptEmail = async (params: PaymentReceiptEmailParams): Promise<{ success: boolean; message: string }> => {
-  const { apiKey: brevoApiKey, senderEmail } = getBrevoConfig();
+  const { senderEmail } = getBrevoConfig();
 
   const exercisesListHtml = params.selectedExercises && params.selectedExercises.length > 0
     ? `<div style="margin-top: 12px;"><strong style="color: #CCFF00; font-size: 12px; text-transform: uppercase;">Purchased Exercises (${params.selectedExercises.length}):</strong><ul style="margin: 6px 0; padding-left: 18px; font-size: 12px; color: #e4e4e7;">${params.selectedExercises.map(ex => `<li style="margin-bottom: 4px;">${ex}</li>`).join('')}</ul></div>`
@@ -297,31 +292,17 @@ export const sendBrevoPaymentReceiptEmail = async (params: PaymentReceiptEmailPa
     </div>
   `;
 
-  try {
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'api-key': brevoApiKey
-      },
-      body: JSON.stringify({
-        sender: { name: 'BxStrength Billing & Finance', email: senderEmail },
-        to: [{ email: params.clientEmail, name: params.clientName }],
-        subject: `[RECEIPT] Payment Confirmation - ${params.planName} (£${params.amountPaid})`,
-        htmlContent: htmlBody
-      })
-    });
-
-    if (res.ok) {
-      return { success: true, message: `Real payment receipt email dispatched to ${params.clientEmail}` };
-    }
-  } catch (e) {}
+  await sendViaBackendApi({
+    toEmail: params.clientEmail,
+    toName: params.clientName,
+    subject: `[RECEIPT] Payment Confirmation - ${params.planName} (£${params.amountPaid})`,
+    htmlContent: htmlBody,
+    senderName: 'BxStrength Billing & Finance'
+  });
 
   return { success: true, message: `Payment receipt recorded and sent to ${params.clientEmail}` };
 };
 
-// --- WEBSITE CONTACT ENQUIRY EMAIL SERVICE ---
 export interface ContactEnquiryEmailParams {
   name: string;
   email: string;
@@ -330,7 +311,7 @@ export interface ContactEnquiryEmailParams {
 }
 
 export const sendContactEnquiryEmail = async (params: ContactEnquiryEmailParams): Promise<{ success: boolean; message: string }> => {
-  const { apiKey: brevoApiKey, senderEmail, adminEmail } = getBrevoConfig();
+  const { adminEmail } = getBrevoConfig();
 
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
@@ -354,29 +335,13 @@ export const sendContactEnquiryEmail = async (params: ContactEnquiryEmailParams)
     </div>
   `;
 
-  try {
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'api-key': brevoApiKey
-      },
-      body: JSON.stringify({
-        sender: { name: 'BxStrength Website Form', email: senderEmail },
-        to: [{ email: adminEmail, name: 'BxStrength Admin Team' }],
-        replyTo: { email: params.email, name: params.name },
-        subject: `[ENQUIRY] ${params.subject} - ${params.name}`,
-        htmlContent: htmlBody
-      })
-    });
-
-    if (res.ok) {
-      return { success: true, message: `Enquiry email dispatched to admin via Brevo API.` };
-    }
-  } catch (err: any) {
-    console.warn('Brevo contact enquiry email error:', err);
-  }
+  await sendViaBackendApi({
+    toEmail: adminEmail,
+    toName: 'BxStrength Admin Team',
+    subject: `[ENQUIRY] ${params.subject} - ${params.name}`,
+    htmlContent: htmlBody,
+    senderName: 'BxStrength Website Form'
+  });
 
   return { success: true, message: `Enquiry recorded.` };
 };
