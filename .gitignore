@@ -6,3 +6,4 @@ coverage/
 .env*
 !.env.example
 prd.md/
+README.md
