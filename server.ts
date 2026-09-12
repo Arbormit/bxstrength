@@ -96,7 +96,7 @@ app.post('/api/create-stripe-checkout-session', async (req, res) => {
         line_items: [
           {
             price_data: {
-              currency: 'usd',
+              currency: 'gbp',
               product_data: {
                 name: `${planName} (${(serviceType || 'individual').toUpperCase()} MODE)`,
                 description: customExercises && customExercises.length > 0 ? `Custom Exercises: ${customExercises.slice(0, 3).join(', ')}...` : 'Bespoke Fitness Protocol'
