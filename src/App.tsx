@@ -3,6 +3,7 @@ import { ViewPage, Trainer, UserRole, SelfAssessmentData } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
+import { AssessmentSection } from './components/AssessmentSection';
 import { TrustBar } from './components/TrustBar';
 import { TransformationJourney } from './components/TransformationJourney';
 import { BeforeAfterShowcase } from './components/BeforeAfterShowcase';
@@ -215,6 +216,10 @@ function AppContent() {
                 setSelectedTrainerForBooking(undefined);
                 setBookingModalOpen(true);
               }}
+              onOpenAssessment={() => setAssessmentModalOpen(true)}
+            />
+
+            <AssessmentSection
               onOpenAssessment={() => setAssessmentModalOpen(true)}
             />
 
