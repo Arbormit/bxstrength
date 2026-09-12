@@ -157,15 +157,13 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => handleNav('home')} 
             className="flex items-center gap-3 group text-left focus:outline-none cursor-pointer"
             id="brand-logo"
+            aria-label="BxStrength Home"
           >
-            <div className="w-10 h-10 rounded-lg bg-white text-black flex items-center justify-center font-black shadow-lg group-hover:bg-zinc-200 transition-colors">
-              <Dumbbell className="w-5 h-5 transform -rotate-45" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tight text-white leading-none">
-                BxStrength<span className="text-zinc-400">.</span>
-              </span>
-            </div>
+            <img 
+              src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" 
+              alt="BxStrength Logo" 
+              className="h-9 sm:h-11 md:h-12 w-auto max-w-[160px] sm:max-w-[220px] object-contain rounded-lg shadow-md group-hover:opacity-90 transition-opacity"
+            />
           </button>
 
           {/* Primary Action Suite */}

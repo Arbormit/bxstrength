@@ -22,12 +22,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           {/* Column 1: BRAND ABOUT */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded bg-white text-black flex items-center justify-center font-black">
-                <Dumbbell className="w-4 h-4 transform -rotate-45" />
-              </div>
-              <span className="text-lg font-black text-white tracking-tight">
-                BX<span className="text-[#CCFF00]">STRENGTH</span>
-              </span>
+              <img 
+                src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" 
+                alt="BxStrength Logo" 
+                className="h-10 sm:h-12 w-auto max-w-[180px] object-contain rounded-lg shadow-md hover:opacity-90 transition-opacity cursor-pointer"
+                onClick={() => handleNav('home')}
+              />
             </div>
             
             <p className="text-xs text-zinc-400 leading-relaxed">
