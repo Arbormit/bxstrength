@@ -251,6 +251,7 @@ if (dbPool) {
           ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(50) DEFAULT 'Other';
           ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(100) DEFAULT 'Normal User';
           ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_statements TEXT DEFAULT '[]';
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS signup_method VARCHAR(50) DEFAULT 'Email / Password';
         `);
 
         await ensureTrainerColumnsExist();
@@ -340,18 +341,26 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const passwordHash = await bcrypt.hash(rawPassword, salt);
     const userId = `user-${Date.now()}`;
 
+    const requestedMethod = req.body.signupMethod || req.body.signup_method;
+    const signupMethod = requestedMethod === 'Google SSO' || rawPassword.includes('GoogleAuthPass@') ? 'Google SSO' : 'Email / Password';
+
     if (dbPool) {
       try {
         const result = await dbPool.query(
-          `INSERT INTO users (id, name, email, password_hash, role, phone, avatar_url, is_verified, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, true, 'active')
-           RETURNING id, name, email, role, phone, avatar_url, is_verified, status, created_at`,
-          [userId, name, email, passwordHash, userRole, phone, `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`]
+          `INSERT INTO users (id, name, email, password_hash, role, phone, avatar_url, is_verified, status, signup_method)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, true, 'active', $8)
+           RETURNING id, name, email, role, phone, avatar_url, is_verified, status, signup_method, created_at`,
+          [userId, name, email, passwordHash, userRole, phone, `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`, signupMethod]
         );
         const user = result.rows[0];
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
         return res.status(201).json({ user, token });
-      } catch (e: any) {}
+      } catch (e: any) {
+        if (e.code === '23505') {
+          return res.status(400).json({ error: 'An account with this email address already exists in NeonDB.' });
+        }
+        console.error('NeonDB Registration Error:', e.message);
+      }
     }
 
     const token = jwt.sign({ id: userId, email, role: userRole, name }, JWT_SECRET, { expiresIn: '7d' });
@@ -736,14 +745,28 @@ app.get('/api/users', async (req, res) => {
     if (dbPool) {
       try {
         const result = await dbPool.query('SELECT * FROM users ORDER BY created_at DESC');
-        return res.json(result.rows);
+        const formatted = result.rows.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          email: r.email,
+          role: r.role,
+          phone: r.phone || '',
+          avatarUrl: r.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(r.name)}`,
+          coachPosition: r.coach_position || 'Senior Coach',
+          heightCm: r.height_cm || 175,
+          age: r.age || 25,
+          gender: r.gender || 'Other',
+          fitnessGoals: r.fitness_goals || '',
+          subscriptionTier: r.subscription_tier || 'Normal User',
+          billingStatements: typeof r.billing_statements === 'string' ? JSON.parse(r.billing_statements || '[]') : (r.billing_statements || []),
+          signupMethod: r.signup_method || (r.password_hash && r.password_hash.includes('GoogleAuthPass') ? 'Google SSO' : 'Email / Password'),
+          isVerified: r.is_verified ?? true,
+          status: r.status || 'active',
+          createdAt: r.created_at || new Date().toISOString()
+        }));
+        return res.json(formatted);
       } catch (err: any) {
-        try {
-          const fallback = await dbPool.query('SELECT * FROM users');
-          return res.json(fallback.rows);
-        } catch {
-          return res.json([]);
-        }
+        console.error('NeonDB fetch users error:', err.message);
       }
     }
     res.json([]);
@@ -1592,5 +1615,17 @@ app.use((err: any, req: any, res: any, next: any) => {
 
 app.listen(Number(PORT) || 3001, '0.0.0.0', () => {
   console.log(`  ➜  API Server: http://localhost:${PORT}/`);
+
+  // Render Anti-Sleep Keep-Alive Heartbeat (Pings health check every 10 mins to maintain 24/7 uptime)
+  const KEEP_ALIVE_INTERVAL_MS = 10 * 60 * 1000;
+  setInterval(() => {
+    const apiHost = process.env.VITE_API_URL || process.env.API_URL || `http://127.0.0.1:${PORT}`;
+    const targetUrl = `${apiHost.replace(/\/$/, '')}/api/health`;
+    fetch(targetUrl)
+      .then((res) => {
+        if (res.ok) console.log(`  ➜  Keep-Alive Heartbeat: Active (${new Date().toLocaleTimeString()})`);
+      })
+      .catch(() => {});
+  }, KEEP_ALIVE_INTERVAL_MS);
 });
 

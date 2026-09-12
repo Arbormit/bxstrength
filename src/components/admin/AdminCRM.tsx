@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, UserRole, ClassSchedule, Subscription, AuditLog, Enquiry, WorkoutProgram, NutritionPlan, Announcement } from '../../types';
-import { VelocityAPI } from '../../services/api';
+import { VelocityAPI, getApiUrl } from '../../services/api';
 import { CRMOverview } from './CRMOverview';
 import { UserManagement } from './UserManagement';
 import { ClassScheduleManager } from './ClassScheduleManager';
@@ -43,7 +43,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
   const loadCRMData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/users');
+      const res = await fetch(getApiUrl('/api/users'));
       if (res.ok) {
         const rawUsers = await res.json();
         if (Array.isArray(rawUsers)) {
@@ -70,6 +70,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
               gender: u.gender || 'Other',
               subscriptionTier: u.subscription_tier || u.subscriptionTier || 'Normal User',
               billingStatements: statements,
+              signupMethod: u.signup_method || u.signupMethod || (u.password_hash && String(u.password_hash).includes('GoogleAuthPass') ? 'Google SSO' : 'Email / Password'),
               avatarUrl: u.avatar_url || u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.email || 'User')}`,
               fitnessGoals: u.fitness_goals || u.fitnessGoals || '',
               isVerified: u.is_verified !== undefined ? Boolean(u.is_verified) : (u.isVerified !== undefined ? Boolean(u.isVerified) : true),

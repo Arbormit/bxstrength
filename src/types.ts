@@ -52,6 +52,7 @@ export interface User {
   fitnessGoals?: string;
   subscriptionTier?: SubscriptionTier;
   billingStatements?: BillingStatement[];
+  signupMethod?: 'Google SSO' | 'Email / Password' | string;
   isVerified: boolean;
   status: 'active' | 'inactive';
   createdAt: string;

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   fitness_goals TEXT,
   is_verified BOOLEAN DEFAULT true,
   status VARCHAR(50) DEFAULT 'active',
+  signup_method VARCHAR(50) DEFAULT 'Email / Password',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   last_login_at TIMESTAMP WITH TIME ZONE
 );
