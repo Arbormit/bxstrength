@@ -136,28 +136,6 @@ export const FaqSection: React.FC<{ onOpenConsultation: () => void; onOpenAssess
             <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAllFaqs ? 'rotate-180' : ''}`} />
           </button>
         </div>
-
-        {/* CTA Banner inside FAQ */}
-        <div className="mt-12 p-8 bg-zinc-900 border border-zinc-800 rounded-xl text-center flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="text-left">
-            <h4 className="text-lg font-black uppercase tracking-tight text-white">Ready to get started?</h4>
-            <p className="text-xs text-zinc-400 mt-1">Book your free 15-minute discovery consultation session today.</p>
-          </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button
-              onClick={onOpenAssessment}
-              className="w-full sm:w-auto border border-zinc-700 hover:border-white text-zinc-300 hover:text-white font-bold text-xs uppercase px-5 py-3 rounded-lg transition-colors cursor-pointer"
-            >
-              Take Self Assessment
-            </button>
-            <button
-              onClick={onOpenConsultation}
-              className="w-full sm:w-auto bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase px-6 py-3 rounded-lg transition-colors shadow-lg cursor-pointer"
-            >
-              Book Free Consultation
-            </button>
-          </div>
-        </div>
       </div>
     </section>
   );
