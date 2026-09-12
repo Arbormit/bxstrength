@@ -303,38 +303,6 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({
 
           </div>
 
-          {/* Quote & Coach Info Bar */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 sm:p-5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-400 shrink-0">
-                <Award className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-              <div>
-                <p className="text-white italic font-medium text-xs sm:text-sm">"{activeItem.quote}"</p>
-                <p className="text-zinc-400 text-[10px] sm:text-[11px] mt-0.5">
-                  <strong className="text-emerald-400">{activeItem.name}</strong> ({activeItem.location}) • Supervised by <strong>{activeItem.coach}</strong> ({activeItem.coachTitle})
-                </p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2.5 shrink-0 w-full md:w-auto">
-              <button
-                onClick={onOpenConsultation}
-                className="flex-1 md:flex-none bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-black tracking-widest py-3 px-5 sm:px-6 rounded-lg uppercase transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>START TRANSFORMATION</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={onOpenAssessment}
-                className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold py-3 px-4 rounded-lg uppercase transition-all cursor-pointer whitespace-nowrap hidden sm:block"
-              >
-                ASSESSMENT
-              </button>
-            </div>
-          </div>
-
           {/* Mobile Bottom Slide Dots */}
           <div className="flex sm:hidden justify-center items-center gap-2 pt-2">
             {TRANSFORMATIONS.map((item, idx) => (
