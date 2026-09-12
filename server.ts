@@ -937,7 +937,7 @@ app.post('/api/enquiries', enquiryLimiter, async (req, res) => {
   }
 });
 
-app.delete('/api/enquiries/:id', async (req, res) => {
+app.delete('/api/enquiries/:id', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
   try {
     const { id } = req.params;
     if (dbPool) {
@@ -1514,7 +1514,7 @@ app.post('/api/tickets', enquiryLimiter, async (req, res) => {
   }
 });
 
-app.patch('/api/tickets/:id', async (req, res) => {
+app.patch('/api/tickets/:id', authenticateToken, authorizeRoles('admin', 'coach'), async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const { status, adminResponse } = req.body;
@@ -1567,7 +1567,7 @@ app.patch('/api/tickets/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/tickets/:id', async (req, res) => {
+app.delete('/api/tickets/:id', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
   try {
     const { id } = req.params;
 
