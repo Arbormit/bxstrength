@@ -123,12 +123,14 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
         {/* Top Branding Header */}
         <div className="bg-[#18181b] p-5 flex items-center justify-between border-b border-zinc-800">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-white text-black flex items-center justify-center font-black">
-              <Dumbbell className="w-4 h-4 transform -rotate-45" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black uppercase tracking-wider text-white">BxStrength Account Recovery</h3>
-              <p className="text-[11px] text-zinc-400">EmailJS SMTP Password Reset Service</p>
+            <img 
+              src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" 
+              alt="BxStrength Logo" 
+              className="h-9 w-auto max-w-[150px] object-contain rounded-lg shadow-md"
+            />
+            <div className="border-l border-zinc-700 pl-3">
+              <h3 className="text-xs font-black uppercase tracking-wider text-white">ACCOUNT RECOVERY</h3>
+              <p className="text-[10px] text-zinc-400">Password Reset Service</p>
             </div>
           </div>
           <button

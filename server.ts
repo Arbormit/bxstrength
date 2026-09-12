@@ -344,6 +344,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const requestedMethod = req.body.signupMethod || req.body.signup_method;
     const signupMethod = requestedMethod === 'Google SSO' || rawPassword.includes('GoogleAuthPass@') ? 'Google SSO' : 'Email / Password';
 
+    let registeredUser: any = null;
+
     if (dbPool) {
       try {
         const result = await dbPool.query(
@@ -352,9 +354,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
            RETURNING id, name, email, role, phone, avatar_url, is_verified, status, signup_method, created_at`,
           [userId, name, email, passwordHash, userRole, phone, `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`, signupMethod]
         );
-        const user = result.rows[0];
-        const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-        return res.status(201).json({ user, token });
+        registeredUser = result.rows[0];
       } catch (e: any) {
         if (e.code === '23505') {
           return res.status(400).json({ error: 'An account with this email address already exists in NeonDB.' });
@@ -362,11 +362,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         console.error('NeonDB Registration Query Error:', e.message);
         return res.status(500).json({ error: `NeonDB error: ${e.message}` });
       }
-    }
-
-    const token = jwt.sign({ id: userId, email, role: userRole, name }, JWT_SECRET, { expiresIn: '7d' });
-    return res.status(201).json({
-      user: {
+    } else {
+      registeredUser = {
         id: userId,
         name,
         email,
@@ -376,9 +373,97 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         isVerified: true,
         status: 'active',
         createdAt: new Date().toISOString()
-      },
-      token
-    });
+      };
+    }
+
+    // Trigger Professional Brevo Welcome Email to User & Admin Notification
+    const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
+    const adminEmail = process.env.VITE_ADMIN_EMAIL || 'support@bxstrength.com';
+
+    if (brevoApiKey) {
+      // 1. Send Professional Welcome Email to New User
+      fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': brevoApiKey
+        },
+        body: JSON.stringify({
+          sender: { name: 'BxStrength Coaching', email: senderEmail },
+          to: [{ email: email, name: name }],
+          subject: 'WELCOME TO BXSTRENGTH | Your Account Is Active 🥊',
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 48px; width: auto; border-radius: 8px; margin: 0 auto;" />
+              </div>
+              <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase; text-align: center; font-size: 20px; font-weight: 900;">WELCOME TO BXSTRENGTH</h2>
+              <p style="text-align: center; color: #a1a1aa; font-size: 13px; margin-top: 4px;">Premier Digital Boxing, Strength &amp; Fitness Coaching</p>
+              
+              <div style="margin-top: 24px; font-size: 14px; line-height: 1.6; color: #e4e4e7;">
+                <p>Dear <strong>${name}</strong>,</p>
+                <p>Welcome to BxStrength! Your athlete profile has been successfully created and activated.</p>
+              </div>
+
+              <div style="background-color: #18181b; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #27272a; font-size: 13px; line-height: 1.7;">
+                <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Registered Name:</strong> ${name}</p>
+                <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Email Address:</strong> ${email}</p>
+                <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Authentication Method:</strong> ${signupMethod}</p>
+                <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Account Status:</strong> <span style="color: #CCFF00; font-weight: bold;">VERIFIED &amp; ACTIVE</span></p>
+              </div>
+
+              <div style="text-align: center; margin: 28px 0;">
+                <a href="${req.headers.origin || 'https://bxstrength.com'}" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 4px 14px rgba(204, 255, 0, 0.3);">
+                  ACCESS YOUR ATHLETE PORTAL
+                </a>
+              </div>
+
+              <div style="border-t: 1px solid #27272a; margin-top: 24px; padding-top: 16px; font-size: 12px; color: #71717a; line-height: 1.5;">
+                <p style="margin: 2px 0;">Engineered by <strong>Head Coach Shaban Faridi</strong></p>
+                <p style="margin: 2px 0;">BxStrength HQ | Support: <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: underline;">${senderEmail}</a> | Phone: +91 8423594482</p>
+              </div>
+            </div>
+          `
+        })
+      })
+        .then(async (r) => {
+          if (r.ok) console.log(`[WELCOME EMAIL SENT] Dispatched welcome email to ${email}`);
+          else console.error(`[WELCOME EMAIL FAILED] Brevo status ${r.status}:`, await r.text());
+        })
+        .catch((err) => console.error('[WELCOME EMAIL ERROR] Brevo exception:', err.message));
+
+      // 2. Send Admin Alert Email
+      fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': brevoApiKey
+        },
+        body: JSON.stringify({
+          sender: { name: 'BxStrength Security Bot', email: senderEmail },
+          to: [{ email: adminEmail, name: 'BxStrength Admin' }],
+          subject: `🔔 [NEW ATHLETE REGISTRATION] ${name} (${email})`,
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 24px; border-radius: 10px; max-width: 500px; margin: 0 auto; border: 1px solid #27272a;">
+              <h3 style="color: #CCFF00; margin: 0; text-transform: uppercase;">NEW USER SIGNUP DETECTED</h3>
+              <div style="background-color: #18181b; padding: 14px; border-radius: 6px; margin: 14px 0; font-size: 13px;">
+                <p style="margin: 4px 0;"><strong>Name:</strong> ${name}</p>
+                <p style="margin: 4px 0;"><strong>Email:</strong> ${email}</p>
+                <p style="margin: 4px 0;"><strong>Signup Method:</strong> ${signupMethod}</p>
+                <p style="margin: 4px 0;"><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
+              </div>
+              <p style="font-size: 11px; color: #71717a;">Stored in NeonDB PostgreSQL database.</p>
+            </div>
+          `
+        })
+      }).catch(() => {});
+    }
+
+    const token = jwt.sign({ id: registeredUser.id, email: registeredUser.email, role: registeredUser.role, name: registeredUser.name }, JWT_SECRET, { expiresIn: '7d' });
+    return res.status(201).json({ user: registeredUser, token });
   } catch (err: any) {
     console.error('Registration error:', err.message);
     res.status(500).json({ error: 'Registration failed due to a server error.' });
@@ -403,22 +488,35 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     if (dbPool) {
       try {
         const result = await dbPool.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (result.rows.length > 0) {
-          const user = result.rows[0];
-          const valid = await bcrypt.compare(rawPassword, user.password_hash);
-          if (!valid) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-          }
-
-          delete user.password_hash;
-          const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-          return res.json({ user, token });
+        if (result.rows.length === 0) {
+          return res.status(404).json({
+            error: 'No account found with this email address. Please create an account first.',
+            code: 'ACCOUNT_NOT_FOUND'
+          });
         }
-      } catch (e: any) {}
+
+        const user = result.rows[0];
+        const valid = await bcrypt.compare(rawPassword, user.password_hash);
+        if (!valid) {
+          return res.status(401).json({
+            error: 'Incorrect password. Please verify your password or reset it.',
+            code: 'INVALID_PASSWORD'
+          });
+        }
+
+        delete user.password_hash;
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+        return res.json({ user, token });
+      } catch (e: any) {
+        console.error('NeonDB Login query error:', e.message);
+        return res.status(500).json({ error: 'Database authentication query failed.' });
+      }
     }
 
-    const token = jwt.sign({ id: 'user-demo', email, role: 'client', name: 'Demo Athlete' }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ message: 'Authentication successful', token });
+    return res.status(404).json({
+      error: 'No account found with this email address. Please create an account first.',
+      code: 'ACCOUNT_NOT_FOUND'
+    });
   } catch (err: any) {
     console.error('Login error:', err.message);
     res.status(500).json({ error: 'Authentication failed' });

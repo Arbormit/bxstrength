@@ -231,7 +231,7 @@ export const VelocityAPI = {
         }
       }
     } catch (err: any) {
-      if (err.message && (err.message.includes('Security Lockout Active') || err.message.includes('Invalid credentials') || err.message.includes('Too many login attempts'))) {
+      if (err.message) {
         throw err;
       }
     }
@@ -241,7 +241,7 @@ export const VelocityAPI = {
     const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 
     if (!user) {
-      throw new Error('Invalid email or password. Please try again or create an account.');
+      throw new Error('No account found with this email address. You must create an account first.');
     }
 
     user.lastLoginAt = new Date().toISOString();
