@@ -647,7 +647,12 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
             </div>
           `
         })
-      }).catch(() => {});
+      })
+        .then(async (r) => {
+          if (r.ok) console.log(`[EMAIL SENT] Client consultation confirmation to ${leadEmail}`);
+          else console.error(`[EMAIL FAILED] Client email status ${r.status}:`, await r.text());
+        })
+        .catch((err) => console.error('[EMAIL ERROR] Client email exception:', err.message));
 
       // 2. Send Admin Alert Email
       fetch('https://api.brevo.com/v3/smtp/email', {
@@ -677,13 +682,125 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
             </div>
           `
         })
-      }).catch(() => {});
+      })
+        .then(async (r) => {
+          if (r.ok) console.log(`[EMAIL SENT] Admin notification for lead ${leadName}`);
+          else console.error(`[EMAIL FAILED] Admin email status ${r.status}:`, await r.text());
+        })
+        .catch((err) => console.error('[EMAIL ERROR] Admin email exception:', err.message));
     }
 
     res.status(201).json({ message: 'Free consultation booked successfully', bookingRef, data: newEnquiry });
   } catch (err: any) {
     console.error('Consultation booking error:', err.message);
     res.status(500).json({ error: 'Failed to schedule consultation' });
+  }
+});
+
+// Check Email Service Status & API Configuration Health
+app.get('/api/email/status', async (req, res) => {
+  try {
+    const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
+
+    if (!brevoApiKey) {
+      return res.json({
+        status: 'OFFLINE',
+        configured: false,
+        message: 'BREVO_API_KEY is not configured in server environment variables.',
+        senderEmail,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const accountRes = await fetch('https://api.brevo.com/v3/account', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'api-key': brevoApiKey
+      }
+    });
+
+    if (accountRes.ok) {
+      const accountData = await accountRes.json();
+      return res.json({
+        status: 'HEALTHY',
+        configured: true,
+        provider: 'Brevo (Transactional SMTP API)',
+        accountEmail: accountData.email,
+        planType: accountData.planType || 'active',
+        senderEmail,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      const errData = await accountRes.json().catch(() => ({}));
+      return res.status(accountRes.status).json({
+        status: 'UNHEALTHY',
+        configured: true,
+        message: 'Brevo API key was rejected or invalid',
+        details: errData,
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (err: any) {
+    res.status(500).json({ status: 'ERROR', message: err.message });
+  }
+});
+
+// Verification / Test Email Endpoint
+app.post('/api/email/test', async (req, res) => {
+  try {
+    const { targetEmail } = req.body;
+    if (!targetEmail) {
+      return res.status(400).json({ error: 'targetEmail is required to dispatch test email.' });
+    }
+
+    const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
+
+    if (!brevoApiKey) {
+      return res.status(400).json({ error: 'BREVO_API_KEY environment variable is missing on server.' });
+    }
+
+    const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': brevoApiKey
+      },
+      body: JSON.stringify({
+        sender: { name: 'BxStrength Security System', email: senderEmail },
+        to: [{ email: targetEmail }],
+        subject: '✅ [BxStrength] Email Service Health & Verification Test',
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+            <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">EMAIL SERVICE ACTIVE</h2>
+            <p style="font-size: 14px; color: #a1a1aa;">This automated test message confirms that BxStrength transactional email service is working properly.</p>
+            <div style="background-color: #18181b; padding: 16px; border-radius: 8px; margin: 16px 0; border: 1px solid #27272a; font-size: 13px;">
+              <p style="margin: 4px 0;"><strong>Sender:</strong> ${senderEmail}</p>
+              <p style="margin: 4px 0;"><strong>Recipient:</strong> ${targetEmail}</p>
+              <p style="margin: 4px 0;"><strong>Protocol:</strong> HTTPS TLS 1.3 via Brevo REST API</p>
+              <p style="margin: 4px 0;"><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
+            </div>
+            <p style="font-size: 12px; color: #71717a;">BxStrength System Diagnostic Service</p>
+          </div>
+        `
+      })
+    });
+
+    if (brevoRes.ok) {
+      const data = await brevoRes.json();
+      console.log(`[EMAIL TEST SUCCESS] Dispatched test email to ${targetEmail} (messageId: ${data.messageId})`);
+      return res.json({ success: true, message: 'Test email successfully sent!', messageId: data.messageId });
+    } else {
+      const errorData = await brevoRes.json().catch(() => ({}));
+      console.error(`[EMAIL TEST FAILED] Brevo returned ${brevoRes.status}:`, errorData);
+      return res.status(brevoRes.status).json({ error: 'Brevo email dispatch failed', details: errorData });
+    }
+  } catch (err: any) {
+    console.error('[EMAIL TEST ERROR]', err.message);
+    res.status(500).json({ error: 'Email service test error', message: err.message });
   }
 });
 
