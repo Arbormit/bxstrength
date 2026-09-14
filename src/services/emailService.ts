@@ -2,13 +2,12 @@ const metaEnv = (import.meta as any).env || {};
 const API_BASE_URL = metaEnv.VITE_API_URL || '';
 
 const getBrevoConfig = () => {
-  const apiKey = metaEnv.VITE_BREVO_API_KEY || metaEnv.BREVO_API_KEY || '';
-  const senderEmail = metaEnv.VITE_SENDER_EMAIL || metaEnv.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
+  const senderEmail = metaEnv.VITE_SENDER_EMAIL || 'support@bxstrength.com';
   const adminEmail = metaEnv.VITE_ADMIN_EMAIL || 'khanshadan96@gmail.com';
-  return { apiKey, senderEmail, adminEmail };
+  return { senderEmail, adminEmail };
 };
 
-// Unified helper to send emails via backend server proxy (with multi-provider fallback: Gmail SMTP, Brevo, Resend)
+// Unified helper to send emails via backend server proxy (with Brevo API v3 on server)
 const sendViaBackendApi = async (payload: {
   toEmail: string;
   toName?: string;
@@ -28,29 +27,7 @@ const sendViaBackendApi = async (payload: {
       return true;
     }
   } catch (err: any) {
-    console.warn('⚠️ [CLIENT EMAIL BACKEND FALLBACK WARNING]', err.message);
-  }
-
-  // Direct Brevo REST API fallback if backend is offline
-  const { apiKey, senderEmail } = getBrevoConfig();
-  if (apiKey) {
-    try {
-      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': apiKey
-        },
-        body: JSON.stringify({
-          sender: { name: payload.senderName || 'BxStrength Coaching', email: senderEmail },
-          to: [{ email: payload.toEmail, name: payload.toName || payload.toEmail }],
-          subject: payload.subject,
-          htmlContent: payload.htmlContent
-        })
-      });
-      return res.ok;
-    } catch {}
+    console.warn('⚠️ [CLIENT EMAIL BACKEND WARNING]', err.message);
   }
   return false;
 };

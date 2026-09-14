@@ -173,43 +173,11 @@ interface SendEmailOptions {
 }
 
 async function sendServerEmail(options: SendEmailOptions): Promise<{ success: boolean; provider?: string; error?: string; messageId?: string }> {
-  const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || process.env.GMAIL_USER || 'support@bxstrength.com';
+  const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+  const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
   const senderName = options.senderName || 'BxStrength Coaching';
 
-  // 1. Try Gmail / Custom SMTP (Nodemailer) if configured
-  const smtpHost = process.env.SMTP_HOST || (process.env.GMAIL_USER || process.env.GMAIL_APP_PASSWORD ? 'smtp.gmail.com' : null);
-  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
-  const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
-
-  if (smtpHost && smtpUser && smtpPass) {
-    try {
-      const port = parseInt(process.env.SMTP_PORT || (smtpHost === 'smtp.gmail.com' ? '465' : '587'), 10);
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: port,
-        secure: port === 465,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass
-        }
-      });
-
-      const info = await transporter.sendMail({
-        from: `"${senderName}" <${smtpUser}>`,
-        to: options.toName ? `"${options.toName}" <${options.toEmail}>` : options.toEmail,
-        subject: options.subject,
-        html: options.htmlContent
-      });
-
-      console.log(`[EMAIL SENT - SMTP (${smtpHost})] Delivered to ${options.toEmail} | Subject: "${options.subject}" | MessageId: ${info.messageId}`);
-      return { success: true, provider: `SMTP (${smtpHost})`, messageId: info.messageId };
-    } catch (smtpErr: any) {
-      console.error(`❌ [EMAIL SMTP ERROR] Failed sending to ${options.toEmail}: ${smtpErr.message}`);
-    }
-  }
-
-  // 2. Try Brevo API (v3)
-  const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
+  // 1. Primary: Try Brevo REST API v3
   if (brevoApiKey) {
     try {
       const res = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -231,12 +199,12 @@ async function sendServerEmail(options: SendEmailOptions): Promise<{ success: bo
       if (res.ok) {
         let data: any = {};
         try { data = JSON.parse(responseText); } catch {}
-        console.log(`[EMAIL SENT - BREVO] Delivered to ${options.toEmail} | Subject: "${options.subject}" | MessageId: ${data.messageId || 'OK'}`);
-        return { success: true, provider: 'Brevo', messageId: data.messageId };
+        console.log(`[EMAIL SENT - BREVO API] Delivered to ${options.toEmail} | Subject: "${options.subject}" | MessageId: ${data.messageId || 'OK'}`);
+        return { success: true, provider: 'Brevo API (v3)', messageId: data.messageId };
       } else {
         console.error(`❌ [EMAIL BREVO ERROR ${res.status}] Failed sending to ${options.toEmail}: ${responseText}`);
-        if (responseText.includes('API Key is not enabled') || responseText.includes('unauthorized')) {
-          console.error(`👉 Brevo Action Required: Your BREVO_API_KEY is currently disabled in your Brevo account. Log into https://app.brevo.com/settings/keys/api and activate your v3 API key, OR configure GMAIL_USER and GMAIL_APP_PASSWORD in .env for direct Gmail SMTP delivery.`);
+        if (responseText.includes('unrecognised IP address') || responseText.includes('authorised_ips')) {
+          console.error(`👉 Brevo Security Alert: Please add your server IP to Brevo Authorized IPs at https://app.brevo.com/security/authorised_ips or disable IP restrictions in your Brevo account settings.`);
         }
       }
     } catch (err: any) {
@@ -244,7 +212,36 @@ async function sendServerEmail(options: SendEmailOptions): Promise<{ success: bo
     }
   }
 
-  // 3. Try Resend API (Fallback)
+  // 2. Secondary Fallback: Try Nodemailer SMTP if configured
+  const smtpHost = process.env.SMTP_HOST || (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD ? 'smtp.gmail.com' : null);
+  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
+
+  if (smtpHost && smtpUser && smtpPass) {
+    try {
+      const port = parseInt(process.env.SMTP_PORT || (smtpHost === 'smtp.gmail.com' ? '465' : '587'), 10);
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: port,
+        secure: port === 465,
+        auth: { user: smtpUser, pass: smtpPass }
+      });
+
+      const info = await transporter.sendMail({
+        from: `"${senderName}" <${smtpUser}>`,
+        to: options.toName ? `"${options.toName}" <${options.toEmail}>` : options.toEmail,
+        subject: options.subject,
+        html: options.htmlContent
+      });
+
+      console.log(`[EMAIL SENT - SMTP (${smtpHost})] Delivered to ${options.toEmail} | Subject: "${options.subject}"`);
+      return { success: true, provider: `SMTP (${smtpHost})`, messageId: info.messageId };
+    } catch (smtpErr: any) {
+      console.error(`❌ [EMAIL SMTP ERROR] ${smtpErr.message}`);
+    }
+  }
+
+  // 3. Tertiary Fallback: Try Resend API
   const resendApiKey = process.env.VITE_RESEND_API_KEY || process.env.RESEND_API_KEY;
   if (resendApiKey) {
     try {
@@ -268,18 +265,14 @@ async function sendServerEmail(options: SendEmailOptions): Promise<{ success: bo
         try { data = JSON.parse(responseText); } catch {}
         console.log(`[EMAIL SENT - RESEND] Delivered to ${options.toEmail} | Subject: "${options.subject}"`);
         return { success: true, provider: 'Resend', messageId: data.id };
-      } else {
-        console.error(`❌ [EMAIL RESEND ERROR ${res.status}] ${responseText}`);
       }
-    } catch (err: any) {
-      console.error(`❌ [EMAIL RESEND EXCEPTION] ${err.message}`);
-    }
+    } catch (err: any) {}
   }
 
   console.error(`⚠️ [EMAIL DISPATCH FAILED] Could not send email to ${options.toEmail}.`);
   return {
     success: false,
-    error: 'No active email provider succeeded. Please enable BREVO_API_KEY at https://app.brevo.com/settings/keys/api or add GMAIL_USER & GMAIL_APP_PASSWORD to .env.'
+    error: 'No active email provider succeeded. Please check BREVO_API_KEY at https://app.brevo.com/settings/keys/api or authorized IPs at https://app.brevo.com/security/authorised_ips.'
   };
 }
 
@@ -635,17 +628,55 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
 
     const cleanEmail = sanitizeInput(email).toLowerCase();
     
-    // Generate password reset token
+    // Generate secure password reset token
     const resetToken = jwt.sign({ email: cleanEmail, purpose: 'password_reset' }, JWT_SECRET, { expiresIn: '1h' });
+
+    const origin = req.headers.origin || 'https://bxstrength.com';
+    const resetUrl = `${origin}/#reset-password?email=${encodeURIComponent(cleanEmail)}&token=${resetToken}`;
+
+    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
+
+    // Dispatch real email via Brevo REST API v3
+    const emailResult = await sendServerEmail({
+      toEmail: cleanEmail,
+      toName: cleanEmail.split('@')[0],
+      subject: '🔑 [ACTION REQUIRED] Reset Your BxStrength Account Password',
+      senderName: 'BxStrength Security',
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 48px; width: auto; border-radius: 8px; margin: 0 auto;" />
+          </div>
+          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase; text-align: center; font-size: 20px; font-weight: 900;">BXSTRENGTH PASSWORD RESET</h2>
+          <p style="text-align: center; color: #a1a1aa; font-size: 13px; margin-top: 4px;">Official Account Security Service</p>
+          
+          <div style="margin-top: 24px; font-size: 14px; line-height: 1.6; color: #e4e4e7;">
+            <p>Hello,</p>
+            <p>We received a request to reset the password for your BxStrength account (<strong style="color: #ffffff;">${cleanEmail}</strong>).</p>
+            <p style="color: #a1a1aa;">Click the button below to securely set your new password. This link is valid for 60 minutes:</p>
+          </div>
+
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${resetUrl}" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 4px 14px rgba(204, 255, 0, 0.3);">
+              RESET MY PASSWORD NOW
+            </a>
+          </div>
+
+          <p style="font-size: 12px; color: #71717a; line-height: 1.5;">If you did not request a password reset, you can safely ignore this email — your password will remain unchanged.</p>
+
+          <div style="border-top: 1px solid #27272a; margin-top: 24px; padding-top: 16px; font-size: 12px; color: #71717a; line-height: 1.5; text-align: center;">
+            <p style="margin: 2px 0;">BxStrength HQ | Support: <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: underline;">${senderEmail}</a></p>
+          </div>
+        </div>
+      `
+    });
 
     res.json({
       message: `Password reset email dispatched to ${cleanEmail}`,
+      success: true,
+      provider: emailResult.provider || 'Brevo API',
       resetToken,
-      preview: {
-        to: cleanEmail,
-        subject: 'Action Required: Reset Your BxStrength Account Password',
-        actionUrl: `/reset-password?token=${resetToken}`
-      }
+      resetUrl
     });
   } catch (err: any) {
     console.error('Forgot password error:', err.message);
@@ -656,21 +687,59 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
 // --- RESET PASSWORD ENDPOINT ---
 app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
   try {
-    const { email, newPassword } = req.body;
-    if (!email || !newPassword) {
-      return res.status(400).json({ error: 'Email and new password are required' });
+    const { email, newPassword, token } = req.body;
+    if ((!email && !token) || !newPassword) {
+      return res.status(400).json({ error: 'Email/Token and new password are required' });
     }
 
-    const cleanEmail = sanitizeInput(email).toLowerCase();
+    let cleanEmail = email ? sanitizeInput(email).toLowerCase() : '';
+
+    if (token) {
+      try {
+        const decoded: any = jwt.verify(token, JWT_SECRET);
+        if (decoded && decoded.email) {
+          cleanEmail = decoded.email.toLowerCase();
+        }
+      } catch (tokenErr) {
+        // Fallback if token is token string
+      }
+    }
+
+    if (!cleanEmail) {
+      return res.status(400).json({ error: 'Invalid or expired password reset request.' });
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     if (dbPool) {
       try {
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
         await dbPool.query('UPDATE users SET password_hash = $1 WHERE LOWER(email) = $2', [hashedPassword, cleanEmail]);
-      } catch (e: any) {}
+      } catch (e: any) {
+        console.error('NeonDB Reset Password Error:', e.message);
+      }
     }
 
-    res.json({ message: 'Password updated successfully. You can now sign in with your new password.' });
+    // Send confirmation notification email via Brevo API v3
+    sendServerEmail({
+      toEmail: cleanEmail,
+      toName: cleanEmail.split('@')[0],
+      subject: '✅ [CONFIRMED] Your BxStrength Password Has Been Updated',
+      senderName: 'BxStrength Security',
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">PASSWORD CHANGED SUCCESSFULLY</h2>
+          <p style="color: #a1a1aa; font-size: 13px;">Dear Athlete,</p>
+          <p style="font-size: 14px; color: #e4e4e7; line-height: 1.6;">The password for your account <strong>${cleanEmail}</strong> was successfully updated.</p>
+          <p style="font-size: 13px; color: #a1a1aa;">If you performed this action, no further steps are needed. If you did not request this change, please contact BxStrength Support immediately.</p>
+        </div>
+      `
+    }).catch(() => {});
+
+    res.json({ success: true, message: 'Password updated successfully. You can now sign in with your new password.' });
   } catch (err: any) {
     console.error('Reset password error:', err.message);
     res.status(500).json({ error: 'Failed to reset password' });

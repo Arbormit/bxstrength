@@ -24,7 +24,32 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [generatedResetLink, setGeneratedResetLink] = useState<string>('');
+  const [resetTokenFromUrl, setResetTokenFromUrl] = useState<string>('');
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const urlStr = window.location.href;
+    if (urlStr.includes('reset-password') || urlStr.includes('token=')) {
+      try {
+        const urlObj = new URL(urlStr.replace('#', '?'));
+        const urlEmail = urlObj.searchParams.get('email');
+        const token = urlObj.searchParams.get('token');
+        if (urlEmail) {
+          setEmail(decodeURIComponent(urlEmail));
+        }
+        if (token) {
+          setResetTokenFromUrl(token);
+        }
+        setStep('set_new_password');
+      } catch (e) {
+        const match = urlStr.match(/email=([^&]+)/);
+        if (match && match[1]) {
+          setEmail(decodeURIComponent(match[1]));
+          setStep('set_new_password');
+        }
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -40,25 +65,29 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       setErrorMsg(null);
       setLoading(true);
 
-      const resetToken = `bxreset_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      const link = `${window.location.origin}/#reset-password?email=${encodeURIComponent(cleanEmail)}&token=${resetToken}`;
-      setGeneratedResetLink(link);
-
-      // Send real email via EmailJS SMTP protocol
-      await sendPasswordResetEmail({
-        toEmail: cleanEmail,
-        resetLink: link,
-        token: resetToken
-      });
-
-      await forgotPassword(cleanEmail);
-
-      // Post to backend Express server API
-      fetch(getApiUrl('/api/auth/forgot-password'), {
+      // 1. Call backend Express Server API to generate token & send email via Brevo API v3
+      const res = await fetch(getApiUrl('/api/auth/forgot-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail })
-      }).catch(err => console.warn('Server forgot-password notice:', err.message));
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to dispatch password reset email via Brevo API.');
+      }
+
+      const link = data.resetUrl || `${window.location.origin}/#reset-password?email=${encodeURIComponent(cleanEmail)}&token=${data.resetToken || 'bxreset'}`;
+      setGeneratedResetLink(link);
+
+      // Fallback service trigger if needed
+      sendPasswordResetEmail({
+        toEmail: cleanEmail,
+        resetLink: link,
+        token: data.resetToken || 'bxreset'
+      }).catch(() => {});
+
+      await forgotPassword(cleanEmail).catch(() => {});
 
       setStep('email_dispatched');
     } catch (err: any) {
@@ -89,15 +118,20 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       setErrorMsg(null);
       setLoading(true);
       
-      // Call AuthContext & VelocityAPI to update password
-      await resetPassword(email, newPassword);
-
-      // Call backend API endpoint if present
-      fetch(getApiUrl('/api/auth/reset-password'), {
+      // Call backend API endpoint to update password in NeonDB PostgreSQL
+      const res = await fetch(getApiUrl('/api/auth/reset-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, newPassword })
-      }).catch(err => console.warn('Server reset-password notice:', err.message));
+        body: JSON.stringify({ email, newPassword, token: resetTokenFromUrl })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Password reset failed on server.');
+      }
+
+      // Call AuthContext to sync client-side state
+      await resetPassword(email, newPassword).catch(() => {});
 
       setStep('success');
     } catch (err: any) {
