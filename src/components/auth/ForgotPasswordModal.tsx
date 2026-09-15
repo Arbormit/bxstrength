@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, FC, FormEvent, ChangeEvent } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getApiUrl } from '../../services/api';
 import { X, Mail, CheckCircle2, ArrowRight, KeyRound, Lock, Eye, EyeOff } from 'lucide-react';
@@ -9,7 +9,7 @@ interface ForgotPasswordModalProps {
   onOpenLogin: () => void;
 }
 
-export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
+export const ForgotPasswordModal: FC<ForgotPasswordModalProps> = ({
   isOpen,
   onClose,
   onOpenLogin
@@ -25,7 +25,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [resetTokenFromUrl, setResetTokenFromUrl] = useState<string>('');
 
-  const handleCloseAll = React.useCallback(() => {
+  const handleCloseAll = useCallback(() => {
     setStep('request');
     setEmail('');
     setNewPassword('');
@@ -34,7 +34,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
     onClose();
   }, [onClose]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -57,7 +57,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
           setResetTokenFromUrl(token);
         }
         setStep('set_new_password');
-      } catch (e) {
+      } catch {
         const match = urlStr.match(/email=([^&]+)/);
         if (match && match[1]) {
           setEmail(decodeURIComponent(match[1]));
@@ -71,7 +71,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleRequestSubmit = async (e: React.FormEvent) => {
+  const handleRequestSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const cleanEmail = email.trim();
     if (!cleanEmail) {
@@ -96,14 +96,15 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       }
 
       setStep('email_dispatched');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to dispatch reset link email.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to dispatch reset link email.';
+      setErrorMsg(message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResetSubmit = async (e: React.FormEvent) => {
+  const handleResetSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!newPassword) {
       setErrorMsg('Please enter your new password.');
@@ -140,8 +141,9 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       await resetPassword(email, newPassword).catch(() => {});
 
       setStep('success');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Password update failed.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Password update failed.';
+      setErrorMsg(message);
     } finally {
       setLoading(false);
     }
@@ -165,8 +167,10 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
             </div>
           </div>
           <button
+            type="button"
             onClick={handleCloseAll}
             className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
+            aria-label="Close recovery modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -193,15 +197,16 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                <label htmlFor="recovery-email" className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                   Registered Email Address *
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                   <input
+                    id="recovery-email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                     placeholder="e.g. user@gmail.com"
                     className="w-full bg-[#18181b] border border-zinc-800 focus:border-zinc-600 text-white pl-10 pr-4 py-2.5 text-xs font-bold rounded-lg outline-none placeholder-zinc-500"
                     required
@@ -266,6 +271,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
 
               <div className="pt-2 space-y-3">
                 <button
+                  type="button"
                   onClick={() => {
                     handleCloseAll();
                     onOpenLogin();
@@ -277,6 +283,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setStep('request')}
                   className="text-xs font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer uppercase"
                 >
@@ -302,16 +309,17 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                <label htmlFor="new-password" className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                   New Password *
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                   <input
+                    id="new-password"
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
                     placeholder="Enter at least 6 characters"
                     className="w-full bg-[#18181b] border border-zinc-800 focus:border-zinc-600 text-white pl-10 pr-10 py-2.5 text-xs font-bold rounded-lg outline-none"
                   />
@@ -319,6 +327,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -326,16 +335,17 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                <label htmlFor="confirm-password" className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                   Confirm New Password *
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                   <input
+                    id="confirm-password"
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter your new password"
                     className="w-full bg-[#18181b] border border-zinc-800 focus:border-zinc-600 text-white pl-10 pr-10 py-2.5 text-xs font-bold rounded-lg outline-none"
                   />
@@ -387,6 +397,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => {
                   handleCloseAll();
                   onOpenLogin();
@@ -403,3 +414,4 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
     </div>
   );
 };
+
