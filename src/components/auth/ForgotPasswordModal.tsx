@@ -25,6 +25,15 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [resetTokenFromUrl, setResetTokenFromUrl] = useState<string>('');
 
+  const handleCloseAll = React.useCallback(() => {
+    setStep('request');
+    setEmail('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setErrorMsg(null);
+    onClose();
+  }, [onClose]);
+
   React.useEffect(() => {
     if (!isOpen) return;
 
@@ -58,7 +67,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
     }
 
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, handleCloseAll]);
 
   if (!isOpen) return null;
 
@@ -136,15 +145,6 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCloseAll = () => {
-    setStep('request');
-    setEmail('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setErrorMsg(null);
-    onClose();
   };
 
   return (
