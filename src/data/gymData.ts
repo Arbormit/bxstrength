@@ -113,6 +113,7 @@ export interface BxTrainer extends Trainer {
   specialPopulations?: string[];
   professionalExperience?: string[];
   virtualCoachingSkills?: string[];
+  imagePosition?: string;
 }
 
 export const TRAINERS_DATA: BxTrainer[] = [
@@ -122,7 +123,8 @@ export const TRAINERS_DATA: BxTrainer[] = [
     role: 'Head Coach | Boxing Instructor | Physiotherapy Professional',
     coachPosition: 'HEAD COACH & FOUNDER',
     headline: 'HEAD COACH | BOXING INSTRUCTOR | PHYSIOTHERAPY PROFESSIONAL',
-    image: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&q=80&w=800',
+    image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384984/WhatsApp_Image_2026-08-29_at_4.56.55_AM_1.jpg?auto=format&fit=crop&q=80&w=800',
+    imagePosition: 'object-[center_top]',
     bio: 'Head Coach with over 10 years of industry experience combining boxing instruction, strength & conditioning, and physiotherapy-based rehabilitation. Trained at IG Stadium to master boxing technique and athlete development. Brings 6+ years of entrepreneurial experience as a gym owner/operator, delivering personalized transformations to over 1,000 clients worldwide.',
     secondaryBio: 'His methodology bridges the gap between traditional strength training and the chaotic demands of high-performance conditioning. Whether peaking for elite competition or building a foundation for sustainable power, Head Coach Shaban applies a data-driven, precision-focused approach to every session.',
     specialties: ['Boxing Instruction', 'Physiotherapy & Rehab', 'Strength & Conditioning', 'Chronic Back Pain Rehab', 'Post-Knee Surgery Recovery', 'Athletic Performance'],
@@ -140,8 +142,6 @@ export const TRAINERS_DATA: BxTrainer[] = [
     certifications: [
       'Diploma in Physiotherapy – Singhania University (Rajasthan, India)',
       'Boxing Techniques & Coaching Methods – IG Stadium',
-      'CIMSPA Level 4 Master Fitness Specialist',
-      'First Aid & CPR Certified'
     ],
     coreExpertise: [
       'Boxing Instructor: Beginner techniques through competitive athlete coaching for beginners and intermediate.',
@@ -165,11 +165,23 @@ export const TRAINERS_DATA: BxTrainer[] = [
       'Former Business Developer & Fitness Trainer at WOW Gym'
     ],
     galleryPhotos: [
-      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=80&w=800'
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384987/WhatsApp_Image_2026-08-29_at_4.56.56_AM_1.jpg?auto=format&fit=crop&q=80&w=800',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384983/WhatsApp_Image_2026-08-29_at_4.56.54_AM.jpg?auto=format&fit=crop&q=80&w=800',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384983/WhatsApp_Image_2026-08-29_at_4.56.54_AM_1.jpg?auto=format&fit=crop&q=80&w=800',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384983/WhatsApp_Image_2026-08-29_at_4.56.54_AM_2.jpg?auto=format&fit=crop&q=80&w=800',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384982/WhatsApp_Image_2026-08-29_at_4.56.53_AM_3.jpg?auto=format&fit=crop&q=80&w=800',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384982/WhatsApp_Image_2026-08-29_at_4.56.43_AM_1.jpg?auto=format&fit=crop&q=80&w=800'
     ],
     galleryVideos: [
-      'https://assets.mixkit.co/videos/preview/mixkit-boxer-getting-ready-for-a-fight-42994-large.mp4'
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789385001/WhatsApp_Video_2026-08-29_at_4.58.45_AM.mp4',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384992/WhatsApp_Video_2026-08-29_at_6.06.53_AM.mp4',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384989/WhatsApp_Video_2026-08-29_at_6.06.59_AM.mp4',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384987/WhatsApp_Video_2026-08-29_at_6.06.50_AM.mp4',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384987/WhatsApp_Video_2026-08-29_at_4.57.12_AM.mp4',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384986/WhatsApp_Video_2026-08-29_at_6.06.57_AM.mp4',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384985/WhatsApp_Video_2026-08-29_at_6.06.48_AM.mp4',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384984/WhatsApp_Video_2026-08-29_at_6.06.45_AM.mp4',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384984/WhatsApp_Video_2026-08-29_at_6.06.42_AM.mp4',
     ],
     socials: { instagram: 'https://instagram.com/bxstrength', linkedin: 'https://linkedin.com/' }
   },
@@ -179,7 +191,7 @@ export const TRAINERS_DATA: BxTrainer[] = [
     role: 'Fitness Trainer | Strength & Conditioning Coach | Virtual Fitness Coach',
     coachPosition: 'SENIOR STRENGTH & CONDITIONING COACH',
     headline: 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
-    image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&q=80&w=800',
+    image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789448786/WhatsApp_Image_2026-08-29_at_4.59.57_AM.jpg?auto=format&fit=crop&q=80&w=800',
     bio: 'Dedicated and experienced Fitness Trainer with strong practical knowledge of strength training, functional fitness, conditioning, mobility, and general fitness. Experienced in working with clients of different fitness levels and helping them improve strength, endurance, mobility, body composition, and overall physical performance. Experienced in both in-person and virtual coaching.',
     secondaryBio: 'Specializes in live 1-on-1 virtual training sessions with clear video exercise demonstrations, real-time online form observation & movement correction, custom workout plans adapted to home or gym equipment, and consistent communication & accountability tracking.',
     specialties: ['Strength & Resistance Training', 'Functional Fitness & Muscle Building', 'Fat Loss & Cardio Conditioning', 'Exercise Technique & Form Correction', 'Personalized & Virtual Coaching'],
@@ -215,9 +227,14 @@ export const TRAINERS_DATA: BxTrainer[] = [
       'Specialist in Tailored Home & Gym Equipment Adaptations'
     ],
     galleryPhotos: [
-      'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=800'
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789448786/WhatsApp_Image_2026-08-29_at_4.59.56_AM.jpg?auto=format&fit=crop&q=80&w=800'
     ],
-    galleryVideos: [],
+    galleryVideos: [
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789448788/WhatsApp_Video_2026-08-29_at_4.59.57_AM.mp4',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789448789/WhatsApp_Video_2026-08-29_at_5.05.33_AM.mp4',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789448793/WhatsApp_Video_2026-08-29_at_4.59.58_AM.mp4',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789448793/WhatsApp_Video_2026-08-29_at_5.04.58_AM.mp4',
+    ],
     socials: { instagram: 'https://instagram.com/', linkedin: 'https://linkedin.com/' }
   },
   {
@@ -226,7 +243,7 @@ export const TRAINERS_DATA: BxTrainer[] = [
     role: 'Fitness Trainer | Strength & Conditioning Coach | Virtual Fitness Coach',
     coachPosition: 'ENDURANCE & METABOLIC SPECIALIST',
     headline: 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
-    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800',
+    image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789465256/WhatsApp_Image_2026-08-29_at_6.04.05_AM.jpg?auto=format&fit=crop&q=80&w=800',
     bio: 'Fitness Trainer with hands-on experience in strength training, conditioning, mobility, and general fitness. Dedicated to guiding clients through effective workout routines while maintaining a strong emphasis on exercise technique, consistency, motivation, and personalized goal setting. Capable of delivering coaching both on-site and remotely.',
     secondaryBio: 'Delivers 1-on-1 live online coaching sessions with real-time video demonstrations, remote technique evaluation and movement guidance, tailored home/gym workout planning, and remote motivation with ongoing client accountability.',
     specialties: ['Strength & Muscle Building', 'Fat Loss & Weight Management', 'Cardiovascular Conditioning', 'Exercise Technique & Form', 'Online Personal Training'],
@@ -262,9 +279,14 @@ export const TRAINERS_DATA: BxTrainer[] = [
       'Interactive Live Remote Form Evaluation & Progress Monitoring'
     ],
     galleryPhotos: [
-      'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&q=80&w=800'
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789465255/WhatsApp_Image_2026-08-29_at_6.04.04_AM_1.jpg?auto=format&fit=crop&q=80&w=800',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789465255/WhatsApp_Image_2026-08-29_at_6.04.04_AM.jpg?auto=format&fit=crop&q=80&w=800',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789465645/IMG_7175.jpg?auto=format&fit=crop&q=80&w=800'
     ],
-    galleryVideos: [],
+    galleryVideos: [
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789465263/IMG_9776.MOV.mov',
+      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789465266/WhatsApp_Video_2026-08-29_at_6.04.06_AM.mp4'
+    ],
     socials: { instagram: 'https://instagram.com/', linkedin: 'https://linkedin.com/' }
   }
 ];
@@ -286,32 +308,7 @@ export const SCHEDULE_DATA: ScheduleSlot[] = [
   { id: '14', day: 'Sunday', time: '10:00 AM - 11:30 AM', className: 'Strength & Hypertrophy', trainer: 'Sadeem', room: 'Strength Zone 2', spotsLeft: 12 }
 ];
 
-export const TESTIMONIALS_DATA: Testimonial[] = [
-  {
-    id: 't1',
-    name: 'SARAH CONNOR',
-    role: 'Fitness Enthusiast',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-    comment: 'BxStrength completely reshaped my discipline. The coaches care deeply about your form and progress. The atmosphere is energetic and welcoming!',
-    rating: 5
-  },
-  {
-    id: 't2',
-    name: 'MICHAEL BENNETT',
-    role: 'Marathon Runner',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=200',
-    comment: 'The Boxing Power and Strength programs increased my leg power significantly. Shaban and Sadeem are world-class trainers!',
-    rating: 5
-  },
-  {
-    id: 't3',
-    name: 'EMILY ZHANG',
-    role: 'Executive',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-    comment: 'The Personal Training and Tactical Metabolic sessions with Moheeb help me stay focused and energized. High quality facilities and super clean environment!',
-    rating: 5
-  }
-];
+export const TESTIMONIALS_DATA: Testimonial[] = [];
 
 export const BLOG_POSTS_DATA: BlogPost[] = [
   {

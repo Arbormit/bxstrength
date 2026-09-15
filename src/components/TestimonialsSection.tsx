@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Testimonial } from '../types';
 import { VelocityAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Star, Quote, ChevronLeft, ChevronRight, Plus, X, CheckCircle2, MessageSquarePlus, Trophy, ShieldCheck } from 'lucide-react';
+import { 
+  Star, Quote, ChevronLeft, ChevronRight, Plus, X, CheckCircle2, 
+  MessageSquarePlus, Trophy, ShieldCheck, Upload, Image as ImageIcon, 
+  Trash2, AlertCircle, Maximize2 
+} from 'lucide-react';
 
 import { Skeleton } from './ui/Skeleton';
 
@@ -21,14 +25,28 @@ export const TestimonialsSection: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
+  // Photo Upload States (Strict 500KB Limit)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFileName, setPhotoFileName] = useState<string | null>(null);
+  const [photoFileSize, setPhotoFileSize] = useState<number | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [selectedZoomImage, setSelectedZoomImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isRealReview = (r: Testimonial) => {
+    if (!r || !r.name) return false;
+    const lower = r.name.toLowerCase();
+    return !lower.includes('test') && r.id !== 'rev-1' && r.id !== 'rev-2' && r.id !== 'rev-3' && r.id !== 't1' && r.id !== 't2' && r.id !== 't3';
+  };
+
   const fetchReviews = async () => {
     try {
-      const localReviews = VelocityAPI.getReviews();
+      const localReviews = VelocityAPI.getReviews().filter(isRealReview);
       const res = await fetch('/api/reviews');
       if (res.ok) {
         const serverReviews: Testimonial[] = await res.json();
         const map = new Map<string, Testimonial>();
-        [...serverReviews, ...localReviews].forEach(item => {
+        [...serverReviews, ...localReviews].filter(isRealReview).forEach(item => {
           map.set(item.id, item);
         });
         setReviews(Array.from(map.values()));
@@ -36,7 +54,7 @@ export const TestimonialsSection: React.FC = () => {
         setReviews(localReviews);
       }
     } catch {
-      setReviews(VelocityAPI.getReviews());
+      setReviews(VelocityAPI.getReviews().filter(isRealReview));
     } finally {
       setIsLoading(false);
     }
@@ -51,16 +69,58 @@ export const TestimonialsSection: React.FC = () => {
       setName(user.name);
       setRole('BxStrength Executive Client');
     }
+    handleRemovePhoto();
     setShowModal(true);
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setPhotoError(null);
+    if (!file) return;
+
+    // Strict 500 KB Image Upload Limit (500 * 1024 = 512,000 bytes)
+    const maxBytes = 500 * 1024;
+    if (file.size > maxBytes) {
+      const sizeKB = (file.size / 1024).toFixed(1);
+      setPhotoError(`Selected image is ${sizeKB} KB, which exceeds the 500 KB limit. Please choose a smaller photo.`);
+      setPhotoPreview(null);
+      setPhotoFileName(null);
+      setPhotoFileSize(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setPhotoFileName(file.name);
+    setPhotoFileSize(Math.round(file.size / 1024));
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setPhotoPreview(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoPreview(null);
+    setPhotoFileName(null);
+    setPhotoFileSize(null);
+    setPhotoError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !comment.trim()) return;
 
+    if (photoError) return;
+
     try {
       setIsSubmitting(true);
-      const avatarUrl = user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name.trim())}`;
+      const avatarUrl = photoPreview || user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name.trim())}`;
 
       // Save to Local API Store
       VelocityAPI.addReview({
@@ -71,8 +131,8 @@ export const TestimonialsSection: React.FC = () => {
         avatar: avatarUrl
       });
 
-      // Save to Backend Database API
-      await fetch('/api/reviews', {
+      // Save to Backend NeonDB Database API
+      const response = await fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,6 +144,11 @@ export const TestimonialsSection: React.FC = () => {
         })
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to publish review');
+      }
+
       await fetchReviews();
       setCurrentIndex(0);
       setShowModal(false);
@@ -91,10 +156,12 @@ export const TestimonialsSection: React.FC = () => {
       setRole('');
       setRating(5);
       setComment('');
-      setToastMsg('Thank you! Your review has been published live to the website.');
-      setTimeout(() => setToastMsg(null), 4000);
-    } catch (err) {
+      handleRemovePhoto();
+      setToastMsg('Thank you! Your review with photo has been saved to database and published live!');
+      setTimeout(() => setToastMsg(null), 4500);
+    } catch (err: any) {
       console.error('Failed to post review:', err);
+      setPhotoError(err.message || 'Failed to post review. Please ensure your image is under 500 KB.');
     } finally {
       setIsSubmitting(false);
     }
@@ -110,13 +177,16 @@ export const TestimonialsSection: React.FC = () => {
     setCurrentIndex((prev) => (prev - 1 + reviews.length) % reviews.length);
   };
 
-  const current = reviews[currentIndex] || {
-    name: 'BxStrength Athlete',
-    role: 'Executive Member',
-    rating: 5,
-    comment: 'Elite strength training, periodized nutrition, and world-class private facilities.',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300'
+  const formatAvatarSrc = (avatar: string) => {
+    if (avatar && avatar.includes('data:image')) {
+      return avatar.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&');
+    }
+    return avatar;
   };
+
+  const current = reviews.length > 0 ? reviews[currentIndex] || reviews[0] : null;
+
+  const activeAvatar = current ? formatAvatarSrc(current.avatar) : '';
 
   return (
     <section className="py-20 bg-[#0a0a0a] text-white border-b border-zinc-800 relative font-sans">
@@ -124,7 +194,7 @@ export const TestimonialsSection: React.FC = () => {
       {/* Dedicated Toast Notification */}
       {toastMsg && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#18181b] border-l-4 border-emerald-500 text-white px-5 py-3.5 shadow-2xl rounded-r-lg flex items-center gap-3 animate-in slide-in-from-bottom-5">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           <span className="text-xs font-bold uppercase tracking-wide">{toastMsg}</span>
           <button onClick={() => setToastMsg(null)} className="ml-2 text-zinc-400 hover:text-white cursor-pointer">
             <X className="w-4 h-4" />
@@ -144,7 +214,7 @@ export const TestimonialsSection: React.FC = () => {
               ATHLETE & MEMBER TESTIMONIALS
             </h2>
             <p className="text-xs text-zinc-400 mt-1 max-w-xl">
-              Real transformation reviews stored in database and submitted directly by our executive gym members.
+              Real transformation reviews with photos stored in NeonDB database and submitted directly by our executive gym members.
             </p>
           </div>
 
@@ -167,7 +237,7 @@ export const TestimonialsSection: React.FC = () => {
             <Quote className="w-10 h-10 text-zinc-700 mx-auto" />
             <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wider">No Client Reviews Published Yet</h3>
             <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-              Be the first member to share your transformation experience with BxStrength! Click the button above to write a review.
+              Be the first member to share your transformation experience with photo! Click the button above to write a review.
             </p>
           </div>
         ) : current ? (
@@ -189,14 +259,28 @@ export const TestimonialsSection: React.FC = () => {
             </p>
 
             <div className="flex flex-col items-center justify-center gap-3">
-              <img
-                src={current.avatar}
-                alt={current.name}
-                className="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 shadow-xl bg-zinc-900"
-              />
+              <div 
+                className="relative group cursor-pointer"
+                onClick={() => activeAvatar && setSelectedZoomImage(activeAvatar)}
+                title="Click to view full photo"
+              >
+                <img
+                  src={activeAvatar}
+                  alt={current.name}
+                  className="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 shadow-xl bg-zinc-900 group-hover:scale-105 transition-transform"
+                />
+                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Maximize2 className="w-4 h-4 text-white" />
+                </div>
+              </div>
               <div>
-                <h3 className="text-base font-black text-white uppercase tracking-tight">
-                  {current.name}
+                <h3 className="text-base font-black text-white uppercase tracking-tight flex items-center justify-center gap-1.5">
+                  <span>{current.name}</span>
+                  {activeAvatar.includes('data:image') && (
+                    <span className="text-[9px] font-mono bg-emerald-950/80 border border-emerald-800 text-emerald-300 px-1.5 py-0.5 rounded-full uppercase">
+                      PHOTO VERIFIED
+                    </span>
+                  )}
                 </h3>
                 <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mt-0.5">
                   {current.role}
@@ -234,10 +318,10 @@ export const TestimonialsSection: React.FC = () => {
       {/* WRITE REVIEW MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg bg-[#121214] text-white border border-zinc-800 shadow-2xl rounded-xl overflow-hidden font-sans">
+          <div className="relative w-full max-w-lg bg-[#121214] text-white border border-zinc-800 shadow-2xl rounded-xl overflow-hidden font-sans max-h-[90vh] flex flex-col">
             
             {/* Header */}
-            <div className="bg-[#18181b] p-5 flex items-center justify-between border-b border-zinc-800">
+            <div className="bg-[#18181b] p-5 flex items-center justify-between border-b border-zinc-800 shrink-0">
               <div className="flex items-center gap-2.5">
                 <Trophy className="w-5 h-5 text-emerald-400" />
                 <h3 className="text-sm font-black uppercase text-white tracking-wider">WRITE A CLIENT REVIEW</h3>
@@ -250,7 +334,7 @@ export const TestimonialsSection: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmitReview} className="p-6 space-y-4">
+            <form onSubmit={handleSubmitReview} className="p-6 space-y-4 overflow-y-auto">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                   Your Full Name *
@@ -303,6 +387,77 @@ export const TestimonialsSection: React.FC = () => {
                 </div>
               </div>
 
+              {/* Photo Upload Option with Strict 500KB Limit */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5 flex items-center justify-between">
+                  <span>Customer Photo / Result (Optional)</span>
+                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">
+                    MAX 500 KB
+                  </span>
+                </label>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/png, image/jpeg, image/jpg, image/webp, image/gif"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+
+                {photoPreview ? (
+                  <div className="relative bg-[#18181b] border border-emerald-500/50 rounded-xl p-3 flex items-center gap-3">
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      className="w-14 h-14 rounded-lg object-cover border border-zinc-700 bg-zinc-900 shadow-md"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{photoFileName || 'Uploaded Photo'}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-900/40 px-1.5 py-0.5 rounded border border-emerald-700/50">
+                          {photoFileSize} KB / 500 KB max
+                        </span>
+                        <span className="text-[10px] text-emerald-300 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Size OK
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="p-1.5 bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 text-red-300 rounded-lg transition-colors cursor-pointer"
+                      title="Remove photo"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-zinc-700 hover:border-emerald-500 bg-[#18181b] hover:bg-zinc-900/80 p-4 rounded-xl text-center cursor-pointer transition-all group"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-1.5">
+                      <div className="w-9 h-9 rounded-full bg-zinc-800 group-hover:bg-emerald-950/80 group-hover:border group-hover:border-emerald-500/40 flex items-center justify-center transition-colors">
+                        <Upload className="w-4 h-4 text-zinc-400 group-hover:text-emerald-400" />
+                      </div>
+                      <span className="text-xs font-bold text-zinc-300 group-hover:text-white uppercase tracking-wider">
+                        Click to upload customer photo
+                      </span>
+                      <span className="text-[10px] text-zinc-500 font-mono">
+                        PNG, JPG, WEBP • Strict limit: max 500 KB
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {photoError && (
+                  <div className="mt-2 p-2.5 bg-red-950/80 border border-red-800 text-red-200 text-xs rounded-lg flex items-center gap-2 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                    <span className="font-semibold">{photoError}</span>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
                   Your Review & Feedback *
@@ -327,8 +482,8 @@ export const TestimonialsSection: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="px-6 py-2.5 bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-wider uppercase rounded-lg transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                  disabled={isSubmitting || !!photoError}
+                  className="px-6 py-2.5 bg-white hover:bg-zinc-200 disabled:opacity-50 text-black text-xs font-black tracking-wider uppercase rounded-lg transition-all shadow-md cursor-pointer flex items-center gap-1.5"
                 >
                   {isSubmitting ? 'PUBLISHING...' : 'PUBLISH REVIEW LIVE'}
                 </button>
@@ -337,6 +492,32 @@ export const TestimonialsSection: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* FULLSCREEN IMAGE ZOOM MODAL */}
+      {selectedZoomImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in"
+          onClick={() => setSelectedZoomImage(null)}
+        >
+          <div 
+            className="relative max-w-2xl max-h-[85vh] bg-[#121214] border border-zinc-800 p-2 rounded-2xl overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedZoomImage(null)}
+              className="absolute top-3 right-3 z-10 p-2 bg-black/60 hover:bg-black text-white rounded-full transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={selectedZoomImage}
+              alt="Customer Review Photo"
+              className="w-full max-h-[80vh] object-contain rounded-xl"
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 };
+

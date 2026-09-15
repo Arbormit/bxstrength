@@ -1217,7 +1217,11 @@ export const VelocityAPI = {
   getReviews(): Testimonial[] {
     initStore();
     const raw = getItem<Testimonial[]>(STORAGE_KEYS.REVIEWS, []);
-    const clean = raw.filter(r => r.id !== 'rev-1' && r.id !== 'rev-2' && r.id !== 'rev-3');
+    const clean = raw.filter(r => 
+      r.name && !r.name.toLowerCase().includes('test') &&
+      r.id !== 'rev-1' && r.id !== 'rev-2' && r.id !== 'rev-3' &&
+      r.id !== 't1' && r.id !== 't2' && r.id !== 't3'
+    );
     if (clean.length !== raw.length) {
       setItem(STORAGE_KEYS.REVIEWS, clean);
     }

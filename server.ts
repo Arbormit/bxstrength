@@ -39,14 +39,18 @@ app.use(
   })
 );
 
-// 2. CORS & BODY PARSER WITH STRICT PAYLOAD LIMIT
+// 2. CORS & BODY PARSER WITH STRICT PAYLOAD LIMIT (10MB for base64 photo uploads up to 500KB)
 app.use(cors());
-app.use(express.json({ limit: '100kb' }));
+app.use(express.json({ limit: '10mb' }));
 
 // Global Request Body & Query XSS Protection Sanitizer
 app.use((req, res, next) => {
   const sanitize = (obj: any): any => {
     if (typeof obj === 'string') {
+      // Preserve base64 image data URLs as-is so base64 character integrity is maintained
+      if (obj.startsWith('data:image/')) {
+        return obj;
+      }
       return obj
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -154,6 +158,7 @@ app.get('/sitemap.xml', (req, res) => {
 // 4. INPUT SANITIZATION
 function sanitizeInput(str: string): string {
   if (typeof str !== 'string') return '';
+  if (str.startsWith('data:image/')) return str;
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -174,106 +179,67 @@ interface SendEmailOptions {
 
 async function sendServerEmail(options: SendEmailOptions): Promise<{ success: boolean; provider?: string; error?: string; messageId?: string }> {
   const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
-  const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
-  const senderName = options.senderName || 'BxStrength Coaching';
+  const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'khanshadan96@gmail.com';
+  const senderName = options.senderName || 'BxStrength Security';
 
-  // 1. Primary: Try Brevo REST API v3
-  if (brevoApiKey) {
-    try {
-      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': brevoApiKey
-        },
-        body: JSON.stringify({
-          sender: { name: senderName, email: senderEmail },
-          to: [{ email: options.toEmail, name: options.toName || options.toEmail }],
-          subject: options.subject,
-          htmlContent: options.htmlContent
-        })
-      });
-
-      const responseText = await res.text();
-      if (res.ok) {
-        let data: any = {};
-        try { data = JSON.parse(responseText); } catch {}
-        console.log(`[EMAIL SENT - BREVO API] Delivered to ${options.toEmail} | Subject: "${options.subject}" | MessageId: ${data.messageId || 'OK'}`);
-        return { success: true, provider: 'Brevo API (v3)', messageId: data.messageId };
-      } else {
-        console.error(`❌ [EMAIL BREVO ERROR ${res.status}] Failed sending to ${options.toEmail}: ${responseText}`);
-        if (responseText.includes('unrecognised IP address') || responseText.includes('authorised_ips')) {
-          console.error(`👉 Brevo Security Alert: Please add your server IP to Brevo Authorized IPs at https://app.brevo.com/security/authorised_ips or disable IP restrictions in your Brevo account settings.`);
-        }
-      }
-    } catch (err: any) {
-      console.error(`❌ [EMAIL BREVO EXCEPTION] ${err.message}`);
-    }
+  if (!brevoApiKey) {
+    console.error('❌ [BREVO API ERROR] BREVO_API_KEY is missing in environment variables (.env)');
+    return {
+      success: false,
+      provider: 'Brevo API (v3)',
+      error: 'BREVO_API_KEY is missing in system environment configuration.'
+    };
   }
 
-  // 2. Secondary Fallback: Try Nodemailer SMTP if configured
-  const smtpHost = process.env.SMTP_HOST || (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD ? 'smtp.gmail.com' : null);
-  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
-  const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
-
-  if (smtpHost && smtpUser && smtpPass) {
-    try {
-      const port = parseInt(process.env.SMTP_PORT || (smtpHost === 'smtp.gmail.com' ? '465' : '587'), 10);
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: port,
-        secure: port === 465,
-        auth: { user: smtpUser, pass: smtpPass }
-      });
-
-      const info = await transporter.sendMail({
-        from: `"${senderName}" <${smtpUser}>`,
-        to: options.toName ? `"${options.toName}" <${options.toEmail}>` : options.toEmail,
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': brevoApiKey
+      },
+      body: JSON.stringify({
+        sender: { name: senderName, email: senderEmail },
+        to: [{ email: options.toEmail, name: options.toName || options.toEmail }],
         subject: options.subject,
-        html: options.htmlContent
-      });
+        htmlContent: options.htmlContent
+      })
+    });
 
-      console.log(`[EMAIL SENT - SMTP (${smtpHost})] Delivered to ${options.toEmail} | Subject: "${options.subject}"`);
-      return { success: true, provider: `SMTP (${smtpHost})`, messageId: info.messageId };
-    } catch (smtpErr: any) {
-      console.error(`❌ [EMAIL SMTP ERROR] ${smtpErr.message}`);
-    }
-  }
+    const responseText = await res.text();
+    if (res.ok) {
+      let data: any = {};
+      try { data = JSON.parse(responseText); } catch {}
+      console.log(`✅ [EMAIL SENT - BREVO API v3] Delivered to ${options.toEmail} | MessageId: ${data.messageId || 'OK'}`);
+      return { success: true, provider: 'Brevo API (v3)', messageId: data.messageId };
+    } else {
+      let errorMessage = `Brevo API HTTP ${res.status}`;
+      try {
+        const errData = JSON.parse(responseText);
+        errorMessage = errData.message || errorMessage;
+      } catch {}
 
-  // 3. Tertiary Fallback: Try Resend API
-  const resendApiKey = process.env.VITE_RESEND_API_KEY || process.env.RESEND_API_KEY;
-  if (resendApiKey) {
-    try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: `${senderName} <${senderEmail}>`,
-          to: [options.toEmail],
-          subject: options.subject,
-          html: options.htmlContent
-        })
-      });
+      console.error(`❌ [EMAIL BREVO ERROR ${res.status}] Failed sending to ${options.toEmail}: ${responseText}`);
 
-      const responseText = await res.text();
-      if (res.ok) {
-        let data: any = {};
-        try { data = JSON.parse(responseText); } catch {}
-        console.log(`[EMAIL SENT - RESEND] Delivered to ${options.toEmail} | Subject: "${options.subject}"`);
-        return { success: true, provider: 'Resend', messageId: data.id };
+      if (responseText.includes('unrecognised IP address') || responseText.includes('authorised_ips')) {
+        console.error(`👉 Brevo IP Whitelist Alert: Add your server IP to Brevo Authorized IPs at https://app.brevo.com/security/authorised_ips or disable IP restrictions in your Brevo settings.`);
       }
-    } catch (err: any) {}
-  }
 
-  console.error(`⚠️ [EMAIL DISPATCH FAILED] Could not send email to ${options.toEmail}.`);
-  return {
-    success: false,
-    error: 'No active email provider succeeded. Please check BREVO_API_KEY at https://app.brevo.com/settings/keys/api or authorized IPs at https://app.brevo.com/security/authorised_ips.'
-  };
+      return {
+        success: false,
+        provider: 'Brevo API (v3)',
+        error: errorMessage
+      };
+    }
+  } catch (err: any) {
+    console.error(`❌ [EMAIL BREVO EXCEPTION] ${err.message}`);
+    return {
+      success: false,
+      provider: 'Brevo API (v3)',
+      error: err.message
+    };
+  }
 }
 
 // Database Connection Setup for NeonDB / PostgreSQL
@@ -300,6 +266,20 @@ if (dbPool) {
       console.log(`  ➜  NeonDB:     Connected successfully (${res.rows[0].now})`);
       try {
         await dbPool.query(`
+          CREATE TABLE IF NOT EXISTS users (
+            id VARCHAR(64) PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            role VARCHAR(50) DEFAULT 'client',
+            phone VARCHAR(100),
+            avatar_url TEXT,
+            is_verified BOOLEAN DEFAULT true,
+            status VARCHAR(50) DEFAULT 'active',
+            signup_method VARCHAR(50) DEFAULT 'Email / Password',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
           CREATE TABLE IF NOT EXISTS support_tickets (
             id VARCHAR(64) PRIMARY KEY,
             user_id VARCHAR(64) NOT NULL,
@@ -628,53 +608,73 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
 
     const cleanEmail = sanitizeInput(email).toLowerCase();
     
-    // Generate secure password reset token
-    const resetToken = jwt.sign({ email: cleanEmail, purpose: 'password_reset' }, JWT_SECRET, { expiresIn: '1h' });
+    // Generate secure password reset token strictly valid for 5 MINUTES
+    const resetToken = jwt.sign({ email: cleanEmail, purpose: 'password_reset' }, JWT_SECRET, { expiresIn: '5m' });
 
-    const origin = req.headers.origin || 'https://bxstrength.com';
+    const origin = req.headers.origin || 'http://localhost:3000';
     const resetUrl = `${origin}/#reset-password?email=${encodeURIComponent(cleanEmail)}&token=${resetToken}`;
 
-    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
+    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'khanshadan96@gmail.com';
 
     // Dispatch real email via Brevo REST API v3
     const emailResult = await sendServerEmail({
       toEmail: cleanEmail,
       toName: cleanEmail.split('@')[0],
-      subject: '🔑 [ACTION REQUIRED] Reset Your BxStrength Account Password',
+      subject: '🔑 [BXSTRENGTH] Reset Your Password (Link Active for 5 Minutes)',
       senderName: 'BxStrength Security',
       htmlContent: `
-        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
-          <div style="text-align: center; margin-bottom: 24px;">
-            <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 48px; width: auto; border-radius: 8px; margin: 0 auto;" />
+        <div style="font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 40px 24px; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+          <div style="text-align: center; margin-bottom: 28px;">
+            <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 52px; width: auto; border-radius: 10px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
           </div>
-          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase; text-align: center; font-size: 20px; font-weight: 900;">BXSTRENGTH PASSWORD RESET</h2>
-          <p style="text-align: center; color: #a1a1aa; font-size: 13px; margin-top: 4px;">Official Account Security Service</p>
           
-          <div style="margin-top: 24px; font-size: 14px; line-height: 1.6; color: #e4e4e7;">
-            <p>Hello,</p>
-            <p>We received a request to reset the password for your BxStrength account (<strong style="color: #ffffff;">${cleanEmail}</strong>).</p>
-            <p style="color: #a1a1aa;">Click the button below to securely set your new password. This link is valid for 60 minutes:</p>
+          <div style="background-color: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
+            <span style="background-color: rgba(239, 68, 68, 0.15); color: #f87171; font-size: 11px; font-weight: 900; letter-spacing: 1px; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; border: 1px solid rgba(239, 68, 68, 0.3);">⏱️ URGENT: 5-MINUTE TIME LIMIT</span>
+            <h2 style="color: #CCFF00; margin: 16px 0 8px 0; text-transform: uppercase; font-size: 22px; font-weight: 900; tracking: 0.5px;">PASSWORD RESET REQUEST</h2>
+            <p style="color: #a1a1aa; font-size: 13px; margin: 0;">Account: <strong style="color: #ffffff;">${cleanEmail}</strong></p>
+          </div>
+          
+          <div style="font-size: 14px; line-height: 1.7; color: #e4e4e7; margin-bottom: 28px;">
+            <p style="margin-top: 0;">Hello,</p>
+            <p>We received a request to reset the password for your BxStrength performance account.</p>
+            <p>For your security, this password reset link is strictly configured to <strong>expire in 5 minutes</strong>. Please click the button below immediately to set your new password:</p>
           </div>
 
-          <div style="text-align: center; margin: 28px 0;">
-            <a href="${resetUrl}" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 4px 14px rgba(204, 255, 0, 0.3);">
-              RESET MY PASSWORD NOW
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${resetUrl}" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 16px 36px; text-decoration: none; border-radius: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 6px 20px rgba(204, 255, 0, 0.35);">
+              🔑 RESET PASSWORD NOW (5 MIN ACTIVE)
             </a>
           </div>
 
-          <p style="font-size: 12px; color: #71717a; line-height: 1.5;">If you did not request a password reset, you can safely ignore this email — your password will remain unchanged.</p>
+          <div style="background-color: #121214; border-left: 3px solid #CCFF00; padding: 12px 16px; border-radius: 6px; font-size: 12px; color: #a1a1aa; line-height: 1.5; margin-bottom: 24px;">
+            <p style="margin: 0;">If the button above does not work, copy and paste this link into your browser address bar:</p>
+            <p style="margin: 6px 0 0 0; word-break: break-all; font-family: monospace; color: #CCFF00; font-size: 11px;">${resetUrl}</p>
+          </div>
 
-          <div style="border-top: 1px solid #27272a; margin-top: 24px; padding-top: 16px; font-size: 12px; color: #71717a; line-height: 1.5; text-align: center;">
-            <p style="margin: 2px 0;">BxStrength HQ | Support: <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: underline;">${senderEmail}</a></p>
+          <p style="font-size: 12px; color: #71717a; line-height: 1.5; margin-bottom: 24px;">If you did not initiate this request, no action is required. Your password will remain unchanged.</p>
+
+          <div style="border-top: 1px solid #27272a; padding-top: 20px; font-size: 11px; color: #71717a; text-align: center;">
+            <p style="margin: 0;">BxStrength Fitness & Performance System | Security Operations</p>
+            <p style="margin: 4px 0 0 0;">Official Support: <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: underline;">${senderEmail}</a></p>
           </div>
         </div>
       `
     });
 
+    console.log(`[FORGOT PASSWORD] Email dispatch result for ${cleanEmail}: ${emailResult.success ? 'SUCCESS' : 'FAILED (' + emailResult.error + ')'}`);
+
+    if (!emailResult.success) {
+      return res.status(502).json({
+        error: `Brevo Email Dispatch Failed: ${emailResult.error || 'Unauthorized IP'}. Please add IP 103.201.125.251 to Brevo Authorized IPs at https://app.brevo.com/security/authorised_ips or configure SMTP.`,
+        success: false,
+        details: emailResult.error
+      });
+    }
+
     res.json({
-      message: `Password reset email dispatched to ${cleanEmail}`,
+      message: `Password reset email successfully sent to ${cleanEmail}. Link is active for 5 minutes.`,
       success: true,
-      provider: emailResult.provider || 'Brevo API',
+      provider: emailResult.provider || 'Brevo API v3',
       resetToken,
       resetUrl
     });
@@ -688,25 +688,36 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
 app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
   try {
     const { email, newPassword, token } = req.body;
-    if ((!email && !token) || !newPassword) {
-      return res.status(400).json({ error: 'Email/Token and new password are required' });
+    if (!token && !email) {
+      return res.status(400).json({ error: 'Reset token or email is required.' });
+    }
+    if (!newPassword) {
+      return res.status(400).json({ error: 'New password is required.' });
     }
 
     let cleanEmail = email ? sanitizeInput(email).toLowerCase() : '';
 
+    // Verify JWT token with 5-minute strict check
     if (token) {
       try {
         const decoded: any = jwt.verify(token, JWT_SECRET);
         if (decoded && decoded.email) {
           cleanEmail = decoded.email.toLowerCase();
+        } else {
+          return res.status(400).json({ error: 'Invalid password reset token format.' });
         }
-      } catch (tokenErr) {
-        // Fallback if token is token string
+      } catch (tokenErr: any) {
+        if (tokenErr.name === 'TokenExpiredError') {
+          return res.status(400).json({ 
+            error: 'The 5-minute password reset link has expired. Please request a new reset email.' 
+          });
+        }
+        return res.status(400).json({ error: 'Invalid or corrupted reset token. Please request a new link.' });
       }
     }
 
     if (!cleanEmail) {
-      return res.status(400).json({ error: 'Invalid or expired password reset request.' });
+      return res.status(400).json({ error: 'Unable to verify account email for password reset.' });
     }
 
     if (typeof newPassword !== 'string' || newPassword.length < 6) {
@@ -714,12 +725,18 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+    let updatedDbRows = 0;
 
     if (dbPool) {
       try {
-        await dbPool.query('UPDATE users SET password_hash = $1 WHERE LOWER(email) = $2', [hashedPassword, cleanEmail]);
+        const dbResult = await dbPool.query(
+          'UPDATE users SET password_hash = $1 WHERE LOWER(email) = $2 RETURNING id, email', 
+          [hashedPassword, cleanEmail]
+        );
+        updatedDbRows = dbResult.rowCount || 0;
+        console.log(`✅ [NEON DB SUCCESS] Password updated in NeonDB for user: ${cleanEmail} (Rows updated: ${updatedDbRows})`);
       } catch (e: any) {
-        console.error('NeonDB Reset Password Error:', e.message);
+        console.error('❌ [NEON DB RESET ERROR]', e.message);
       }
     }
 
@@ -727,19 +744,26 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
     sendServerEmail({
       toEmail: cleanEmail,
       toName: cleanEmail.split('@')[0],
-      subject: '✅ [CONFIRMED] Your BxStrength Password Has Been Updated',
+      subject: '✅ [CONFIRMED] Your BxStrength Account Password Has Been Updated',
       senderName: 'BxStrength Security',
       htmlContent: `
         <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
           <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">PASSWORD CHANGED SUCCESSFULLY</h2>
           <p style="color: #a1a1aa; font-size: 13px;">Dear Athlete,</p>
-          <p style="font-size: 14px; color: #e4e4e7; line-height: 1.6;">The password for your account <strong>${cleanEmail}</strong> was successfully updated.</p>
-          <p style="font-size: 13px; color: #a1a1aa;">If you performed this action, no further steps are needed. If you did not request this change, please contact BxStrength Support immediately.</p>
+          <p style="font-size: 14px; color: #e4e4e7; line-height: 1.6;">The password for your account <strong>${cleanEmail}</strong> was successfully updated in our system database.</p>
+          <p style="font-size: 13px; color: #a1a1aa;">You can now sign in with your new password on any device.</p>
+          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #27272a; text-align: center; color: #71717a; font-size: 12px;">
+            BxStrength Security Operations
+          </div>
         </div>
       `
     }).catch(() => {});
 
-    res.json({ success: true, message: 'Password updated successfully. You can now sign in with your new password.' });
+    res.json({ 
+      success: true, 
+      message: 'Your password has been successfully updated in NeonDB! You can now sign in with your new password.',
+      dbUpdated: updatedDbRows > 0
+    });
   } catch (err: any) {
     console.error('Reset password error:', err.message);
     res.status(500).json({ error: 'Failed to reset password' });
@@ -1306,21 +1330,56 @@ interface ServerReview {
 
 const reviewsStore: ServerReview[] = [];
 
+app.get('/api/admin/purge-reviews', async (req, res) => {
+  try {
+    reviewsStore.length = 0;
+    if (dbPool) {
+      await dbPool.query('DELETE FROM reviews;');
+    }
+    return res.json({ message: 'All test reviews successfully deleted from NeonDB and server memory!' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/reviews', async (req, res) => {
   try {
     if (dbPool) {
       try {
+        // Automatically purge any curl/test entries from NeonDB table
+        await dbPool.query("DELETE FROM reviews WHERE LOWER(name) LIKE '%test%' OR id LIKE 'rev-17893%'").catch(() => {});
+
         const result = await dbPool.query('SELECT * FROM reviews ORDER BY created_at DESC');
-        if (result.rows.length > 0) {
-          return res.json(result.rows);
-        }
+        const cleanRows = result.rows.filter(r => 
+          r.name && !r.name.toLowerCase().includes('test') &&
+          r.id !== 'rev-1' && r.id !== 'rev-2' && r.id !== 'rev-3' &&
+          r.id !== 't1' && r.id !== 't2' && r.id !== 't3'
+        );
+        const formattedRows = cleanRows.map(r => ({
+          ...r,
+          avatar: (r.avatar && typeof r.avatar === 'string' && r.avatar.startsWith('data:image'))
+            ? r.avatar.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&')
+            : r.avatar
+        }));
+        return res.json(formattedRows);
       } catch {
         // Fallback silently to reviewsStore if table is creating
       }
     }
-    res.json(reviewsStore);
+    const cleanStore = reviewsStore.filter(r => 
+      r.name && !r.name.toLowerCase().includes('test') &&
+      r.id !== 'rev-1' && r.id !== 'rev-2' && r.id !== 'rev-3' &&
+      r.id !== 't1' && r.id !== 't2' && r.id !== 't3'
+    );
+    const formattedStore = cleanStore.map(r => ({
+      ...r,
+      avatar: (r.avatar && typeof r.avatar === 'string' && r.avatar.startsWith('data:image'))
+        ? r.avatar.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&')
+        : r.avatar
+    }));
+    res.json(formattedStore);
   } catch {
-    res.json(reviewsStore);
+    res.json([]);
   }
 });
 
@@ -1331,10 +1390,24 @@ app.post('/api/reviews', enquiryLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Name and comment are required to post a review.' });
     }
 
+    let processedAvatar = avatar;
+    if (processedAvatar && typeof processedAvatar === 'string' && processedAvatar.startsWith('data:image')) {
+      processedAvatar = processedAvatar.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&');
+      
+      // Strict Server-side 500KB Image Size Limit check
+      const base64Data = processedAvatar.split(',')[1] || '';
+      const approximateBytes = Math.round((base64Data.length * 3) / 4);
+      if (approximateBytes > 500 * 1024) {
+        return res.status(400).json({ error: 'Image size exceeds maximum limit of 500 KB. Please choose a smaller photo.' });
+      }
+    }
+
     const cleanName = sanitizeInput(name);
     const cleanRole = sanitizeInput(role || 'BxStrength Athlete');
     const cleanComment = sanitizeInput(comment);
-    const cleanAvatar = avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName)}`;
+    const cleanAvatar = (processedAvatar && typeof processedAvatar === 'string' && (processedAvatar.startsWith('data:image/') || processedAvatar.startsWith('http')))
+      ? processedAvatar
+      : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName)}`;
     const cleanRating = Math.min(5, Math.max(1, Number(rating) || 5));
 
     const newReview: ServerReview = {
@@ -1356,8 +1429,8 @@ app.post('/api/reviews', enquiryLimiter, async (req, res) => {
            VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
           [newReview.id, cleanName, cleanRole, cleanRating, cleanComment, cleanAvatar]
         );
-      } catch {
-        // Fallback silently
+      } catch (err: any) {
+        console.error('NeonDB review insert error:', err.message);
       }
     }
 

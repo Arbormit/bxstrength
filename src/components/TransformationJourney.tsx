@@ -51,9 +51,6 @@ export const TransformationJourney: React.FC<TransformationJourneyProps> = ({
     <section className="w-full bg-[#0a0a0a] py-20 text-white border-b border-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-[11px] font-black tracking-widest text-zinc-400 uppercase bg-zinc-900 border border-zinc-800 px-3.5 py-1.5 rounded-full inline-block mb-3">
-            SCIENTIFIC METHODOLOGY
-          </span>
           <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
             YOUR TRANSFORMATION JOURNEY
           </h2>

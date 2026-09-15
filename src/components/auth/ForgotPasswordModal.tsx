@@ -25,6 +25,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [resetTokenFromUrl, setResetTokenFromUrl] = useState<string>('');
+  const [generatedResetLink, setGeneratedResetLink] = useState<string>('');
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -191,7 +192,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                   RESET YOUR PASSWORD
                 </h2>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  Enter your registered email address. A real email with a secure reset link will be dispatched to your inbox via EmailJS SMTP protocol.
+                  Enter your registered account email address. We'll send you a secure link to reset your password.
                 </p>
               </div>
 
@@ -219,11 +220,11 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                   className="w-full bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest py-3 uppercase transition-all rounded-lg cursor-pointer flex items-center justify-center gap-2 shadow-md"
                 >
                   {loading ? (
-                    <span>DISPATCHING EMAIL VIA EMAILJS SMTP...</span>
+                    <span>SENDING RESET LINK...</span>
                   ) : (
                     <>
-                      <Mail className="w-4 h-4" />
-                      <span>DISPATCH REAL RESET EMAIL</span>
+                      <Mail className="w-4 h-4 text-black" />
+                      <span>SEND RESET LINK</span>
                     </>
                   )}
                 </button>
@@ -242,69 +243,48 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
             </form>
           )}
 
-          {/* STEP 2: DISPATCHED REAL EMAIL VIEW & TOKEN URL */}
+          {/* STEP 2: CLEAN EMAIL DISPATCHED CONFIRMATION */}
           {step === 'email_dispatched' && (
-            <div className="space-y-5 animate-in fade-in duration-300">
-              <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-5 space-y-4 shadow-xl">
-                {/* Email Header */}
-                <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase text-emerald-400 tracking-wider">
-                      DISPATCHED REAL EMAIL NOTIFICATION (EMAILJS SMTP)
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-zinc-500 font-mono">SMTP Protocol Active</span>
-                </div>
-
-                {/* Email Details */}
-                <div className="space-y-1.5 text-xs">
-                  <p className="text-zinc-400 font-semibold">
-                    Recipient Email: <strong className="text-white font-mono">{email}</strong>
-                  </p>
-                  <p className="text-zinc-400 font-semibold">
-                    Subject: <strong className="text-white uppercase">BxStrength Password Reset Request</strong>
-                  </p>
-                </div>
-
-                {/* Real Reset Link Preview Box */}
-                <div className="bg-[#121214] border border-zinc-800/90 p-4 rounded-lg space-y-3 text-xs text-zinc-300 leading-relaxed">
-                  <p className="font-bold text-white">Hello,</p>
-                  <p>
-                    A real password reset email has been dispatched to <strong className="text-white">{email}</strong>. You can click the link in your email or click the button below to type your new password:
-                  </p>
-
-                  <div className="bg-[#18181b] p-3 rounded border border-zinc-800 font-mono text-[11px] text-emerald-400 break-all">
-                    {generatedResetLink}
-                  </div>
-
-                  <div className="pt-2 text-center">
-                    <button
-                      onClick={() => setStep('set_new_password')}
-                      className="bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs tracking-wider px-6 py-3 rounded-lg uppercase transition-all shadow-lg cursor-pointer inline-flex items-center gap-2"
-                    >
-                      <KeyRound className="w-4 h-4" />
-                      <span>OPEN RESET LINK & TYPE NEW PASSWORD</span>
-                    </button>
-                  </div>
-                </div>
+            <div className="space-y-6 text-center py-2 animate-in fade-in duration-300">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 shadow-lg">
+                <Mail className="w-8 h-8" />
               </div>
 
-              <div className="flex items-center justify-between text-xs">
-                <button
-                  onClick={() => setStep('request')}
-                  className="text-zinc-400 hover:text-white font-bold uppercase transition-colors cursor-pointer"
-                >
-                  Resend Email
-                </button>
+              <div className="space-y-2">
+                <h2 className="text-xl font-black uppercase tracking-tight text-white">
+                  CHECK YOUR INBOX
+                </h2>
+                <p className="text-xs text-zinc-300 max-w-sm mx-auto leading-relaxed">
+                  We've sent a password reset email to <strong className="text-white font-mono">{email}</strong>. Please check your inbox and click the reset link to choose a new password.
+                </p>
+              </div>
+
+              <div className="bg-[#18181b] border border-zinc-800 rounded-xl p-4 text-left space-y-2 text-xs text-zinc-400">
+                <div className="flex items-center gap-2 text-amber-400 font-bold text-[11px] uppercase tracking-wider">
+                  <span>⏱️ 5-Minute Time Limit</span>
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  For your security, the reset link will expire in <strong>5 minutes</strong>. If you don't see the email within a minute, please check your spam or junk folder.
+                </p>
+              </div>
+
+              <div className="pt-2 space-y-3">
                 <button
                   onClick={() => {
                     handleCloseAll();
                     onOpenLogin();
                   }}
-                  className="text-white font-bold uppercase hover:text-zinc-300 transition-colors cursor-pointer"
+                  className="w-full bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest py-3 uppercase transition-all rounded-lg cursor-pointer shadow-md flex items-center justify-center gap-2"
                 >
-                  Return to Sign In →
+                  <span>RETURN TO SIGN IN</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => setStep('request')}
+                  className="text-xs font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer uppercase"
+                >
+                  Didn't get an email? Resend
                 </button>
               </div>
             </div>
@@ -314,14 +294,14 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
           {step === 'set_new_password' && (
             <form onSubmit={handleResetSubmit} className="space-y-4 animate-in fade-in duration-200">
               <div>
-                <span className="text-[10px] font-black uppercase text-emerald-400 tracking-wider bg-emerald-950/50 border border-emerald-900 px-2.5 py-1 rounded inline-block mb-2">
-                  VERIFIED RESET TOKEN ACTIVE
+                <span className="text-[10px] font-bold uppercase text-emerald-400 tracking-wider bg-emerald-950/60 border border-emerald-800 px-2.5 py-1 rounded inline-block mb-2">
+                  🔒 SECURE RESET SESSION ACTIVE
                 </span>
                 <h2 className="text-xl font-black uppercase tracking-tight text-white mb-1">
-                  TYPE YOUR NEW PASSWORD
+                  CREATE NEW PASSWORD
                 </h2>
                 <p className="text-xs text-zinc-400">
-                  Account Email: <strong className="text-white">{email}</strong>
+                  Account: <strong className="text-white font-mono">{email}</strong>
                 </p>
               </div>
 
@@ -366,7 +346,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 space-y-2">
                 <button
                   type="submit"
                   disabled={loading}
@@ -377,10 +357,23 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                   ) : (
                     <>
                       <KeyRound className="w-4 h-4" />
-                      <span>SAVE NEW PASSWORD & SIGN IN</span>
+                      <span>RESET PASSWORD & SIGN IN</span>
                     </>
                   )}
                 </button>
+
+                {errorMsg && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setErrorMsg(null);
+                      setStep('request');
+                    }}
+                    className="w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 text-xs font-bold py-2.5 rounded-lg uppercase transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span>Request New Reset Link</span>
+                  </button>
+                )}
               </div>
             </form>
           )}

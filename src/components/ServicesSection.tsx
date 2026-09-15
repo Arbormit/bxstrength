@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { 
   Dumbbell, Flame, HeartPulse, Activity, Zap, CheckCircle2, AlertCircle, 
-  Target, ShieldCheck, RefreshCw, Home, Video, Trophy, Users, Award, Heart, ChevronDown, ChevronRight, Tag, Clock, Gift, Calendar, Check, Filter, ArrowRight
+  Target, ShieldCheck, RefreshCw, Home, Video, Trophy, Users, Award, Heart, 
+  ChevronDown, ChevronRight, Tag, Clock, Gift, Calendar, Check, Filter, ArrowRight, ArrowUpDown,
+  Sparkles, Info, DollarSign, Layers, Percent, UserCheck, HelpCircle, SlidersHorizontal
 } from 'lucide-react';
 
 export interface ServiceItem {
@@ -18,6 +20,7 @@ export interface ServiceItem {
   discount: string | number;      // discount
   validity: string;               // validity
   complimentary: string;          // complimentary
+  idealFor?: string;              // Friendly plain-English target audience guide
   // UI Icon & Compatibility
   icon?: React.ElementType;
   discountTag?: string;
@@ -36,204 +39,61 @@ interface ServicesSectionProps {
 }
 
 export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking, onSelectService }) => {
-  const [activeTab, setActiveTab] = useState<string>('All');
+  const [sortOrder, setSortOrder] = useState<'high-to-low' | 'low-to-high'>('high-to-low');
   const [showAllServices, setShowAllServices] = useState<boolean>(false);
 
   const services: ServiceItem[] = [
-    {
-      title: 'Fitness Boxing',
-      category: 'Individual Service',
-      servicePlan: 'Fitness Boxing',
-      duration: '20Min / session',
-      price: 30,
-      sessionType: '1-on-1 Personal Session',
-      goalPrimaryOutcome: 'Technical Boxing, Conditioning, footwork & power.',
-      whatYouGet: 'Live 1:1 padwork & boxing conditioning coaching.',
-      keyDifference: 'Single specialist service; focused 1-on-1 padwork.',
-      totalSessions: '1 Session',
-      discount: '',
-      validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
-      icon: Flame,
-      badge: 'POPULAR'
-    },
-    {
-      title: 'Strength Training',
-      category: 'Individual Service',
-      servicePlan: 'Strength Training',
-      duration: '20Min / session',
-      price: 25,
-      sessionType: '1-on-1 Pro Coaching',
-      goalPrimaryOutcome: 'Build muscle, raw strength & overall fitness.',
-      whatYouGet: 'Live 1:1 strength coaching tailored to your goal.',
-      keyDifference: 'Single specialist strength service with progressive overload.',
-      totalSessions: '1 Session',
-      discount: '',
-      validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
-      icon: Dumbbell
-    },
-    {
-      title: 'Mobility & Recovery',
-      category: 'Individual Service',
-      servicePlan: 'Mobility & Recovery',
-      duration: '20Min / session',
-      price: 30,
-      sessionType: '1-on-1 Pro Coaching',
-      goalPrimaryOutcome: 'Improve joint mobility & accelerate muscle recovery.',
-      whatYouGet: 'Targeted mobility drills & dynamic stretching protocols.',
-      keyDifference: 'Focus on movement quality & joint longevity.',
-      totalSessions: '1 Session',
-      discount: '',
-      validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
-      icon: HeartPulse
-    },
-    {
-      title: 'Flexibility Training',
-      category: 'Individual Service',
-      servicePlan: 'Flexibility Training',
-      duration: '20Min / session',
-      price: 25,
-      sessionType: '1-on-1 Clinical Rehab',
-      goalPrimaryOutcome: 'Increase flexibility & reduce muscle stiffness.',
-      whatYouGet: 'Live 1:1 flexibility & posture alignment coaching.',
-      keyDifference: 'Single specialist flexibility & strain prevention.',
-      totalSessions: '1 Session',
-      discount: '',
-      validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
-      icon: Activity
-    },
-    {
-      title: 'Mindset & Wellness',
-      category: 'Individual Service',
-      servicePlan: 'Mindset & Wellness',
-      duration: '20Min / session',
-      price: 30,
-      sessionType: '1-on-1 Pro Coaching',
-      goalPrimaryOutcome: 'Stress relief, focus resilience & mental wellness.',
-      whatYouGet: '1:1 mindset coaching & stress reduction strategies.',
-      keyDifference: 'Single specialist mindset & performance wellness.',
-      totalSessions: '1 Session',
-      discount: '',
-      validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
-      icon: Heart
-    },
-    {
-      title: 'Custom Basic',
-      category: 'Custom',
-      servicePlan: 'Custom Package',
-      duration: '15Min / session',
-      price: 30,
-      sessionType: 'Fully Personalised',
-      goalPrimaryOutcome: 'One tailored focus designed around your goal.',
-      whatYouGet: 'Personalised coaching & custom session structure.',
-      keyDifference: 'Full custom exercise selection.',
-      totalSessions: '1 Session',
-      discount: '',
-      validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
-      icon: Zap
-    },
-    {
-      title: 'Custom Focus',
-      category: 'Custom',
-      servicePlan: 'Custom Package',
-      duration: '30Min / session',
-      price: 45,
-      sessionType: 'Fully Personalised',
-      goalPrimaryOutcome: 'One tailored focus with deep exercise customization.',
-      whatYouGet: 'Tailored programme, technique focus & goal mapping.',
-      keyDifference: 'High-yield custom protocol.',
-      totalSessions: '1 Session',
-      discount: '',
-      validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
-      icon: Zap,
-      badge: 'RECOMMENDED'
-    },
-    {
-      title: 'Custom Performance',
-      category: 'Custom',
-      servicePlan: 'Custom Package',
-      duration: '45Min / session',
-      price: 65,
-      sessionType: 'Fully Personalised',
-      goalPrimaryOutcome: 'Combine any 2 focus areas into 1 session.',
-      whatYouGet: 'Full personalisation & advanced technique correction.',
-      keyDifference: 'Dual focus area custom program.',
-      totalSessions: '1 Session',
-      discount: '',
-      validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
-      icon: Zap
-    },
-    {
-      title: 'Custom Complete',
-      category: 'Custom',
-      servicePlan: 'Custom Complete',
-      duration: '60Min / session',
-      price: 85,
-      sessionType: 'Fully Personalised',
-      goalPrimaryOutcome: 'Up to 4 focus areas combined into bespoke plan.',
-      whatYouGet: '100% tailored multi-focus coaching plan.',
-      keyDifference: 'VIP complete custom protocol.',
-      totalSessions: '1 Session',
-      discount: '',
-      validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
-      icon: Trophy,
-      badge: 'VIP BESPOKE'
-    },
+    // --- CORE SESSION PACKAGES (BEST VALUE) ---
     {
       title: 'BX Basic Care',
       category: 'Core Package',
       servicePlan: 'BX Basic Care',
-      duration: '15Min / session',
+      duration: '15 Mins',
       price: 20,
       sessionType: 'Standard Package',
-      goalPrimaryOutcome: 'One primary focus with accessible entry rate.',
-      whatYouGet: 'Basic warm-up, focused coaching & cool-down.',
-      keyDifference: 'Entry level standard value package.',
+      goalPrimaryOutcome: 'One Primary Focus: Basic warm-up, focused coaching & cool-down.',
+      whatYouGet: ['Basic warm-up & cool-down', 'Focused 1-on-1 coaching', 'Technique correction'],
+      keyDifference: 'Best value 15-min core session with primary focus.',
+      idealFor: 'Ideal for a quick 15-min targeted technique tune-up or busy schedules.',
       totalSessions: '1 Session',
       discount: '',
       validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
+      complimentary: 'Warm-up + cool-down included in every session.',
       icon: ShieldCheck,
-      badge: 'MOST ACCESSIBLE'
+      badge: 'BEST VALUE'
     },
     {
       title: 'BX Focus',
       category: 'Core Package',
       servicePlan: 'BX Focus',
-      duration: '30Min / session',
-      price: 35,
+      duration: '30 Mins',
+      price: 40,
       sessionType: 'Standard Package',
-      goalPrimaryOutcome: 'One main focus plus supporting workout.',
-      whatYouGet: 'Goal-based training & supporting exercises.',
-      keyDifference: 'Better value than single session bookings.',
+      goalPrimaryOutcome: 'One Main Focus + Supporting Work: Personalised warm-up & goal based training.',
+      whatYouGet: ['Personalised warm-up', 'Goal based training', 'Supporting exercise drills', 'Cool-down'],
+      keyDifference: 'Core 30-min targeted session with supporting exercises.',
+      idealFor: 'Ideal for focused goal training with guided supporting exercises.',
       totalSessions: '1 Session',
       discount: '',
       validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
+      complimentary: 'Warm-up + cool-down included in every session.',
       icon: Target
     },
     {
       title: 'BX Performance',
       category: 'Core Package',
       servicePlan: 'BX Performance',
-      duration: '45Min / session',
-      price: 55,
+      duration: '45 Mins',
+      price: 60,
       sessionType: 'Standard Package',
-      goalPrimaryOutcome: 'Any 2 focus areas in structured performance plan.',
-      whatYouGet: 'Progressive training & technique corrections.',
-      keyDifference: 'High popularity performance package.',
+      goalPrimaryOutcome: 'Choose Any Two Focuses: Structured workout with progressive training.',
+      whatYouGet: ['Structured 45-min workout', 'Progressive training overload', 'Coaching corrections', 'Mobility & Session notes'],
+      keyDifference: 'High popularity dual-focus core package.',
+      idealFor: 'Ideal for combining 2 key fitness goals into one structured session.',
       totalSessions: '1 Session',
       discount: '',
       validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
+      complimentary: 'Warm-up + cool-down included in every session.',
       icon: Activity,
       badge: 'BEST SELLER'
     },
@@ -241,18 +101,245 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
       title: 'BX Complete',
       category: 'Core Package',
       servicePlan: 'BX Complete',
-      duration: '60Min / session',
-      price: 75,
+      duration: '60 Mins',
+      price: 80,
       sessionType: 'Standard Package',
-      goalPrimaryOutcome: 'Up to 4 focus areas for full coaching.',
-      whatYouGet: 'Full-body strength, conditioning & mobility.',
-      keyDifference: 'Flagship complete standard package.',
+      goalPrimaryOutcome: 'Up To Four Focus Areas: Full body training, strength, conditioning & mobility.',
+      whatYouGet: ['Full body 60-min coaching', 'Strength & Conditioning', 'Mobility & Flexibility', 'Live progress tracking'],
+      keyDifference: 'Flagship 60-min complete package — saves £45 vs individual services!',
+      idealFor: 'Ideal for full 60-min total body transformation & maximum value.',
+      totalSessions: '1 Session',
+      discount: 'SAVE £45',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Trophy,
+      badge: 'FLAGSHIP VALUE'
+    },
+
+    // --- CUSTOM BX PACKAGES (FULLY PERSONALISED) ---
+    {
+      title: 'Custom Basic',
+      category: 'Custom',
+      servicePlan: 'Custom Package',
+      duration: '15 Mins',
+      price: 30,
+      sessionType: 'Fully Personalised (+£10)',
+      goalPrimaryOutcome: 'One Tailored Focus: Designed around your exact individual goal.',
+      whatYouGet: ['Designed around your goal', 'Personal coaching control', 'Intensity & technique focus', 'Cool-down'],
+      keyDifference: 'Fully customized 15-min protocol (+£10 over standard).',
+      idealFor: 'Ideal for clients wanting 100% custom 15-min exercise selection.',
       totalSessions: '1 Session',
       discount: '',
       validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included within booked time.',
-      icon: Trophy
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Zap
     },
+    {
+      title: 'Custom Focus',
+      category: 'Custom',
+      servicePlan: 'Custom Package',
+      duration: '30 Mins',
+      price: 50,
+      sessionType: 'Fully Personalised (+£10)',
+      goalPrimaryOutcome: 'One Main Focus + Personalised Support: Tailored program & goal mapping.',
+      whatYouGet: ['Tailored bespoke program', 'Extra attention to detail', 'Individual goal mapping', 'Cool-down'],
+      keyDifference: 'Fully customized 30-min protocol (+£10 over standard).',
+      idealFor: 'Ideal for a tailored 30-min program with dedicated goal mapping.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Zap,
+      badge: 'RECOMMENDED'
+    },
+    {
+      title: 'Custom Performance',
+      category: 'Custom',
+      servicePlan: 'Custom Package',
+      duration: '45 Mins',
+      price: 70,
+      sessionType: 'Fully Personalised (+£10)',
+      goalPrimaryOutcome: 'Any Two Foci - Custom Built: Full personalisation & advanced programming.',
+      whatYouGet: ['Full 100% personalisation', 'Advanced custom programming', 'Technique refinement', 'Session tracking'],
+      keyDifference: 'Fully customized 45-min dual protocol (+£10 over standard).',
+      idealFor: 'Ideal for a custom-built 45-min workout combining any 2 foci.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Zap
+    },
+    {
+      title: 'Custom Complete',
+      category: 'Custom',
+      servicePlan: 'Custom Complete',
+      duration: '60 Mins',
+      price: 90,
+      sessionType: 'Fully Personalised (+£10)',
+      goalPrimaryOutcome: 'Up To Four Foci - Fully Custom: 100% personalised multi-focus plan.',
+      whatYouGet: ['100% personalised 60-min plan', 'Multi-focus bespoke training', 'Advanced coaching & mobility', 'Progress tracking'],
+      keyDifference: 'Ultimate 60-min custom coaching (+£10 over standard).',
+      idealFor: 'Ideal for multi-focus 60-min bespoke custom coaching.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Trophy,
+      badge: 'PREMIUM PACKAGE'
+    },
+
+    // --- INDIVIDUAL SERVICES (SPECIALIST PRICING) ---
+    {
+      title: 'Fitness Boxing',
+      category: 'Individual Service',
+      servicePlan: 'Fitness Boxing',
+      duration: '60 Mins',
+      price: 35,
+      sessionType: 'Specialist Session',
+      goalPrimaryOutcome: 'Technical boxing, conditioning, footwork, power & endurance.',
+      whatYouGet: ['1:1 Technical boxing padwork', 'Footwork & stance drills', 'Boxing conditioning & endurance'],
+      keyDifference: 'Specialist 60-min 1-on-1 boxing coaching.',
+      idealFor: 'Ideal for 1-on-1 technical boxing padwork, footwork & conditioning.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Flame,
+      badge: 'POPULAR'
+    },
+    {
+      title: 'Strength Training',
+      category: 'Individual Service',
+      servicePlan: 'Strength Training',
+      duration: '60 Mins',
+      price: 30,
+      sessionType: 'Specialist Session',
+      goalPrimaryOutcome: 'Build strength, muscle, endurance & overall fitness.',
+      whatYouGet: ['1:1 Strength & muscle building', 'Progressive overload tracking', 'Form & technique correction'],
+      keyDifference: 'Specialist 60-min dedicated lifting session.',
+      idealFor: 'Ideal for building lean muscle, raw strength & form correction.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Dumbbell
+    },
+    {
+      title: 'Mobility',
+      category: 'Individual Service',
+      servicePlan: 'Mobility',
+      duration: '60 Mins',
+      price: 30,
+      sessionType: 'Specialist Session',
+      goalPrimaryOutcome: 'Improve range of motion, movement quality & posture.',
+      whatYouGet: ['Joint mobilization protocols', 'Movement quality enhancement', 'Postural alignment work'],
+      keyDifference: 'Specialist 60-min dedicated mobility session.',
+      idealFor: 'Ideal for improving range of motion, posture & joint longevity.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: HeartPulse
+    },
+    {
+      title: 'Flexibility',
+      category: 'Individual Service',
+      servicePlan: 'Flexibility Training',
+      duration: '60 Mins',
+      price: 30,
+      sessionType: 'Specialist Session',
+      goalPrimaryOutcome: 'Increase flexibility, reduce stiffness & enhance recovery.',
+      whatYouGet: ['Assisted dynamic & PNF stretching', 'Stiffness reduction', 'Muscle strain prevention'],
+      keyDifference: 'Specialist 60-min flexibility & recovery session.',
+      idealFor: 'Ideal for reducing muscle stiffness, strain prevention & recovery.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Activity
+    },
+    {
+      title: 'Mobility & Recovery',
+      category: 'Individual Service',
+      servicePlan: 'Mobility & Recovery',
+      duration: '40 Mins',
+      price: 30,
+      sessionType: 'Specialist Session',
+      goalPrimaryOutcome: 'Low-impact session for recovery, posture & pain reduction.',
+      whatYouGet: ['Low-impact active recovery', 'Pain reduction drills', 'Postural correction'],
+      keyDifference: 'Specialist 40-min targeted recovery session.',
+      idealFor: 'Ideal for low-impact active recovery & pain reduction.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: HeartPulse
+    },
+    {
+      title: 'BX Mindset Session',
+      category: 'Individual Service',
+      servicePlan: 'Mindset & Wellness',
+      duration: '45 Mins',
+      price: 45,
+      sessionType: 'Specialist Session',
+      goalPrimaryOutcome: 'Mindset coaching, mental wellness & performance focus.',
+      whatYouGet: ['1:1 Mindset & resilience coaching', 'Stress management strategies', 'Mental clarity & goal setting'],
+      keyDifference: 'Specialist 45-min mental performance coaching.',
+      idealFor: 'Ideal for mental focus, stress management & goal resilience.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Heart
+    },
+
+    // --- VALUE COMPARISON SERVICE CARDS ---
+    {
+      title: '4-Service Accumulation Bundle',
+      category: 'Value Comparison',
+      servicePlan: 'BX Complete (Value Bundle)',
+      duration: '60 Mins',
+      price: 80,
+      sessionType: 'Value Saver Package',
+      goalPrimaryOutcome: '4 Individual Services: Boxing (£35) + Strength (£30) + Mobility (£30) + Flexibility (£30) = £125 Value.',
+      whatYouGet: [
+        'Full Body 60-Min Training',
+        'Combines Boxing, Strength, Mobility & Flexibility',
+        'Saves £45 vs buying 4 services separately (£125 value)'
+      ],
+      keyDifference: 'Save £45 with BX Complete package vs individual service accumulation.',
+      idealFor: 'Ideal for clients wanting all 4 specialist disciplines at maximum savings (£80 instead of £125).',
+      totalSessions: '1 Session (4 Focuses)',
+      discount: 'SAVE £45',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Trophy,
+      badge: 'SAVE £45'
+    },
+    {
+      title: '2-Service Dual Focus Saver',
+      category: 'Value Comparison',
+      servicePlan: 'BX Performance (Dual Saver)',
+      duration: '45 Mins',
+      price: 60,
+      sessionType: 'Value Saver Package',
+      goalPrimaryOutcome: 'Two Individual Services: Boxing (£35) + Strength (£30) = £65 Total Value.',
+      whatYouGet: [
+        'Structured 45-Min Dual Workout',
+        'Combines Boxing + Strength Training',
+        'Saves £5 vs booking 2 services separately (£65 value)'
+      ],
+      keyDifference: 'Save £5 with BX Performance package vs booking 2 separate sessions.',
+      idealFor: 'Ideal for combining Boxing & Strength into one 45-min workout for £60 instead of £65.',
+      totalSessions: '1 Session (2 Focuses)',
+      discount: 'SAVE £5',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Layers,
+      badge: 'SAVE £5'
+    },
+
+    // --- WEEKLY & MONTHLY PROGRAMMES ---
     {
       title: 'BX Weekly 3',
       category: 'Programme',
@@ -260,13 +347,14 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
       duration: 'Varies by selected sessions',
       price: 30,
       sessionType: '3 Session Weekly Programme',
-      goalPrimaryOutcome: 'Build weekly consistency & momentum.',
-      whatYouGet: 'Choose any 3 sessions from boxing, strength, mobility or mindset.',
+      goalPrimaryOutcome: 'Choose any 3 sessions from Boxing, Strength, Functional, Mobility or Flexibility.',
+      whatYouGet: ['3 Sessions included per week', 'Flexible session selection', 'Build your week your way'],
       keyDifference: '10% discount on weekly commitment.',
+      idealFor: 'Ideal for committed clients taking 3 sessions/week with 10% savings.',
       totalSessions: '3 Sessions',
-      discount: '10% OFF',
-      validity: '7 Days',
-      complimentary: 'Warm-up + cool-down included within booked time.',
+      discount: 'SAVE 10%',
+      validity: '15 Days',
+      complimentary: 'Warm-up + cool-down included in every session.',
       icon: Calendar,
       badge: 'SAVE 10%'
     },
@@ -277,75 +365,117 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
       duration: 'Varies by selected sessions',
       price: 50,
       sessionType: '12 Session Monthly Programme',
-      goalPrimaryOutcome: 'Longer term progression & coaching support.',
-      whatYouGet: '12 sessions built with coach around your targets.',
+      goalPrimaryOutcome: 'Build a complete plan from Boxing, Strength, Functional, Mobility and Flexibility.',
+      whatYouGet: ['12 Sessions included per month', 'Complete transformation plan', 'Build your plan transform faster'],
       keyDifference: '20% discount on monthly commitment.',
+      idealFor: 'Ideal for maximum transformation commitment with 20% savings.',
       totalSessions: '12 Sessions / Month',
-      discount: '20% OFF',
-      validity: '30 Days',
-      complimentary: 'Warm-up + cool-down included within booked time.',
+      discount: 'SAVE 20%',
+      validity: '45 Days',
+      complimentary: 'Warm-up + cool-down included in every session.',
       icon: RefreshCw,
       badge: 'SAVE 20%'
     }
   ];
 
-  const categories = [
-    { id: 'All', label: 'All Services (15)' },
-    { id: 'Individual Service', label: 'Individual Services' },
-    { id: 'Custom', label: 'Custom Packages' },
-    { id: 'Core Package', label: 'Core Packages' },
-    { id: 'Programme', label: 'Weekly & Monthly Programmes' },
-  ];
+  const getNumericPrice = (p: number | string): number => {
+    if (typeof p === 'number') return p;
+    const parsed = parseFloat(String(p).replace(/[^0-9.]/g, ''));
+    return isNaN(parsed) ? 0 : parsed;
+  };
 
-  const filteredServices = activeTab === 'All' 
-    ? services 
-    : services.filter(s => s.category === activeTab);
+  // Sort services dynamically based on sortOrder
+  const sortedServices = [...services].sort((a, b) => {
+    const priceA = getNumericPrice(a.price);
+    const priceB = getNumericPrice(b.price);
+    return sortOrder === 'high-to-low' ? priceB - priceA : priceA - priceB;
+  });
 
   // Show only 6 cards by default, expand to all when showAllServices is true
-  const visibleServices = showAllServices ? filteredServices : filteredServices.slice(0, 6);
+  const visibleServices = showAllServices ? sortedServices : sortedServices.slice(0, 6);
 
   return (
-    <section id="services-section" className="w-full bg-[#09090b] text-white py-20 border-b border-zinc-800">
+    <section id="services-section" className="w-full bg-[#09090b] text-white py-20 border-b border-zinc-800 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 text-[#CCFF00] text-xs font-black uppercase tracking-widest mb-4">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>TRANSPARENT PRICING & CUSTOM PROTOCOLS</span>
-          </div>
+        <div className="text-center max-w-4xl mx-auto mb-12">
           <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
             OUR TRAINING SERVICES & PRICING
           </h2>
-          <p className="text-zinc-400 text-sm sm:text-base mt-2 leading-relaxed">
-            Select a specialist service or custom protocol below. Upfront pricing in GBP (£) with zero hidden fees.
+          <p className="text-zinc-400 text-sm sm:text-base mt-3 leading-relaxed max-w-2xl mx-auto">
+            Personal Coaching. Real Results. Clear, transparent upfront pricing in GBP (£) with zero hidden fees. Select any service or package below.
           </p>
         </div>
 
-        {/* Category Filter Tabs */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
-          {categories.map((cat) => {
-            const isActive = activeTab === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  setActiveTab(cat.id);
-                  setShowAllServices(false); // Reset to 6 cards when changing tab
-                }}
-                className={`px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-2 ${
-                  isActive
-                    ? 'bg-[#CCFF00] text-black shadow-lg shadow-[#CCFF00]/20 font-black scale-105'
-                    : 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800'
-                }`}
-              >
-                <span>{cat.label}</span>
-              </button>
-            );
-          })}
+        {/* Category Differentiation Banners */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-xs font-bold">
+          <div className="bg-zinc-900/90 border border-emerald-500/30 p-4 rounded-xl flex items-center gap-3 shadow-md">
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-emerald-400 font-black uppercase block text-[11px] tracking-wider">CORE SESSION PACKAGES</span>
+              <span className="text-zinc-300 font-normal">Best Value. Warm-up & cool-down included in every session.</span>
+            </div>
+          </div>
+
+          <div className="bg-zinc-900/90 border border-[#CCFF00]/30 p-4 rounded-xl flex items-center gap-3 shadow-md">
+            <div className="w-9 h-9 rounded-lg bg-[#CCFF00]/10 text-[#CCFF00] flex items-center justify-center shrink-0">
+              <Zap className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[#CCFF00] font-black uppercase block text-[11px] tracking-wider">CUSTOM BX PACKAGES</span>
+              <span className="text-zinc-300 font-normal">100% Bespoke & Personalised (+£10 over standard packages).</span>
+            </div>
+          </div>
+
+          <div className="bg-zinc-900/90 border border-amber-500/30 p-4 rounded-xl flex items-center gap-3 shadow-md">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+              <Flame className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-amber-400 font-black uppercase block text-[11px] tracking-wider">INDIVIDUAL SERVICES</span>
+              <span className="text-zinc-300 font-normal">Specialist 1-on-1 sessions (Boxing, Strength, Mobility, Mindset).</span>
+            </div>
+          </div>
         </div>
 
-        {/* Services Grid (Concise & Easy to Read Cards) */}
+        {/* --- INTERACTIVE PRICE SORT BAR --- */}
+        <div className="bg-[#121215]/90 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 mb-10 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-xs sm:text-sm font-black uppercase tracking-wider text-white">
+            <div className="w-8.5 h-8.5 rounded-lg bg-[#CCFF00]/15 border border-[#CCFF00]/30 text-[#CCFF00] flex items-center justify-center shrink-0">
+              <ArrowUpDown className="w-4 h-4 text-[#CCFF00]" />
+            </div>
+            <div>
+              <span className="block text-xs sm:text-sm font-black uppercase text-white tracking-wide">
+                ALL TRAINING SERVICES & PACKAGES
+              </span>
+              <span className="text-[10px] text-zinc-400 font-normal block mt-0.5">
+                Click sort button to toggle pricing order
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setSortOrder(sortOrder === 'high-to-low' ? 'low-to-high' : 'high-to-low')}
+            className="w-full sm:w-auto flex items-center justify-between sm:justify-center gap-3 bg-black/90 hover:bg-zinc-900 border-2 border-[#CCFF00]/60 hover:border-[#CCFF00] px-4 py-2.5 rounded-xl transition-all duration-200 cursor-pointer shadow-lg active:scale-95 group"
+            title="Click to toggle price sorting order"
+          >
+            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest group-hover:text-zinc-300">
+              SORT ORDER:
+            </span>
+            <span className="text-[#CCFF00] font-mono font-black text-xs sm:text-sm tracking-wide">
+              {sortOrder === 'high-to-low' ? 'HIGH TO LOW (£90 → £20)' : 'LOW TO HIGH (£20 → £90)'}
+            </span>
+            <span className="text-[10px] font-mono text-black bg-[#CCFF00] font-black px-2 py-0.5 rounded-md shrink-0 group-hover:scale-105 transition-transform">
+              {sortOrder === 'high-to-low' ? 'HIGH FIRST' : 'LOW FIRST'}
+            </span>
+          </button>
+        </div>
+
+        {/* Services Grid (User-Centric High-Visibility Cards) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {visibleServices.map((srv, idx) => {
             const IconComp = srv.icon || Dumbbell;
@@ -354,7 +484,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
             return (
               <div
                 key={idx}
-                className="relative bg-[#121215] border border-zinc-800/90 hover:border-[#CCFF00]/50 rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 group hover:-translate-y-1 shadow-2xl hover:shadow-[#CCFF00]/5 overflow-hidden"
+                className="relative bg-[#121215] border border-zinc-800/90 hover:border-[#CCFF00]/60 rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 group hover:-translate-y-1 shadow-2xl hover:shadow-[#CCFF00]/10 overflow-hidden"
               >
                 {/* Discount Ribbon Tag */}
                 {displayDiscount && (
@@ -364,13 +494,13 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
                 )}
 
                 <div>
-                  {/* Top Header Badges */}
+                  {/* Category Header Badges */}
                   <div className="flex items-center justify-between gap-2 mb-3 pr-6">
-                    <span className="text-[10px] font-black tracking-widest text-[#CCFF00] uppercase bg-[#CCFF00]/10 border border-[#CCFF00]/20 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-black tracking-widest text-[#CCFF00] uppercase bg-[#CCFF00]/10 border border-[#CCFF00]/20 px-2.5 py-0.5 rounded">
                       {srv.category}
                     </span>
                     {srv.badge && (
-                      <span className="text-[9px] font-black tracking-wider text-amber-300 uppercase bg-amber-950/60 border border-amber-800/80 px-2 py-0.5 rounded">
+                      <span className="text-[9px] font-black tracking-wider text-amber-300 uppercase bg-amber-950/70 border border-amber-800/80 px-2 py-0.5 rounded">
                         {srv.badge}
                       </span>
                     )}
@@ -379,11 +509,12 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
                   {/* Title & Icon Header */}
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
-                      <h3 className="text-lg font-black uppercase tracking-tight text-white group-hover:text-[#CCFF00] transition-colors leading-snug">
+                      <h3 className="text-xl font-black uppercase tracking-tight text-white group-hover:text-[#CCFF00] transition-colors leading-snug">
                         {srv.title}
                       </h3>
-                      <p className="text-[11px] text-zinc-400 font-medium">
-                        {srv.sessionType}
+                      <p className="text-[11px] text-zinc-400 font-semibold flex items-center gap-1.5 mt-0.5">
+                        <UserCheck className="w-3.5 h-3.5 text-[#CCFF00]" />
+                        <span>{srv.sessionType}</span>
                       </p>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-zinc-800/90 border border-zinc-700/80 flex items-center justify-center text-[#CCFF00] group-hover:bg-[#CCFF00] group-hover:text-black transition-all shrink-0">
@@ -391,35 +522,64 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
                     </div>
                   </div>
 
-                  {/* HIGH VISIBILITY PRICING BOX */}
-                  <div className="mb-4 p-3 bg-gradient-to-br from-zinc-900 to-[#18181b] border-2 border-zinc-800 group-hover:border-[#CCFF00]/40 rounded-xl flex items-center justify-between">
+                  {/* HIGH VISIBILITY BOLD PRICING BOX */}
+                  <div className="mb-4 p-4 bg-gradient-to-br from-zinc-900 via-[#18181c] to-zinc-900 border-2 border-zinc-700/80 group-hover:border-[#CCFF00] rounded-2xl flex items-center justify-between shadow-xl transition-all">
                     <div>
-                      <span className="text-[9px] font-extrabold text-zinc-400 uppercase tracking-widest block">
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-0.5">
                         PRICE / SESSION
                       </span>
-                      <div className="flex items-baseline gap-1.5 mt-0.5">
-                        <span className="text-2xl font-black text-[#CCFF00]">£{srv.price}</span>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl sm:text-4xl font-black text-[#CCFF00] tracking-tight drop-shadow-[0_2px_10px_rgba(204,255,0,0.25)]">
+                          £{srv.price}
+                        </span>
                         <span className="text-xs font-bold text-zinc-300">/ {srv.duration}</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-[10px] font-bold text-white bg-zinc-800 border border-zinc-700 px-2.5 py-1 rounded-md inline-block">
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <span className="text-[11px] font-black text-white bg-zinc-800 border border-zinc-700 px-3 py-1 rounded-lg inline-block shadow-sm">
                         {srv.totalSessions}
                       </span>
+                      {displayDiscount && (
+                        <span className="text-[10px] font-extrabold text-black bg-[#CCFF00] px-2 py-0.5 rounded font-mono">
+                          {displayDiscount}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Instant Bite-Sized Information (Quick to Read) */}
-                  <div className="space-y-2 text-xs mb-4">
-                    <div className="flex items-start gap-2 text-zinc-200">
-                      <Target className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span className="text-xs leading-snug font-medium">{srv.goalPrimaryOutcome}</span>
+                  {/* USER-CENTRIC "WHO IS THIS FOR?" HIGHLIGHT BOX */}
+                  {srv.idealFor && (
+                    <div className="mb-4 bg-zinc-900/90 border border-zinc-800/90 p-3 rounded-xl flex items-start gap-2 text-xs">
+                      <HelpCircle className="w-4 h-4 text-[#CCFF00] shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block mb-0.5">
+                          WHO IS THIS FOR?
+                        </span>
+                        <p className="text-zinc-200 leading-snug font-medium text-[11px]">
+                          {srv.idealFor}
+                        </p>
+                      </div>
                     </div>
+                  )}
 
-                    <div className="flex items-start gap-2 text-zinc-300">
-                      <CheckCircle2 className="w-4 h-4 text-[#CCFF00] shrink-0 mt-0.5" />
-                      <span className="text-xs leading-snug text-zinc-300">{Array.isArray(srv.whatYouGet) ? srv.whatYouGet.join(', ') : srv.whatYouGet}</span>
-                    </div>
+                  {/* WHAT YOU GET CHECKLIST */}
+                  <div className="space-y-2 text-xs mb-4">
+                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-1">
+                      WHAT YOU GET IN THIS SESSION:
+                    </span>
+                    {Array.isArray(srv.whatYouGet) ? (
+                      srv.whatYouGet.map((item, i) => (
+                        <div key={i} className="flex items-start gap-2 text-zinc-200">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#CCFF00] shrink-0 mt-0.5" />
+                          <span className="text-xs leading-snug font-medium text-zinc-200">{item}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-start gap-2 text-zinc-200">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#CCFF00] shrink-0 mt-0.5" />
+                        <span className="text-xs leading-snug font-medium text-zinc-200">{srv.whatYouGet}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -427,19 +587,22 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
                 <div className="pt-3 border-t border-zinc-800/80">
                   <button
                     onClick={() => onSelectService ? onSelectService(srv) : onOpenBooking()}
-                    className="w-full bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs uppercase tracking-wider py-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-[0.99]"
+                    className="w-full bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-[0.99]"
                   >
                     <span>SELECT & BOOK — £{srv.price}</span>
                     <ArrowRight className="w-4 h-4 text-black group-hover:translate-x-1 transition-transform" />
                   </button>
+                  <p className="text-[10px] text-center text-zinc-400 font-medium mt-1.5">
+                    No Hidden Fees • Live 1-on-1 Personal Coach
+                  </p>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Dynamic Expand/Collapse Button (Shows all 15 programs when clicked) */}
-        {filteredServices.length > 6 && (
+        {/* Dynamic Expand/Collapse Button */}
+        {sortedServices.length > 6 && (
           <div className="text-center mt-10">
             <button
               onClick={() => setShowAllServices(!showAllServices)}
@@ -448,15 +611,15 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
               <span>
                 {showAllServices 
                   ? 'SHOW LESS PROGRAMS' 
-                  : `VIEW ALL ${filteredServices.length} TRAINING PROGRAMS`}
+                  : `VIEW ALL ${sortedServices.length} TRAINING PROGRAMS (SORTED HIGH TO LOW)`}
               </span>
               <ChevronDown className={`w-4 h-4 text-[#CCFF00] transition-transform duration-300 ${showAllServices ? 'rotate-180' : ''}`} />
             </button>
           </div>
         )}
 
+
       </div>
     </section>
   );
 };
-

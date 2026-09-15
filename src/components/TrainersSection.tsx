@@ -62,12 +62,12 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
                 {/* Left Column: Borderless Coach Portrait Image matching sample */}
                 <div
                   onClick={() => setSelectedTrainerForProfile(trainer)}
-                  className="w-full lg:w-[440px] flex-shrink-0 relative rounded-2xl overflow-hidden aspect-[4/5] sm:h-[500px] lg:h-[520px] bg-zinc-900 shadow-2xl cursor-pointer group"
+                  className="w-full lg:w-[440px] flex-shrink-0 relative rounded-2xl overflow-hidden aspect-[4/5] sm:h-[500px] lg:h-[530px] bg-zinc-950 shadow-2xl cursor-pointer group"
                 >
                   <img
                     src={trainer.image}
                     alt={trainer.name}
-                    className="w-full h-full object-cover object-center filter contrast-105 brightness-95 transition-transform duration-700 group-hover:scale-105"
+                    className={`w-full h-full object-cover ${trainer.imagePosition || 'object-top'} filter contrast-105 brightness-95 transition-transform duration-700 group-hover:scale-105`}
                   />
                   {/* Subtle bottom vignette gradient */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
@@ -162,7 +162,7 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
               <img
                 src={selectedTrainerForProfile.image}
                 alt={selectedTrainerForProfile.name}
-                className="w-20 h-20 rounded-xl object-cover object-top border-2 border-emerald-500 shadow-xl"
+                className={`w-20 h-20 rounded-xl object-cover ${selectedTrainerForProfile.imagePosition || 'object-top'} border-2 border-[#CCFF00] shadow-xl`}
               />
               <div>
                 <h3 className="text-xl font-black text-white uppercase tracking-tight">

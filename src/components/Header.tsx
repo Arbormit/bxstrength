@@ -160,9 +160,9 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="BxStrength Home"
           >
             <img 
-              src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" 
+              src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1789401857/WhatsApp_Image_2026-09-08_at_10.50.41_AM.jpg" 
               alt="BxStrength Logo" 
-              className="h-9 sm:h-11 md:h-12 w-auto max-w-[160px] sm:max-w-[220px] object-contain rounded-lg shadow-md group-hover:opacity-90 transition-opacity"
+              className="h-10 sm:h-14 md:h-16 lg:h-18 w-auto max-w-[220px] sm:max-w-[280px] md:max-w-[340px] object-contain rounded-lg shadow-lg group-hover:opacity-90 transition-all"
             />
           </button>
 
