@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { sendPasswordResetEmail } from '../../services/emailService';
 import { getApiUrl } from '../../services/api';
-import { X, Mail, CheckCircle2, ArrowRight, ShieldCheck, KeyRound, Lock, Eye, EyeOff, Dumbbell, ExternalLink } from 'lucide-react';
+import { X, Mail, CheckCircle2, ArrowRight, KeyRound, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -15,7 +14,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   onClose,
   onOpenLogin
 }) => {
-  const { forgotPassword, resetPassword } = useAuth();
+  const { resetPassword } = useAuth();
 
   const [step, setStep] = useState<'request' | 'email_dispatched' | 'set_new_password' | 'success'>('request');
   const [email, setEmail] = useState('');
@@ -25,10 +24,17 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [resetTokenFromUrl, setResetTokenFromUrl] = useState<string>('');
-  const [generatedResetLink, setGeneratedResetLink] = useState<string>('');
 
   React.useEffect(() => {
     if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleCloseAll();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
     const urlStr = window.location.href;
     if (urlStr.includes('reset-password') || urlStr.includes('token=')) {
       try {
@@ -50,6 +56,8 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
         }
       }
     }
+
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -66,7 +74,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       setErrorMsg(null);
       setLoading(true);
 
-      // 1. Call backend Express Server API to generate token & send email via Brevo API v3
+      // Call backend Express Server API to generate token & send email via Brevo API v3
       const res = await fetch(getApiUrl('/api/auth/forgot-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -77,18 +85,6 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
       if (!res.ok) {
         throw new Error(data.error || 'Failed to dispatch password reset email via Brevo API.');
       }
-
-      const link = data.resetUrl || `${window.location.origin}/#reset-password?email=${encodeURIComponent(cleanEmail)}&token=${data.resetToken || 'bxreset'}`;
-      setGeneratedResetLink(link);
-
-      // Fallback service trigger if needed
-      sendPasswordResetEmail({
-        toEmail: cleanEmail,
-        resetLink: link,
-        token: data.resetToken || 'bxreset'
-      }).catch(() => {});
-
-      await forgotPassword(cleanEmail).catch(() => {});
 
       setStep('email_dispatched');
     } catch (err: any) {
@@ -301,7 +297,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                   CREATE NEW PASSWORD
                 </h2>
                 <p className="text-xs text-zinc-400">
-                  Account: <strong className="text-white font-mono">{email}</strong>
+                  Account: <strong className="text-white font-mono">{email || 'Verified BxStrength Member'}</strong>
                 </p>
               </div>
 

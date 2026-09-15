@@ -622,45 +622,53 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
       toName: cleanEmail.split('@')[0],
       subject: 'Password Reset Request - BxStrength',
       senderName: 'BxStrength Security',
-      htmlContent: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0c0c0e; color: #ffffff; padding: 40px 20px; border-radius: 12px; max-width: 560px; margin: 0 auto; border: 1px solid #27272a;">
-          <!-- Header Logo -->
-          <div style="text-align: center; margin-bottom: 28px;">
-            <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 44px; width: auto; border-radius: 8px; margin: 0 auto;" />
-          </div>
-          
-          <!-- Main Content Card -->
-          <div style="background-color: #141417; border: 1px solid #27272a; border-radius: 10px; padding: 28px; text-align: left; margin-bottom: 20px;">
-            <h2 style="color: #CCFF00; margin: 0 0 16px 0; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Password Reset Request</h2>
-            <p style="font-size: 14px; line-height: 1.6; color: #e4e4e7; margin: 0 0 14px 0;">
-              We received a request to reset the password for your account (<strong style="color: #ffffff;">${cleanEmail}</strong>).
-            </p>
-            <p style="font-size: 13px; line-height: 1.6; color: #a1a1aa; margin: 0 0 24px 0;">
-              Click the button below to set your new password. This link is active for <strong>5 minutes</strong>.
-            </p>
+      htmlContent: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Reset Request - BxStrength</title>
+</head>
+<body style="margin: 0; padding: 30px 10px; background-color: #0c0c0e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <div style="background-color: #0c0c0e; color: #ffffff; padding: 30px 20px; border-radius: 12px; max-width: 560px; margin: 0 auto; border: 1px solid #27272a;">
+    <!-- Header Logo -->
+    <div style="text-align: center; margin-bottom: 24px;">
+      <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 44px; width: auto; border-radius: 8px; margin: 0 auto;" />
+    </div>
+    
+    <!-- Main Content Card -->
+    <div style="background-color: #141417; border: 1px solid #27272a; border-radius: 10px; padding: 28px; text-align: left; margin-bottom: 20px;">
+      <h2 style="color: #CCFF00; margin: 0 0 16px 0; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Password Reset Request</h2>
+      <p style="font-size: 14px; line-height: 1.6; color: #e4e4e7; margin: 0 0 14px 0;">
+        We received a request to reset the password for your account (<strong style="color: #ffffff;">${cleanEmail}</strong>).
+      </p>
+      <p style="font-size: 13px; line-height: 1.6; color: #a1a1aa; margin: 0 0 24px 0;">
+        Click the button below to set your new password. This link is active for <strong>5 minutes</strong>.
+      </p>
 
-            <div style="text-align: center; margin: 24px 0;">
-              <a href="${resetUrl}" style="background-color: #CCFF00; color: #000000; font-weight: 800; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;">
-                Reset Password
-              </a>
-            </div>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${resetUrl}" style="background-color: #CCFF00; color: #000000; font-weight: 800; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;">
+          Reset Password
+        </a>
+      </div>
 
-            <p style="font-size: 11px; color: #71717a; line-height: 1.5; margin: 16px 0 0 0; text-align: center;">
-              If the button doesn't work, copy and paste this link into your browser:<br/>
-              <a href="${resetUrl}" style="color: #CCFF00; word-break: break-all; text-decoration: underline;">${resetUrl}</a>
-            </p>
-          </div>
+      <p style="font-size: 11px; color: #71717a; line-height: 1.5; margin: 16px 0 0 0; text-align: center;">
+        If the button doesn't work, copy and paste this link into your browser:<br/>
+        <a href="${resetUrl}" style="color: #CCFF00; word-break: break-all; text-decoration: underline;">${resetUrl}</a>
+      </p>
+    </div>
 
-          <p style="font-size: 12px; color: #71717a; line-height: 1.5; margin: 0 0 20px 0; text-align: center;">
-            If you did not request a password reset, you can safely ignore this email.
-          </p>
+    <p style="font-size: 12px; color: #71717a; line-height: 1.5; margin: 0 0 20px 0; text-align: center;">
+      If you did not request a password reset, you can safely ignore this email.
+    </p>
 
-          <!-- Footer -->
-          <div style="border-top: 1px solid #27272a; padding-top: 16px; font-size: 11px; color: #71717a; text-align: center;">
-            BxStrength Security Operations | <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: none;">${senderEmail}</a>
-          </div>
-        </div>
-      `
+    <!-- Footer -->
+    <div style="border-top: 1px solid #27272a; padding-top: 16px; font-size: 11px; color: #71717a; text-align: center;">
+      BxStrength Security Operations | <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: none;">${senderEmail}</a>
+    </div>
+  </div>
+</body>
+</html>`
     });
 
     console.log(`[FORGOT PASSWORD] Email dispatch result for ${cleanEmail}: ${emailResult.success ? 'SUCCESS' : 'FAILED (' + emailResult.error + ')'}`);
@@ -748,27 +756,35 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
       toName: cleanEmail.split('@')[0],
       subject: 'Password Changed - BxStrength',
       senderName: 'BxStrength Security',
-      htmlContent: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0c0c0e; color: #ffffff; padding: 40px 20px; border-radius: 12px; max-width: 560px; margin: 0 auto; border: 1px solid #27272a;">
-          <div style="text-align: center; margin-bottom: 24px;">
-            <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 44px; width: auto; border-radius: 8px; margin: 0 auto;" />
-          </div>
-          
-          <div style="background-color: #141417; border: 1px solid #27272a; border-radius: 10px; padding: 28px; text-align: left;">
-            <h2 style="color: #CCFF00; margin: 0 0 14px 0; font-size: 18px; font-weight: 800; text-transform: uppercase;">Password Changed Successfully</h2>
-            <p style="font-size: 14px; line-height: 1.6; color: #e4e4e7; margin: 0 0 12px 0;">
-              The password for your BxStrength account (<strong style="color: #ffffff;">${cleanEmail}</strong>) was successfully updated.
-            </p>
-            <p style="font-size: 13px; line-height: 1.6; color: #a1a1aa; margin: 0;">
-              You can now sign in with your new password. If you did not make this change, please contact BxStrength Support immediately.
-            </p>
-          </div>
+      htmlContent: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Changed - BxStrength</title>
+</head>
+<body style="margin: 0; padding: 30px 10px; background-color: #0c0c0e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <div style="background-color: #0c0c0e; color: #ffffff; padding: 30px 20px; border-radius: 12px; max-width: 560px; margin: 0 auto; border: 1px solid #27272a;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 44px; width: auto; border-radius: 8px; margin: 0 auto;" />
+    </div>
+    
+    <div style="background-color: #141417; border: 1px solid #27272a; border-radius: 10px; padding: 28px; text-align: left;">
+      <h2 style="color: #CCFF00; margin: 0 0 14px 0; font-size: 18px; font-weight: 800; text-transform: uppercase;">Password Changed Successfully</h2>
+      <p style="font-size: 14px; line-height: 1.6; color: #e4e4e7; margin: 0 0 12px 0;">
+        The password for your BxStrength account (<strong style="color: #ffffff;">${cleanEmail}</strong>) was successfully updated.
+      </p>
+      <p style="font-size: 13px; line-height: 1.6; color: #a1a1aa; margin: 0;">
+        You can now sign in with your new password. If you did not make this change, please contact BxStrength Support immediately.
+      </p>
+    </div>
 
-          <div style="border-top: 1px solid #27272a; margin-top: 24px; padding-top: 16px; font-size: 11px; color: #71717a; text-align: center;">
-            BxStrength Security Operations
-          </div>
-        </div>
-      `
+    <div style="border-top: 1px solid #27272a; margin-top: 24px; padding-top: 16px; font-size: 11px; color: #71717a; text-align: center;">
+      BxStrength Security Operations
+    </div>
+  </div>
+</body>
+</html>`
     }).catch(() => {});
 
     res.json({ 
