@@ -620,42 +620,44 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
     const emailResult = await sendServerEmail({
       toEmail: cleanEmail,
       toName: cleanEmail.split('@')[0],
-      subject: '🔑 [BXSTRENGTH] Reset Your Password (Link Active for 5 Minutes)',
+      subject: 'Password Reset Request - BxStrength',
       senderName: 'BxStrength Security',
       htmlContent: `
-        <div style="font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 40px 24px; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0c0c0e; color: #ffffff; padding: 40px 20px; border-radius: 12px; max-width: 560px; margin: 0 auto; border: 1px solid #27272a;">
+          <!-- Header Logo -->
           <div style="text-align: center; margin-bottom: 28px;">
-            <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 52px; width: auto; border-radius: 10px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.5);" />
+            <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 44px; width: auto; border-radius: 8px; margin: 0 auto;" />
           </div>
           
-          <div style="background-color: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
-            <span style="background-color: rgba(239, 68, 68, 0.15); color: #f87171; font-size: 11px; font-weight: 900; letter-spacing: 1px; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; border: 1px solid rgba(239, 68, 68, 0.3);">⏱️ URGENT: 5-MINUTE TIME LIMIT</span>
-            <h2 style="color: #CCFF00; margin: 16px 0 8px 0; text-transform: uppercase; font-size: 22px; font-weight: 900; tracking: 0.5px;">PASSWORD RESET REQUEST</h2>
-            <p style="color: #a1a1aa; font-size: 13px; margin: 0;">Account: <strong style="color: #ffffff;">${cleanEmail}</strong></p>
-          </div>
-          
-          <div style="font-size: 14px; line-height: 1.7; color: #e4e4e7; margin-bottom: 28px;">
-            <p style="margin-top: 0;">Hello,</p>
-            <p>We received a request to reset the password for your BxStrength performance account.</p>
-            <p>For your security, this password reset link is strictly configured to <strong>expire in 5 minutes</strong>. Please click the button below immediately to set your new password:</p>
+          <!-- Main Content Card -->
+          <div style="background-color: #141417; border: 1px solid #27272a; border-radius: 10px; padding: 28px; text-align: left; margin-bottom: 20px;">
+            <h2 style="color: #CCFF00; margin: 0 0 16px 0; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Password Reset Request</h2>
+            <p style="font-size: 14px; line-height: 1.6; color: #e4e4e7; margin: 0 0 14px 0;">
+              We received a request to reset the password for your account (<strong style="color: #ffffff;">${cleanEmail}</strong>).
+            </p>
+            <p style="font-size: 13px; line-height: 1.6; color: #a1a1aa; margin: 0 0 24px 0;">
+              Click the button below to set your new password. This link is active for <strong>5 minutes</strong>.
+            </p>
+
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${resetUrl}" style="background-color: #CCFF00; color: #000000; font-weight: 800; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;">
+                Reset Password
+              </a>
+            </div>
+
+            <p style="font-size: 11px; color: #71717a; line-height: 1.5; margin: 16px 0 0 0; text-align: center;">
+              If the button doesn't work, copy and paste this link into your browser:<br/>
+              <a href="${resetUrl}" style="color: #CCFF00; word-break: break-all; text-decoration: underline;">${resetUrl}</a>
+            </p>
           </div>
 
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${resetUrl}" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 16px 36px; text-decoration: none; border-radius: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 6px 20px rgba(204, 255, 0, 0.35);">
-              🔑 RESET PASSWORD NOW (5 MIN ACTIVE)
-            </a>
-          </div>
+          <p style="font-size: 12px; color: #71717a; line-height: 1.5; margin: 0 0 20px 0; text-align: center;">
+            If you did not request a password reset, you can safely ignore this email.
+          </p>
 
-          <div style="background-color: #121214; border-left: 3px solid #CCFF00; padding: 12px 16px; border-radius: 6px; font-size: 12px; color: #a1a1aa; line-height: 1.5; margin-bottom: 24px;">
-            <p style="margin: 0;">If the button above does not work, copy and paste this link into your browser address bar:</p>
-            <p style="margin: 6px 0 0 0; word-break: break-all; font-family: monospace; color: #CCFF00; font-size: 11px;">${resetUrl}</p>
-          </div>
-
-          <p style="font-size: 12px; color: #71717a; line-height: 1.5; margin-bottom: 24px;">If you did not initiate this request, no action is required. Your password will remain unchanged.</p>
-
-          <div style="border-top: 1px solid #27272a; padding-top: 20px; font-size: 11px; color: #71717a; text-align: center;">
-            <p style="margin: 0;">BxStrength Fitness & Performance System | Security Operations</p>
-            <p style="margin: 4px 0 0 0;">Official Support: <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: underline;">${senderEmail}</a></p>
+          <!-- Footer -->
+          <div style="border-top: 1px solid #27272a; padding-top: 16px; font-size: 11px; color: #71717a; text-align: center;">
+            BxStrength Security Operations | <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: none;">${senderEmail}</a>
           </div>
         </div>
       `
@@ -665,7 +667,7 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
 
     if (!emailResult.success) {
       return res.status(502).json({
-        error: `Brevo Email Dispatch Failed: ${emailResult.error || 'Unauthorized IP'}. Please add IP 103.201.125.251 to Brevo Authorized IPs at https://app.brevo.com/security/authorised_ips or configure SMTP.`,
+        error: `Brevo Email Dispatch Failed: ${emailResult.error || 'Unauthorized IP'}. Please check your Brevo account settings.`,
         success: false,
         details: emailResult.error
       });
@@ -744,15 +746,25 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
     sendServerEmail({
       toEmail: cleanEmail,
       toName: cleanEmail.split('@')[0],
-      subject: '✅ [CONFIRMED] Your BxStrength Account Password Has Been Updated',
+      subject: 'Password Changed - BxStrength',
       senderName: 'BxStrength Security',
       htmlContent: `
-        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
-          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">PASSWORD CHANGED SUCCESSFULLY</h2>
-          <p style="color: #a1a1aa; font-size: 13px;">Dear Athlete,</p>
-          <p style="font-size: 14px; color: #e4e4e7; line-height: 1.6;">The password for your account <strong>${cleanEmail}</strong> was successfully updated in our system database.</p>
-          <p style="font-size: 13px; color: #a1a1aa;">You can now sign in with your new password on any device.</p>
-          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #27272a; text-align: center; color: #71717a; font-size: 12px;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0c0c0e; color: #ffffff; padding: 40px 20px; border-radius: 12px; max-width: 560px; margin: 0 auto; border: 1px solid #27272a;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 44px; width: auto; border-radius: 8px; margin: 0 auto;" />
+          </div>
+          
+          <div style="background-color: #141417; border: 1px solid #27272a; border-radius: 10px; padding: 28px; text-align: left;">
+            <h2 style="color: #CCFF00; margin: 0 0 14px 0; font-size: 18px; font-weight: 800; text-transform: uppercase;">Password Changed Successfully</h2>
+            <p style="font-size: 14px; line-height: 1.6; color: #e4e4e7; margin: 0 0 12px 0;">
+              The password for your BxStrength account (<strong style="color: #ffffff;">${cleanEmail}</strong>) was successfully updated.
+            </p>
+            <p style="font-size: 13px; line-height: 1.6; color: #a1a1aa; margin: 0;">
+              You can now sign in with your new password. If you did not make this change, please contact BxStrength Support immediately.
+            </p>
+          </div>
+
+          <div style="border-top: 1px solid #27272a; margin-top: 24px; padding-top: 16px; font-size: 11px; color: #71717a; text-align: center;">
             BxStrength Security Operations
           </div>
         </div>
