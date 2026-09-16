@@ -13,12 +13,20 @@ export const Hero: React.FC<HeroProps> = () => {
   const touchEndX = useRef<number>(0);
 
   const images: string[] = [
-    'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789401194/sl4.jpg?auto=format&fit=crop&q=80&w=2000',
-    'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789401194/sl1.jpg?auto=format&fit=crop&q=80&w=2000',
-    'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789401194/sl5.jpg?auto=format&fit=crop&q=80&w=2000',
-    'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789401194/sl3.jpg?auto=format&fit=crop&q=80&w=2000',
-    'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789401194/sl2.jpg?auto=format&fit=crop&q=80&w=2000',
+    'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789572014/Hero_1.png?auto=format&q=80&w=2000',
+    'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789572007/Hero_2.png?auto=format&q=80&w=2000',
+    'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789572010/Hero_3.png?auto=format&q=80&w=2000',
+    'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789572008/Hero_4.png?auto=format&q=80&w=2000',
+    'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789401194/sl4.jpg?auto=format&q=80&w=2000',
   ];
+
+  // Preload all slideshow images eagerly on mount to eliminate any loading flickering
+  useEffect(() => {
+    images.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, [images]);
 
   // Auto-play slideshow timer
   useEffect(() => {
@@ -66,46 +74,46 @@ export const Hero: React.FC<HeroProps> = () => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative w-full h-[55vh] sm:h-[70vh] md:h-[80vh] min-h-[350px] sm:min-h-[480px] max-h-[850px] bg-black overflow-hidden border-b border-zinc-800/80 font-sans select-none flex items-center justify-center"
+      className="relative w-full h-[420px] sm:h-[540px] md:h-[640px] lg:h-[720px] bg-black overflow-hidden border-b border-zinc-800/80 font-sans select-none flex items-center justify-center shrink-0"
     >
       {/* Hidden H1 for SEO & Screen Reader Accessibility */}
       <h1 className="sr-only">
         BxStrength — #1 UK &amp; USA Digital Coaching, Boxing, Strength &amp; Fitness Platform
       </h1>
 
-      {/* DYNAMIC RESPONSIVE SLIDESHOW IMAGES (FULL FORM PRESERVATION — NO CROPPING / NO CUTTING) */}
+      {/* DYNAMIC RESPONSIVE SLIDESHOW IMAGES (FULL FORM UNCROPPED PRESERVATION) */}
       {images.map((imgUrl, idx) => {
         const isActive = idx === currentSlide;
         return (
           <div
             key={idx}
-            className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-1000 ease-in-out pointer-events-none ${
-              isActive ? 'opacity-100 z-0 scale-100' : 'opacity-0 -z-10 scale-105'
+            className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-700 ease-in-out pointer-events-none ${
+              isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
             }`}
-            style={{ transitionProperty: 'opacity, transform', transitionDuration: '1000ms' }}
           >
-            {/* Atmospheric Ambient Blur Fill in Background to Prevent Empty Gaps */}
+            {/* Soft Ambient Background Blur fill so there are no empty side gaps */}
             <img
               src={imgUrl}
               alt=""
               aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-30 scale-110 pointer-events-none"
+              className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-25 scale-105 pointer-events-none"
             />
 
-            {/* Main Uncropped Image Display (100% Full Form Visibility on All Devices) */}
+            {/* Main Uncropped Image Display (100% Complete Form — No Cutting / No Cropping) */}
             <img
               src={imgUrl}
               alt={`BxStrength Training Slide ${idx + 1}`}
               title="BxStrength — Premier Digital Coaching, Boxing & Fitness"
               className="relative z-10 max-w-full max-h-full w-auto h-auto object-contain drop-shadow-2xl brightness-100 contrast-105"
-              loading={idx === 0 ? 'eager' : 'lazy'}
+              loading="eager"
+              decoding="async"
             />
           </div>
         );
       })}
 
       {/* Subtle Top & Bottom Gradient Overlay for Seamless Integration */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-transparent to-black/30 pointer-events-none z-10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-transparent to-black/30 pointer-events-none z-20" />
 
       {/* SLIDESHOW NAVIGATION PREV/NEXT CONTROLS */}
       <button

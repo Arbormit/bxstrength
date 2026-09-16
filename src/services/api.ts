@@ -8,18 +8,31 @@ import { BxTrainer, TRAINERS_DATA } from '../data/gymData';
 
 const metaEnv = (import.meta as any).env || {};
 
+export const decodeHtmlEntities = (text: string): string => {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/');
+};
+
 export const getApiUrl = (path: string): string => {
-  const configured = metaEnv.VITE_API_URL || metaEnv.API_URL || '';
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  if (configured) {
-    return `${configured.replace(/\/$/, '')}${cleanPath}`;
-  }
 
   if (typeof window !== 'undefined') {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     if (isLocal) {
-      return cleanPath;
+      return `http://localhost:3001${cleanPath}`;
     }
+  }
+
+  const configured = metaEnv.VITE_API_URL || metaEnv.API_URL || '';
+  if (configured) {
+    return `${configured.replace(/\/$/, '')}${cleanPath}`;
   }
 
   return `https://bxstrength-api.onrender.com${cleanPath}`;
@@ -97,6 +110,8 @@ const SEED_ANNOUNCEMENTS: Announcement[] = [
   }
 ];
 
+const SEED_REVIEWS: Testimonial[] = [];
+
 // Helper to initialize local storage
 function getItem<T>(key: string, seed: T): T {
   const data = localStorage.getItem(key);
@@ -127,7 +142,7 @@ export function initStore() {
     getItem(STORAGE_KEYS.NUTRITION, SEED_NUTRITION);
     getItem(STORAGE_KEYS.SUBSCRIPTIONS, SEED_SUBSCRIPTIONS);
     getItem(STORAGE_KEYS.ENQUIRIES, []);
-    getItem(STORAGE_KEYS.REVIEWS, []);
+    getItem(STORAGE_KEYS.REVIEWS, SEED_REVIEWS);
     getItem(STORAGE_KEYS.TICKETS, []);
     getItem(STORAGE_KEYS.AUDIT_LOGS, SEED_AUDIT_LOGS);
     getItem(STORAGE_KEYS.ANNOUNCEMENTS, SEED_ANNOUNCEMENTS);
@@ -1222,26 +1237,51 @@ export const VelocityAPI = {
       r.id !== 'rev-1' && r.id !== 'rev-2' && r.id !== 'rev-3' &&
       r.id !== 't1' && r.id !== 't2' && r.id !== 't3'
     );
-    if (clean.length !== raw.length) {
-      setItem(STORAGE_KEYS.REVIEWS, clean);
+    
+    // Deduplicate by content key (name + comment)
+    const uniqueMap = new Map<string, Testimonial>();
+    clean.forEach(r => {
+      const key = `${r.name.toLowerCase().trim()}:::${r.comment.trim()}`;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, r);
+      }
+    });
+
+    const uniqueList = Array.from(uniqueMap.values());
+    if (uniqueList.length !== raw.length) {
+      setItem(STORAGE_KEYS.REVIEWS, uniqueList);
     }
-    return clean;
+    return uniqueList;
   },
 
-  addReview(reviewData: { name: string; role?: string; rating: number; comment: string; avatar?: string }): Testimonial {
+  addReview(reviewData: { id?: string; name: string; role?: string; rating: number; comment: string; avatar?: string }): Testimonial {
     initStore();
     const existing = this.getReviews();
     const cleanName = reviewData.name.trim();
+    const cleanComment = reviewData.comment.trim();
+
+    // Check if review already exists locally by id or identical content
+    const dupIdx = existing.findIndex(r =>
+      (reviewData.id && r.id === reviewData.id) ||
+      (r.name.toLowerCase().trim() === cleanName.toLowerCase() && r.comment.trim() === cleanComment)
+    );
+
+    const reviewId = reviewData.id || (dupIdx !== -1 ? existing[dupIdx].id : `rev-${Date.now()}`);
+
     const newReview: Testimonial = {
-      id: `rev-${Date.now()}`,
+      id: reviewId,
       name: cleanName,
       role: reviewData.role?.trim() || 'BxStrength Athlete',
       rating: Math.min(5, Math.max(1, reviewData.rating || 5)),
-      comment: reviewData.comment.trim(),
+      comment: cleanComment,
       avatar: reviewData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName)}`
     };
 
-    existing.unshift(newReview);
+    if (dupIdx !== -1) {
+      existing[dupIdx] = newReview;
+    } else {
+      existing.unshift(newReview);
+    }
     setItem(STORAGE_KEYS.REVIEWS, existing);
 
     const current = this.getCurrentUser();

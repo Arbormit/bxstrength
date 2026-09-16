@@ -40,6 +40,7 @@ interface ServicesSectionProps {
 
 export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking, onSelectService }) => {
   const [sortOrder, setSortOrder] = useState<'high-to-low' | 'low-to-high'>('high-to-low');
+  const [filterCategory, setFilterCategory] = useState<'all' | 'individual' | 'custom'>('all');
   const [showAllServices, setShowAllServices] = useState<boolean>(false);
 
   const services: ServiceItem[] = [
@@ -103,13 +104,14 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
       servicePlan: 'BX Complete',
       duration: '60 Mins',
       price: 80,
+      originalPrice: 125,
       sessionType: 'Standard Package',
       goalPrimaryOutcome: 'Up To Four Focus Areas: Full body training, strength, conditioning & mobility.',
       whatYouGet: ['Full body 60-min coaching', 'Strength & Conditioning', 'Mobility & Flexibility', 'Live progress tracking'],
       keyDifference: 'Flagship 60-min complete package — saves £45 vs individual services!',
       idealFor: 'Ideal for full 60-min total body transformation & maximum value.',
       totalSessions: '1 Session',
-      discount: 'SAVE £45',
+      discount: 'SAVE £45 (OFFER)',
       validity: 'Single session booking',
       complimentary: 'Warm-up + cool-down included in every session.',
       icon: Trophy,
@@ -175,13 +177,14 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
       servicePlan: 'Custom Complete',
       duration: '60 Mins',
       price: 90,
+      originalPrice: 135,
       sessionType: 'Fully Personalised (+£10)',
       goalPrimaryOutcome: 'Up To Four Foci - Fully Custom: 100% personalised multi-focus plan.',
       whatYouGet: ['100% personalised 60-min plan', 'Multi-focus bespoke training', 'Advanced coaching & mobility', 'Progress tracking'],
       keyDifference: 'Ultimate 60-min custom coaching (+£10 over standard).',
       idealFor: 'Ideal for multi-focus 60-min bespoke custom coaching.',
       totalSessions: '1 Session',
-      discount: '',
+      discount: 'SAVE £45 (OFFER)',
       validity: 'Single session booking',
       complimentary: 'Warm-up + cool-down included in every session.',
       icon: Trophy,
@@ -294,88 +297,88 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
     },
 
     // --- VALUE COMPARISON SERVICE CARDS ---
-    {
-      title: '4-Service Accumulation Bundle',
-      category: 'Value Comparison',
-      servicePlan: 'BX Complete (Value Bundle)',
-      duration: '60 Mins',
-      price: 80,
-      sessionType: 'Value Saver Package',
-      goalPrimaryOutcome: '4 Individual Services: Boxing (£35) + Strength (£30) + Mobility (£30) + Flexibility (£30) = £125 Value.',
-      whatYouGet: [
-        'Full Body 60-Min Training',
-        'Combines Boxing, Strength, Mobility & Flexibility',
-        'Saves £45 vs buying 4 services separately (£125 value)'
-      ],
-      keyDifference: 'Save £45 with BX Complete package vs individual service accumulation.',
-      idealFor: 'Ideal for clients wanting all 4 specialist disciplines at maximum savings (£80 instead of £125).',
-      totalSessions: '1 Session (4 Focuses)',
-      discount: 'SAVE £45',
-      validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included in every session.',
-      icon: Trophy,
-      badge: 'SAVE £45'
-    },
-    {
-      title: '2-Service Dual Focus Saver',
-      category: 'Value Comparison',
-      servicePlan: 'BX Performance (Dual Saver)',
-      duration: '45 Mins',
-      price: 60,
-      sessionType: 'Value Saver Package',
-      goalPrimaryOutcome: 'Two Individual Services: Boxing (£35) + Strength (£30) = £65 Total Value.',
-      whatYouGet: [
-        'Structured 45-Min Dual Workout',
-        'Combines Boxing + Strength Training',
-        'Saves £5 vs booking 2 services separately (£65 value)'
-      ],
-      keyDifference: 'Save £5 with BX Performance package vs booking 2 separate sessions.',
-      idealFor: 'Ideal for combining Boxing & Strength into one 45-min workout for £60 instead of £65.',
-      totalSessions: '1 Session (2 Focuses)',
-      discount: 'SAVE £5',
-      validity: 'Single session booking',
-      complimentary: 'Warm-up + cool-down included in every session.',
-      icon: Layers,
-      badge: 'SAVE £5'
-    },
+    // {
+    //   title: '4-Service Accumulation Bundle',
+    //   category: 'Value Comparison',
+    //   servicePlan: 'BX Complete (Value Bundle)',
+    //   duration: '60 Mins',
+    //   price: 80,
+    //   sessionType: 'Value Saver Package',
+    //   goalPrimaryOutcome: '4 Individual Services: Boxing (£35) + Strength (£30) + Mobility (£30) + Flexibility (£30) = £125 Value.',
+    //   whatYouGet: [
+    //     'Full Body 60-Min Training',
+    //     'Combines Boxing, Strength, Mobility & Flexibility',
+    //     'Saves £45 vs buying 4 services separately (£125 value)'
+    //   ],
+    //   keyDifference: 'Save £45 with BX Complete package vs individual service accumulation.',
+    //   idealFor: 'Ideal for clients wanting all 4 specialist disciplines at maximum savings (£80 instead of £125).',
+    //   totalSessions: '1 Session (4 Focuses)',
+    //   discount: 'SAVE £45',
+    //   validity: 'Single session booking',
+    //   complimentary: 'Warm-up + cool-down included in every session.',
+    //   icon: Trophy,
+    //   badge: 'SAVE £45'
+    // },
+    // {
+    //   title: '2-Service Dual Focus Saver',
+    //   category: 'Value Comparison',
+    //   servicePlan: 'BX Performance (Dual Saver)',
+    //   duration: '45 Mins',
+    //   price: 60,
+    //   sessionType: 'Value Saver Package',
+    //   goalPrimaryOutcome: 'Two Individual Services: Boxing (£35) + Strength (£30) = £65 Total Value.',
+    //   whatYouGet: [
+    //     'Structured 45-Min Dual Workout',
+    //     'Combines Boxing + Strength Training',
+    //     'Saves £5 vs booking 2 services separately (£65 value)'
+    //   ],
+    //   keyDifference: 'Save £5 with BX Performance package vs booking 2 separate sessions.',
+    //   idealFor: 'Ideal for combining Boxing & Strength into one 45-min workout for £60 instead of £65.',
+    //   totalSessions: '1 Session (2 Focuses)',
+    //   discount: 'SAVE £5',
+    //   validity: 'Single session booking',
+    //   complimentary: 'Warm-up + cool-down included in every session.',
+    //   icon: Layers,
+    //   badge: 'SAVE £5'
+    // },
 
     // --- WEEKLY & MONTHLY PROGRAMMES ---
-    {
-      title: 'BX Weekly 3',
-      category: 'Programme',
-      servicePlan: 'BX Weekly 3',
-      duration: 'Varies by selected sessions',
-      price: 30,
-      sessionType: '3 Session Weekly Programme',
-      goalPrimaryOutcome: 'Choose any 3 sessions from Boxing, Strength, Functional, Mobility or Flexibility.',
-      whatYouGet: ['3 Sessions included per week', 'Flexible session selection', 'Build your week your way'],
-      keyDifference: '10% discount on weekly commitment.',
-      idealFor: 'Ideal for committed clients taking 3 sessions/week with 10% savings.',
-      totalSessions: '3 Sessions',
-      discount: 'SAVE 10%',
-      validity: '15 Days',
-      complimentary: 'Warm-up + cool-down included in every session.',
-      icon: Calendar,
-      badge: 'SAVE 10%'
-    },
-    {
-      title: 'BX Monthly 12',
-      category: 'Programme',
-      servicePlan: 'BX Monthly 12',
-      duration: 'Varies by selected sessions',
-      price: 50,
-      sessionType: '12 Session Monthly Programme',
-      goalPrimaryOutcome: 'Build a complete plan from Boxing, Strength, Functional, Mobility and Flexibility.',
-      whatYouGet: ['12 Sessions included per month', 'Complete transformation plan', 'Build your plan transform faster'],
-      keyDifference: '20% discount on monthly commitment.',
-      idealFor: 'Ideal for maximum transformation commitment with 20% savings.',
-      totalSessions: '12 Sessions / Month',
-      discount: 'SAVE 20%',
-      validity: '45 Days',
-      complimentary: 'Warm-up + cool-down included in every session.',
-      icon: RefreshCw,
-      badge: 'SAVE 20%'
-    }
+    // {
+    //   title: 'BX Weekly 3',
+    //   category: 'Programme',
+    //   servicePlan: 'BX Weekly 3',
+    //   duration: 'Varies by selected sessions',
+    //   price: 30,
+    //   sessionType: '3 Session Weekly Programme',
+    //   goalPrimaryOutcome: 'Choose any 3 sessions from Boxing, Strength, Functional, Mobility or Flexibility.',
+    //   whatYouGet: ['3 Sessions included per week', 'Flexible session selection', 'Build your week your way'],
+    //   keyDifference: '10% discount on weekly commitment.',
+    //   idealFor: 'Ideal for committed clients taking 3 sessions/week with 10% savings.',
+    //   totalSessions: '3 Sessions',
+    //   discount: 'SAVE 10%',
+    //   validity: '15 Days',
+    //   complimentary: 'Warm-up + cool-down included in every session.',
+    //   icon: Calendar,
+    //   badge: 'SAVE 10%'
+    // },
+    // {
+    //   title: 'BX Monthly 12',
+    //   category: 'Programme',
+    //   servicePlan: 'BX Monthly 12',
+    //   duration: 'Varies by selected sessions',
+    //   price: 50,
+    //   sessionType: '12 Session Monthly Programme',
+    //   goalPrimaryOutcome: 'Build a complete plan from Boxing, Strength, Functional, Mobility and Flexibility.',
+    //   whatYouGet: ['12 Sessions included per month', 'Complete transformation plan', 'Build your plan transform faster'],
+    //   keyDifference: '20% discount on monthly commitment.',
+    //   idealFor: 'Ideal for maximum transformation commitment with 20% savings.',
+    //   totalSessions: '12 Sessions / Month',
+    //   discount: 'SAVE 20%',
+    //   validity: '45 Days',
+    //   complimentary: 'Warm-up + cool-down included in every session.',
+    //   icon: RefreshCw,
+    //   badge: 'SAVE 20%'
+    // }
   ];
 
   const getNumericPrice = (p: number | string): number => {
@@ -384,15 +387,23 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
     return isNaN(parsed) ? 0 : parsed;
   };
 
-  // Sort services dynamically based on sortOrder
-  const sortedServices = [...services].sort((a, b) => {
+  // 1. Filter services based on selected filterCategory (Strictly Individual Services vs Custom Services)
+  const filteredServices = services.filter((srv) => {
+    if (filterCategory === 'all') return true;
+    if (filterCategory === 'individual') return srv.category === 'Individual Service';
+    if (filterCategory === 'custom') return srv.category !== 'Individual Service';
+    return true;
+  });
+
+  // 2. Sort filtered services dynamically based on sortOrder
+  const sortedServices = [...filteredServices].sort((a, b) => {
     const priceA = getNumericPrice(a.price);
     const priceB = getNumericPrice(b.price);
     return sortOrder === 'high-to-low' ? priceB - priceA : priceA - priceB;
   });
 
-  // Show only 6 cards by default, expand to all when showAllServices is true
-  const visibleServices = showAllServices ? sortedServices : sortedServices.slice(0, 6);
+  // 3. Show only 6 cards by default when in 'all' view, show all matching cards when filtered or expanded
+  const visibleServices = (showAllServices || filterCategory !== 'all') ? sortedServices : sortedServices.slice(0, 6);
 
   return (
     <section id="services-section" className="w-full bg-[#09090b] text-white py-20 border-b border-zinc-800 font-sans">
@@ -408,198 +419,244 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
           </p>
         </div>
 
-        {/* Category Differentiation Banners */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-xs font-bold">
-          <div className="bg-zinc-900/90 border border-emerald-500/30 p-4 rounded-xl flex items-center gap-3 shadow-md">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-5 h-5" />
+        {/* 2 Main Service Category Cards (Individual Services vs Custom Services) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8 text-xs font-bold">
+          <div
+            onClick={() => setFilterCategory(filterCategory === 'individual' ? 'all' : 'individual')}
+            className={`p-5 rounded-2xl flex items-center gap-4 shadow-xl cursor-pointer transition-all duration-300 border ${
+              filterCategory === 'individual'
+                ? 'bg-amber-950/80 border-amber-400 ring-2 ring-amber-500/50 scale-[1.01]'
+                : 'bg-zinc-900/90 border-amber-500/30 hover:border-amber-400/70 hover:bg-zinc-800/80'
+            }`}
+          >
+            <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+              <Flame className="w-6 h-6" />
             </div>
-            <div>
-              <span className="text-emerald-400 font-black uppercase block text-[11px] tracking-wider">CORE SESSION PACKAGES</span>
-              <span className="text-zinc-300 font-normal">Best Value. Warm-up & cool-down included in every session.</span>
+            <div className="flex-1">
+              <span className="text-amber-400 font-black uppercase block text-xs tracking-wider">INDIVIDUAL SERVICES</span>
+              <span className="text-zinc-300 font-normal text-xs mt-0.5 block">Specialist 1-on-1 sessions (Boxing, Strength, Mobility, Mindset &amp; Recovery).</span>
             </div>
+            {filterCategory === 'individual' && (
+              <span className="text-[10px] font-black uppercase bg-amber-400 text-black px-2.5 py-1 rounded-full shrink-0 shadow-md">ACTIVE</span>
+            )}
           </div>
 
-          <div className="bg-zinc-900/90 border border-[#CCFF00]/30 p-4 rounded-xl flex items-center gap-3 shadow-md">
-            <div className="w-9 h-9 rounded-lg bg-[#CCFF00]/10 text-[#CCFF00] flex items-center justify-center shrink-0">
-              <Zap className="w-5 h-5" />
+          <div
+            onClick={() => setFilterCategory(filterCategory === 'custom' ? 'all' : 'custom')}
+            className={`p-5 rounded-2xl flex items-center gap-4 shadow-xl cursor-pointer transition-all duration-300 border ${
+              filterCategory === 'custom'
+                ? 'bg-sky-950/80 border-sky-400 ring-2 ring-sky-500/50 scale-[1.01]'
+                : 'bg-zinc-900/90 border-sky-500/30 hover:border-sky-400/70 hover:bg-zinc-800/80'
+            }`}
+          >
+            <div className="w-11 h-11 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center shrink-0 border border-sky-500/20">
+              <Zap className="w-6 h-6" />
             </div>
-            <div>
-              <span className="text-[#CCFF00] font-black uppercase block text-[11px] tracking-wider">CUSTOM BX PACKAGES</span>
-              <span className="text-zinc-300 font-normal">100% Bespoke & Personalised (+£10 over standard packages).</span>
+            <div className="flex-1">
+              <span className="text-sky-400 font-black uppercase block text-xs tracking-wider">CUSTOM SERVICES</span>
+              <span className="text-zinc-300 font-normal text-xs mt-0.5 block">100% Bespoke coaching packages, core plans &amp; tailored transformation protocols.</span>
             </div>
-          </div>
-
-          <div className="bg-zinc-900/90 border border-amber-500/30 p-4 rounded-xl flex items-center gap-3 shadow-md">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
-              <Flame className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-amber-400 font-black uppercase block text-[11px] tracking-wider">INDIVIDUAL SERVICES</span>
-              <span className="text-zinc-300 font-normal">Specialist 1-on-1 sessions (Boxing, Strength, Mobility, Mindset).</span>
-            </div>
+            {filterCategory === 'custom' && (
+              <span className="text-[10px] font-black uppercase bg-sky-400 text-black px-2.5 py-1 rounded-full shrink-0 shadow-md">ACTIVE</span>
+            )}
           </div>
         </div>
 
-        {/* --- INTERACTIVE PRICE SORT BAR --- */}
-        <div className="bg-[#121215]/90 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 mb-10 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-xs sm:text-sm font-black uppercase tracking-wider text-white">
-            <div className="w-8.5 h-8.5 rounded-lg bg-[#CCFF00]/15 border border-[#CCFF00]/30 text-[#CCFF00] flex items-center justify-center shrink-0">
-              <ArrowUpDown className="w-4 h-4 text-[#CCFF00]" />
-            </div>
-            <div>
-              <span className="block text-xs sm:text-sm font-black uppercase text-white tracking-wide">
-                ALL TRAINING SERVICES & PACKAGES
-              </span>
-              <span className="text-[10px] text-zinc-400 font-normal block mt-0.5">
-                Click sort button to toggle pricing order
-              </span>
+        {/* --- COMPACT RESPONSIVE SERVICE FILTER & SORT BAR --- */}
+        <div className="bg-[#121215]/95 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 mb-10 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          
+          {/* Dropdown Select List Filter (2 Main Options + All) */}
+          <div className="w-full sm:w-auto flex-1 max-w-md">
+            <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest block mb-1.5 flex items-center gap-1.5">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-[#CCFF00]" />
+              SELECT SERVICE FILTER CATEGORY:
+            </label>
+            <div className="relative flex items-center bg-zinc-900 border-2 border-zinc-700/80 hover:border-[#CCFF00] focus-within:border-[#CCFF00] rounded-xl px-3.5 py-2.5 transition-all shadow-md">
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value as any)}
+                className="bg-transparent text-white font-black text-xs sm:text-sm uppercase tracking-wider w-full outline-none cursor-pointer appearance-none pr-8 z-10"
+              >
+                <option value="all" className="bg-[#121215] text-white">
+                  ALL SERVICES ({services.length} PROGRAMS)
+                </option>
+                <option value="individual" className="bg-[#121215] text-amber-400 font-bold">
+                  1. INDIVIDUAL SERVICES ({services.filter(s => s.category === 'Individual Service').length} SPECIALIST SESSIONS)
+                </option>
+                <option value="custom" className="bg-[#121215] text-sky-400 font-bold">
+                  2. CUSTOM SERVICES ({services.filter(s => s.category !== 'Individual Service').length} BESPOKE PACKAGES)
+                </option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-[#CCFF00] absolute right-3.5 pointer-events-none shrink-0" />
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setSortOrder(sortOrder === 'high-to-low' ? 'low-to-high' : 'high-to-low')}
-            className="w-full sm:w-auto flex items-center justify-between sm:justify-center gap-3 bg-black/90 hover:bg-zinc-900 border-2 border-[#CCFF00]/60 hover:border-[#CCFF00] px-4 py-2.5 rounded-xl transition-all duration-200 cursor-pointer shadow-lg active:scale-95 group"
-            title="Click to toggle price sorting order"
-          >
-            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest group-hover:text-zinc-300">
-              SORT ORDER:
-            </span>
-            <span className="text-[#CCFF00] font-mono font-black text-xs sm:text-sm tracking-wide">
-              {sortOrder === 'high-to-low' ? 'HIGH TO LOW (£90 → £20)' : 'LOW TO HIGH (£20 → £90)'}
-            </span>
-            <span className="text-[10px] font-mono text-black bg-[#CCFF00] font-black px-2 py-0.5 rounded-md shrink-0 group-hover:scale-105 transition-transform">
-              {sortOrder === 'high-to-low' ? 'HIGH FIRST' : 'LOW FIRST'}
-            </span>
-          </button>
+          {/* Sort Order Toggle Button */}
+          <div className="w-full sm:w-auto shrink-0">
+            <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest block mb-1.5">
+              PRICE ORDER:
+            </label>
+            <button
+              type="button"
+              onClick={() => setSortOrder(sortOrder === 'high-to-low' ? 'low-to-high' : 'high-to-low')}
+              className="w-full sm:w-auto flex items-center justify-between sm:justify-center gap-3 bg-black/90 hover:bg-zinc-900 border-2 border-[#CCFF00]/60 hover:border-[#CCFF00] px-4 py-2.5 rounded-xl transition-all duration-200 cursor-pointer shadow-lg active:scale-95 group"
+              title="Click to toggle price sorting order"
+            >
+              <ArrowUpDown className="w-4 h-4 text-[#CCFF00]" />
+              <span className="text-[#CCFF00] font-mono font-black text-xs sm:text-sm tracking-wide">
+                {sortOrder === 'high-to-low' ? 'HIGH TO LOW (£90 → £20)' : 'LOW TO HIGH (£20 → £90)'}
+              </span>
+              <span className="text-[10px] font-mono text-black bg-[#CCFF00] font-black px-2 py-0.5 rounded-md shrink-0 group-hover:scale-105 transition-transform">
+                {sortOrder === 'high-to-low' ? 'HIGH' : 'LOW'}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Services Grid (User-Centric High-Visibility Cards) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {visibleServices.map((srv, idx) => {
-            const IconComp = srv.icon || Dumbbell;
-            const displayDiscount = srv.discount || srv.discountTag;
+        {visibleServices.length === 0 ? (
+          <div className="text-center py-16 px-4 bg-zinc-900/50 border border-zinc-800 rounded-3xl max-w-lg mx-auto space-y-4">
+            <SlidersHorizontal className="w-8 h-8 text-[#CCFF00] mx-auto" />
+            <h3 className="text-lg font-black text-white uppercase tracking-tight">No services found for this filter</h3>
+            <p className="text-xs text-zinc-400">Try selecting a different filter category or reset to view all available training programs.</p>
+            <button
+              onClick={() => setFilterCategory('all')}
+              className="bg-[#CCFF00] text-black font-black text-xs uppercase tracking-widest px-6 py-3 rounded-xl cursor-pointer hover:bg-[#b8e600] transition-all shadow-lg"
+            >
+              RESET TO ALL SERVICES
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visibleServices.map((srv, idx) => {
+              const IconComp = srv.icon || Dumbbell;
+              const displayDiscount = srv.discount || srv.discountTag;
 
-            return (
-              <div
-                key={idx}
-                className="relative bg-[#121215] border border-zinc-800/90 hover:border-[#CCFF00]/60 rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 group hover:-translate-y-1 shadow-2xl hover:shadow-[#CCFF00]/10 overflow-hidden"
-              >
-                {/* Discount Ribbon Tag */}
-                {displayDiscount && (
-                  <div className="absolute top-3 -right-8 w-32 bg-[#CCFF00] text-black text-[9px] font-black uppercase tracking-widest text-center py-1 rotate-45 shadow-lg z-10 pointer-events-none select-none">
-                    {displayDiscount}
-                  </div>
-                )}
-
-                <div>
-                  {/* Category Header Badges */}
-                  <div className="flex items-center justify-between gap-2 mb-3 pr-6">
-                    <span className="text-[10px] font-black tracking-widest text-[#CCFF00] uppercase bg-[#CCFF00]/10 border border-[#CCFF00]/20 px-2.5 py-0.5 rounded">
-                      {srv.category}
-                    </span>
-                    {srv.badge && (
-                      <span className="text-[9px] font-black tracking-wider text-amber-300 uppercase bg-amber-950/70 border border-amber-800/80 px-2 py-0.5 rounded">
-                        {srv.badge}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Title & Icon Header */}
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div>
-                      <h3 className="text-xl font-black uppercase tracking-tight text-white group-hover:text-[#CCFF00] transition-colors leading-snug">
-                        {srv.title}
-                      </h3>
-                      <p className="text-[11px] text-zinc-400 font-semibold flex items-center gap-1.5 mt-0.5">
-                        <UserCheck className="w-3.5 h-3.5 text-[#CCFF00]" />
-                        <span>{srv.sessionType}</span>
-                      </p>
+              return (
+                <div
+                  key={idx}
+                  className="relative bg-[#121215] border border-zinc-800/90 hover:border-[#CCFF00]/60 rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 group hover:-translate-y-1 shadow-2xl hover:shadow-[#CCFF00]/10 overflow-hidden"
+                >
+                  {/* Discount Ribbon Tag */}
+                  {displayDiscount && (
+                    <div className="absolute top-3 -right-8 w-32 bg-[#CCFF00] text-black text-[9px] font-black uppercase tracking-widest text-center py-1 rotate-45 shadow-lg z-10 pointer-events-none select-none">
+                      {displayDiscount}
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-zinc-800/90 border border-zinc-700/80 flex items-center justify-center text-[#CCFF00] group-hover:bg-[#CCFF00] group-hover:text-black transition-all shrink-0">
-                      <IconComp className="w-5 h-5" />
-                    </div>
-                  </div>
+                  )}
 
-                  {/* HIGH VISIBILITY BOLD PRICING BOX */}
-                  <div className="mb-4 p-4 bg-gradient-to-br from-zinc-900 via-[#18181c] to-zinc-900 border-2 border-zinc-700/80 group-hover:border-[#CCFF00] rounded-2xl flex items-center justify-between shadow-xl transition-all">
-                    <div>
-                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-0.5">
-                        PRICE / SESSION
+                  <div>
+                    {/* Category Header Badges */}
+                    <div className="flex items-center justify-between gap-2 mb-3 pr-6">
+                      <span className="text-[10px] font-black tracking-widest text-[#CCFF00] uppercase bg-[#CCFF00]/10 border border-[#CCFF00]/20 px-2.5 py-0.5 rounded">
+                        {srv.category}
                       </span>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-3xl sm:text-4xl font-black text-[#CCFF00] tracking-tight drop-shadow-[0_2px_10px_rgba(204,255,0,0.25)]">
-                          £{srv.price}
+                      {srv.badge && (
+                        <span className="text-[9px] font-black tracking-wider text-amber-300 uppercase bg-amber-950/70 border border-amber-800/80 px-2 py-0.5 rounded">
+                          {srv.badge}
                         </span>
-                        <span className="text-xs font-bold text-zinc-300">/ {srv.duration}</span>
+                      )}
+                    </div>
+
+                    {/* Title & Icon Header */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div>
+                        <h3 className="text-xl font-black uppercase tracking-tight text-white group-hover:text-[#CCFF00] transition-colors leading-snug">
+                          {srv.title}
+                        </h3>
+                        <p className="text-[11px] text-zinc-400 font-semibold flex items-center gap-1.5 mt-0.5">
+                          <UserCheck className="w-3.5 h-3.5 text-[#CCFF00]" />
+                          <span>{srv.sessionType}</span>
+                        </p>
+                      </div>
+                      <div className="w-10 h-10 rounded-xl bg-zinc-800/90 border border-zinc-700/80 flex items-center justify-center text-[#CCFF00] group-hover:bg-[#CCFF00] group-hover:text-black transition-all shrink-0">
+                        <IconComp className="w-5 h-5" />
                       </div>
                     </div>
-                    <div className="text-right flex flex-col items-end gap-1">
-                      <span className="text-[11px] font-black text-white bg-zinc-800 border border-zinc-700 px-3 py-1 rounded-lg inline-block shadow-sm">
-                        {srv.totalSessions}
-                      </span>
-                      {displayDiscount && (
-                        <span className="text-[10px] font-extrabold text-black bg-[#CCFF00] px-2 py-0.5 rounded font-mono">
-                          {displayDiscount}
+
+                    {/* HIGH VISIBILITY BOLD PRICING BOX */}
+                    <div className="mb-4 p-4 bg-gradient-to-br from-zinc-900 via-[#18181c] to-zinc-900 border-2 border-zinc-700/80 group-hover:border-[#CCFF00] rounded-2xl flex items-center justify-between shadow-xl transition-all">
+                      <div>
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-0.5">
+                          PRICE / SESSION
                         </span>
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          {srv.originalPrice && (
+                            <span className="text-base sm:text-lg font-bold text-zinc-400 line-through decoration-red-500/80 decoration-2">
+                              £{srv.originalPrice}
+                            </span>
+                          )}
+                          <span className="text-3xl sm:text-4xl font-black text-[#CCFF00] tracking-tight drop-shadow-[0_2px_10px_rgba(204,255,0,0.25)]">
+                            £{srv.price}
+                          </span>
+                          <span className="text-xs font-bold text-zinc-300">/ {srv.duration}</span>
+                        </div>
+                      </div>
+                      <div className="text-right flex flex-col items-end gap-1">
+                        <span className="text-[11px] font-black text-white bg-zinc-800 border border-zinc-700 px-3 py-1 rounded-lg inline-block shadow-sm">
+                          {srv.totalSessions}
+                        </span>
+                        {displayDiscount && (
+                          <span className="text-[10px] font-extrabold text-black bg-[#CCFF00] px-2 py-0.5 rounded font-mono">
+                            {displayDiscount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* USER-CENTRIC "WHO IS THIS FOR?" HIGHLIGHT BOX */}
+                    {srv.idealFor && (
+                      <div className="mb-4 bg-zinc-900/90 border border-zinc-800/90 p-3 rounded-xl flex items-start gap-2 text-xs">
+                        <HelpCircle className="w-4 h-4 text-[#CCFF00] shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block mb-0.5">
+                            WHO IS THIS FOR?
+                          </span>
+                          <p className="text-zinc-200 leading-snug font-medium text-[11px]">
+                            {srv.idealFor}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* WHAT YOU GET CHECKLIST */}
+                    <div className="space-y-2 text-xs mb-4">
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-1">
+                        WHAT YOU GET IN THIS SESSION:
+                      </span>
+                      {Array.isArray(srv.whatYouGet) ? (
+                        srv.whatYouGet.map((item, i) => (
+                          <div key={i} className="flex items-start gap-2 text-zinc-200">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#CCFF00] shrink-0 mt-0.5" />
+                            <span className="text-xs leading-snug font-medium text-zinc-200">{item}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="flex items-start gap-2 text-zinc-200">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#CCFF00] shrink-0 mt-0.5" />
+                          <span className="text-xs leading-snug font-medium text-zinc-200">{srv.whatYouGet}</span>
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  {/* USER-CENTRIC "WHO IS THIS FOR?" HIGHLIGHT BOX */}
-                  {srv.idealFor && (
-                    <div className="mb-4 bg-zinc-900/90 border border-zinc-800/90 p-3 rounded-xl flex items-start gap-2 text-xs">
-                      <HelpCircle className="w-4 h-4 text-[#CCFF00] shrink-0 mt-0.5" />
-                      <div>
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block mb-0.5">
-                          WHO IS THIS FOR?
-                        </span>
-                        <p className="text-zinc-200 leading-snug font-medium text-[11px]">
-                          {srv.idealFor}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* WHAT YOU GET CHECKLIST */}
-                  <div className="space-y-2 text-xs mb-4">
-                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-1">
-                      WHAT YOU GET IN THIS SESSION:
-                    </span>
-                    {Array.isArray(srv.whatYouGet) ? (
-                      srv.whatYouGet.map((item, i) => (
-                        <div key={i} className="flex items-start gap-2 text-zinc-200">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#CCFF00] shrink-0 mt-0.5" />
-                          <span className="text-xs leading-snug font-medium text-zinc-200">{item}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="flex items-start gap-2 text-zinc-200">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#CCFF00] shrink-0 mt-0.5" />
-                        <span className="text-xs leading-snug font-medium text-zinc-200">{srv.whatYouGet}</span>
-                      </div>
-                    )}
+                  {/* Single High-Contrast Action Button */}
+                  <div className="pt-3 border-t border-zinc-800/80">
+                    <button
+                      onClick={() => onSelectService ? onSelectService(srv) : onOpenBooking()}
+                      className="w-full bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-[0.99]"
+                    >
+                      <span>SELECT &amp; BOOK — £{srv.price}</span>
+                      <ArrowRight className="w-4 h-4 text-black group-hover:translate-x-1 transition-transform" />
+                    </button>
+                    <p className="text-[10px] text-center text-zinc-400 font-medium mt-1.5">
+                      No Hidden Fees • Live 1-on-1 Personal Coach
+                    </p>
                   </div>
                 </div>
-
-                {/* Single High-Contrast Action Button */}
-                <div className="pt-3 border-t border-zinc-800/80">
-                  <button
-                    onClick={() => onSelectService ? onSelectService(srv) : onOpenBooking()}
-                    className="w-full bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-[0.99]"
-                  >
-                    <span>SELECT & BOOK — £{srv.price}</span>
-                    <ArrowRight className="w-4 h-4 text-black group-hover:translate-x-1 transition-transform" />
-                  </button>
-                  <p className="text-[10px] text-center text-zinc-400 font-medium mt-1.5">
-                    No Hidden Fees • Live 1-on-1 Personal Coach
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Dynamic Expand/Collapse Button */}
         {sortedServices.length > 6 && (

@@ -123,7 +123,7 @@ export const TRAINERS_DATA: BxTrainer[] = [
     role: 'Head Coach | Boxing Instructor | Physiotherapy Professional',
     coachPosition: 'HEAD COACH & FOUNDER',
     headline: 'HEAD COACH | BOXING INSTRUCTOR | PHYSIOTHERAPY PROFESSIONAL',
-    image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384984/WhatsApp_Image_2026-08-29_at_4.56.55_AM_1.jpg?auto=format&fit=crop&q=80&w=800',
+    image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789568682/ChatGPT_Image_Sep_16_2026_07_51_52_PM.png?auto=format&fit=crop&q=80&w=800',
     imagePosition: 'object-[center_top]',
     bio: 'Head Coach with over 10 years of industry experience combining boxing instruction, strength & conditioning, and physiotherapy-based rehabilitation. Trained at IG Stadium to master boxing technique and athlete development. Brings 6+ years of entrepreneurial experience as a gym owner/operator, delivering personalized transformations to over 1,000 clients worldwide.',
     secondaryBio: 'His methodology bridges the gap between traditional strength training and the chaotic demands of high-performance conditioning. Whether peaking for elite competition or building a foundation for sustainable power, Head Coach Shaban applies a data-driven, precision-focused approach to every session.',
@@ -165,7 +165,6 @@ export const TRAINERS_DATA: BxTrainer[] = [
       'Former Business Developer & Fitness Trainer at WOW Gym'
     ],
     galleryPhotos: [
-      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384987/WhatsApp_Image_2026-08-29_at_4.56.56_AM_1.jpg?auto=format&fit=crop&q=80&w=800',
       'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384983/WhatsApp_Image_2026-08-29_at_4.56.54_AM.jpg?auto=format&fit=crop&q=80&w=800',
       'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384983/WhatsApp_Image_2026-08-29_at_4.56.54_AM_1.jpg?auto=format&fit=crop&q=80&w=800',
       'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384983/WhatsApp_Image_2026-08-29_at_4.56.54_AM_2.jpg?auto=format&fit=crop&q=80&w=800',
@@ -191,7 +190,7 @@ export const TRAINERS_DATA: BxTrainer[] = [
     role: 'Fitness Trainer | Strength & Conditioning Coach | Virtual Fitness Coach',
     coachPosition: 'SENIOR STRENGTH & CONDITIONING COACH',
     headline: 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
-    image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789448786/WhatsApp_Image_2026-08-29_at_4.59.57_AM.jpg?auto=format&fit=crop&q=80&w=800',
+    image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789571525/sadeem.png?auto=format&fit=crop&q=80&w=800',
     bio: 'Dedicated and experienced Fitness Trainer with strong practical knowledge of strength training, functional fitness, conditioning, mobility, and general fitness. Experienced in working with clients of different fitness levels and helping them improve strength, endurance, mobility, body composition, and overall physical performance. Experienced in both in-person and virtual coaching.',
     secondaryBio: 'Specializes in live 1-on-1 virtual training sessions with clear video exercise demonstrations, real-time online form observation & movement correction, custom workout plans adapted to home or gym equipment, and consistent communication & accountability tracking.',
     specialties: ['Strength & Resistance Training', 'Functional Fitness & Muscle Building', 'Fat Loss & Cardio Conditioning', 'Exercise Technique & Form Correction', 'Personalized & Virtual Coaching'],
@@ -243,7 +242,7 @@ export const TRAINERS_DATA: BxTrainer[] = [
     role: 'Fitness Trainer | Strength & Conditioning Coach | Virtual Fitness Coach',
     coachPosition: 'ENDURANCE & METABOLIC SPECIALIST',
     headline: 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
-    image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789465256/WhatsApp_Image_2026-08-29_at_6.04.05_AM.jpg?auto=format&fit=crop&q=80&w=800',
+    image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789571578/Muheeb.png?auto=format&fit=crop&q=80&w=800',
     bio: 'Fitness Trainer with hands-on experience in strength training, conditioning, mobility, and general fitness. Dedicated to guiding clients through effective workout routines while maintaining a strong emphasis on exercise technique, consistency, motivation, and personalized goal setting. Capable of delivering coaching both on-site and remotely.',
     secondaryBio: 'Delivers 1-on-1 live online coaching sessions with real-time video demonstrations, remote technique evaluation and movement guidance, tailored home/gym workout planning, and remote motivation with ongoing client accountability.',
     specialties: ['Strength & Muscle Building', 'Fat Loss & Weight Management', 'Cardiovascular Conditioning', 'Exercise Technique & Form', 'Online Personal Training'],
@@ -279,12 +278,12 @@ export const TRAINERS_DATA: BxTrainer[] = [
       'Interactive Live Remote Form Evaluation & Progress Monitoring'
     ],
     galleryPhotos: [
-      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789465255/WhatsApp_Image_2026-08-29_at_6.04.04_AM_1.jpg?auto=format&fit=crop&q=80&w=800',
-      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789465255/WhatsApp_Image_2026-08-29_at_6.04.04_AM.jpg?auto=format&fit=crop&q=80&w=800',
-      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789465645/IMG_7175.jpg?auto=format&fit=crop&q=80&w=800'
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789572640/Moheeb_1.png?auto=format&fit=crop&q=80&w=800',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789572641/Moheeb_2.png?auto=format&fit=crop&q=80&w=800',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789573309/Moheeb_3.png?auto=format&fit=crop&q=80&w=800',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789573806/Moheeb_4.png?auto=format&fit=crop&q=80&w=800',
     ],
     galleryVideos: [
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789465263/IMG_9776.MOV.mov',
       'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789465266/WhatsApp_Video_2026-08-29_at_6.04.06_AM.mp4'
     ],
     socials: { instagram: 'https://instagram.com/', linkedin: 'https://linkedin.com/' }

@@ -244,8 +244,10 @@ async function sendServerEmail(options: SendEmailOptions): Promise<{ success: bo
 
 // Database Connection Setup for NeonDB / PostgreSQL
 let dbUrl = process.env.DATABASE_URL || '';
-if (dbUrl.includes('sslmode=require')) {
-  dbUrl = dbUrl.replace('sslmode=require', 'sslmode=verify-full');
+if (dbUrl) {
+  dbUrl = dbUrl
+    .replace(/[?&]channel_binding=[^&]+/g, '')
+    .replace('sslmode=require', 'sslmode=verify-full');
 }
 
 const dbPool = process.env.DATABASE_URL
@@ -1356,7 +1358,9 @@ interface ServerReview {
   createdAt: string;
 }
 
-const reviewsStore: ServerReview[] = [];
+const SEED_REVIEWS: ServerReview[] = [];
+
+const reviewsStore: ServerReview[] = [...SEED_REVIEWS];
 
 app.get('/api/admin/purge-reviews', async (req, res) => {
   try {
@@ -1372,48 +1376,59 @@ app.get('/api/admin/purge-reviews', async (req, res) => {
 
 app.get('/api/reviews', async (req, res) => {
   try {
+    let rawList: ServerReview[] = [];
     if (dbPool) {
       try {
         // Automatically purge any curl/test entries from NeonDB table
         await dbPool.query("DELETE FROM reviews WHERE LOWER(name) LIKE '%test%' OR id LIKE 'rev-17893%'").catch(() => {});
 
         const result = await dbPool.query('SELECT * FROM reviews ORDER BY created_at DESC');
-        const cleanRows = result.rows.filter(r => 
-          r.name && !r.name.toLowerCase().includes('test') &&
-          r.id !== 'rev-1' && r.id !== 'rev-2' && r.id !== 'rev-3' &&
-          r.id !== 't1' && r.id !== 't2' && r.id !== 't3'
-        );
-        const formattedRows = cleanRows.map(r => ({
+        rawList = result.rows.map(r => ({
           ...r,
+          name: (r.name || '').replace(/&amp;/g, '&').replace(/&amp;/g, '&').replace(/&#x27;/g, "'"),
+          role: (r.role || 'BxStrength Athlete').replace(/&amp;/g, '&').replace(/&amp;/g, '&').replace(/&#x27;/g, "'"),
+          comment: (r.comment || '').replace(/&amp;/g, '&').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&#x2F;/g, '/'),
           avatar: (r.avatar && typeof r.avatar === 'string' && r.avatar.startsWith('data:image'))
             ? r.avatar.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&')
             : r.avatar
         }));
-        return res.json(formattedRows);
       } catch {
-        // Fallback silently to reviewsStore if table is creating
+        rawList = [...reviewsStore];
       }
+    } else {
+      rawList = [...reviewsStore];
     }
-    const cleanStore = reviewsStore.filter(r => 
+
+    if (rawList.length === 0) {
+      rawList = [...SEED_REVIEWS];
+    }
+
+    const cleanRows = rawList.filter(r => 
       r.name && !r.name.toLowerCase().includes('test') &&
       r.id !== 'rev-1' && r.id !== 'rev-2' && r.id !== 'rev-3' &&
       r.id !== 't1' && r.id !== 't2' && r.id !== 't3'
     );
-    const formattedStore = cleanStore.map(r => ({
-      ...r,
-      avatar: (r.avatar && typeof r.avatar === 'string' && r.avatar.startsWith('data:image'))
-        ? r.avatar.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&')
-        : r.avatar
-    }));
-    res.json(formattedStore);
+
+    const listToUse = cleanRows.length > 0 ? cleanRows : SEED_REVIEWS;
+
+    // Deduplicate by identical name + comment content
+    const uniqueMap = new Map<string, ServerReview>();
+    listToUse.forEach(r => {
+      const contentKey = `${r.name.toLowerCase().trim()}:::${r.comment.trim()}`;
+      if (!uniqueMap.has(contentKey)) {
+        uniqueMap.set(contentKey, r);
+      }
+    });
+
+    return res.json(Array.from(uniqueMap.values()));
   } catch {
-    res.json([]);
+    res.json(SEED_REVIEWS);
   }
 });
 
-app.post('/api/reviews', enquiryLimiter, async (req, res) => {
+app.post('/api/reviews', async (req, res) => {
   try {
-    const { name, role, rating, comment, avatar } = req.body;
+    const { id: providedId, name, role, rating, comment, avatar } = req.body;
     if (!name || !comment) {
       return res.status(400).json({ error: 'Name and comment are required to post a review.' });
     }
@@ -1437,9 +1452,10 @@ app.post('/api/reviews', enquiryLimiter, async (req, res) => {
       ? processedAvatar
       : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName)}`;
     const cleanRating = Math.min(5, Math.max(1, Number(rating) || 5));
+    const reviewId = providedId || `rev-${Date.now()}`;
 
     const newReview: ServerReview = {
-      id: `rev-${Date.now()}`,
+      id: reviewId,
       name: cleanName,
       role: cleanRole,
       rating: cleanRating,
@@ -1448,15 +1464,25 @@ app.post('/api/reviews', enquiryLimiter, async (req, res) => {
       createdAt: new Date().toISOString()
     };
 
-    reviewsStore.unshift(newReview);
+    // Check memory store for duplicate name + comment
+    const existsInMemory = reviewsStore.some(r => r.name.toLowerCase().trim() === cleanName.toLowerCase() && r.comment.trim() === cleanComment);
+    if (!existsInMemory) {
+      reviewsStore.unshift(newReview);
+    }
 
     if (dbPool) {
       try {
-        await dbPool.query(
-          `INSERT INTO reviews (id, name, role, rating, comment, avatar, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-          [newReview.id, cleanName, cleanRole, cleanRating, cleanComment, cleanAvatar]
+        const existingInDb = await dbPool.query(
+          `SELECT id FROM reviews WHERE LOWER(name) = LOWER($1) AND comment = $2`,
+          [cleanName, cleanComment]
         );
+        if (existingInDb.rows.length === 0) {
+          await dbPool.query(
+            `INSERT INTO reviews (id, name, role, rating, comment, avatar, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+            [reviewId, cleanName, cleanRole, cleanRating, cleanComment, cleanAvatar]
+          );
+        }
       } catch (err: any) {
         console.error('NeonDB review insert error:', err.message);
       }

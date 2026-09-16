@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Testimonial } from '../types';
-import { VelocityAPI } from '../services/api';
+import { VelocityAPI, getApiUrl, decodeHtmlEntities } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Star, Quote, ChevronLeft, ChevronRight, Plus, X, CheckCircle2, 
@@ -41,20 +41,40 @@ export const TestimonialsSection: React.FC = () => {
 
   const fetchReviews = async () => {
     try {
-      const localReviews = VelocityAPI.getReviews().filter(isRealReview);
-      const res = await fetch('/api/reviews');
+      const apiUrl = getApiUrl('/api/reviews');
+      const res = await fetch(apiUrl);
       if (res.ok) {
         const serverReviews: Testimonial[] = await res.json();
-        const map = new Map<string, Testimonial>();
-        [...serverReviews, ...localReviews].filter(isRealReview).forEach(item => {
-          map.set(item.id, item);
+        const seenIds = new Set<string>();
+        const seenContent = new Set<string>();
+        const unique: Testimonial[] = [];
+
+        serverReviews.filter(isRealReview).forEach(item => {
+          const cleanName = decodeHtmlEntities(item.name);
+          const cleanRole = decodeHtmlEntities(item.role || 'BxStrength Athlete');
+          const cleanComment = decodeHtmlEntities(item.comment);
+          const contentKey = `${cleanName.toLowerCase().trim()}:::${cleanComment.trim()}`;
+          if (!seenIds.has(item.id) && !seenContent.has(contentKey)) {
+            seenIds.add(item.id);
+            seenContent.add(contentKey);
+            unique.push({
+              ...item,
+              name: cleanName,
+              role: cleanRole,
+              comment: cleanComment
+            });
+          }
         });
-        setReviews(Array.from(map.values()));
+        setReviews(unique);
+        localStorage.setItem('bxstrength_client_reviews', JSON.stringify(unique));
       } else {
+        const localReviews = VelocityAPI.getReviews().filter(isRealReview);
         setReviews(localReviews);
       }
-    } catch {
-      setReviews(VelocityAPI.getReviews().filter(isRealReview));
+    } catch (err) {
+      console.warn('Failed to fetch backend reviews:', err);
+      const localReviews = VelocityAPI.getReviews().filter(isRealReview);
+      setReviews(localReviews);
     } finally {
       setIsLoading(false);
     }
@@ -112,8 +132,22 @@ export const TestimonialsSection: React.FC = () => {
     }
   };
 
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Auto-slide reviews every 4 seconds (pauses on hover or when review modal is open)
+  useEffect(() => {
+    if (reviews.length <= 1 || showModal || isPaused) return;
+
+    const timer = setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % reviews.length);
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [currentIndex, reviews.length, showModal, isPaused]);
+
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!name.trim() || !comment.trim()) return;
 
     if (photoError) return;
@@ -121,9 +155,11 @@ export const TestimonialsSection: React.FC = () => {
     try {
       setIsSubmitting(true);
       const avatarUrl = photoPreview || user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name.trim())}`;
+      const reviewId = `rev-${Date.now()}`;
 
-      // Save to Local API Store
+      // Save to Local Store for instant client availability
       VelocityAPI.addReview({
+        id: reviewId,
         name: name.trim(),
         role: role.trim() || 'BxStrength Athlete',
         rating,
@@ -131,22 +167,28 @@ export const TestimonialsSection: React.FC = () => {
         avatar: avatarUrl
       });
 
-      // Save to Backend NeonDB Database API
-      const response = await fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          role: role.trim() || 'BxStrength Athlete',
-          rating,
-          comment: comment.trim(),
-          avatar: avatarUrl
-        })
-      });
+      // Sync with Server DB
+      try {
+        const apiUrl = getApiUrl('/api/reviews');
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: reviewId,
+            name: name.trim(),
+            role: role.trim() || 'BxStrength Athlete',
+            rating,
+            comment: comment.trim(),
+            avatar: avatarUrl
+          })
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to publish review');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.warn('Backend review notice:', errorData.error);
+        }
+      } catch (netErr) {
+        console.warn('Backend network notice (saved locally):', netErr);
       }
 
       await fetchReviews();
@@ -157,7 +199,7 @@ export const TestimonialsSection: React.FC = () => {
       setRating(5);
       setComment('');
       handleRemovePhoto();
-      setToastMsg('Thank you! Your review with photo has been saved to database and published live!');
+      setToastMsg('Thank you! Your review has been saved and published live!');
       setTimeout(() => setToastMsg(null), 4500);
     } catch (err: any) {
       console.error('Failed to post review:', err);
@@ -207,41 +249,45 @@ export const TestimonialsSection: React.FC = () => {
         {/* Section Heading & Write Review CTA */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-6 border-b border-zinc-800/80 pb-6">
           <div>
-            <span className="text-[11px] font-black tracking-widest text-zinc-400 uppercase bg-zinc-900 border border-zinc-800 px-3.5 py-1.5 rounded-full inline-block mb-3">
-              VERIFIED CLIENT REVIEWS
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
-              ATHLETE & MEMBER TESTIMONIALS
+            <div className="flex items-center gap-2 mb-2">
+              <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+              <span className="text-xs font-black uppercase tracking-widest text-[#CCFF00]">REAL ATHLETE FEEDBACK</span>
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
+              WHAT OUR CLIENTS SAY
             </h2>
-            <p className="text-xs text-zinc-400 mt-1 max-w-xl">
-              Real transformation reviews with photos stored in NeonDB database and submitted directly by our executive gym members.
-            </p>
           </div>
-
           <button
             onClick={handleOpenModal}
-            className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-wider uppercase px-5 py-3.5 rounded-lg transition-all shadow-lg cursor-pointer flex items-center gap-2 self-start sm:self-auto"
+            className="bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all cursor-pointer shadow-lg inline-flex items-center gap-2.5 shrink-0 self-start sm:self-auto active:scale-95"
           >
-            <MessageSquarePlus className="w-4 h-4" />
-            <span>+ WRITE A REVIEW</span>
+            <Plus className="w-4 h-4 text-black" />
+            <span>WRITE A CLIENT REVIEW</span>
           </button>
         </div>
 
-        {/* Testimonial Showcase Card */}
+        {/* Loading Skeleton */}
         {isLoading ? (
-          <div className="max-w-4xl mx-auto">
-            <Skeleton variant="card" count={1} />
+          <div className="max-w-4xl mx-auto bg-[#121214] border border-zinc-800 p-8 sm:p-12 relative shadow-2xl rounded-2xl space-y-4">
+            <Skeleton className="h-10 w-10 mx-auto rounded-full bg-zinc-800" />
+            <Skeleton className="h-6 w-48 mx-auto bg-zinc-800" />
+            <Skeleton className="h-20 w-full bg-zinc-800" />
+            <Skeleton className="h-12 w-12 rounded-full mx-auto bg-zinc-800" />
           </div>
         ) : reviews.length === 0 ? (
-          <div className="max-w-4xl mx-auto bg-[#121214] border border-zinc-800 p-12 text-center rounded-2xl space-y-3">
-            <Quote className="w-10 h-10 text-zinc-700 mx-auto" />
+          <div className="max-w-md mx-auto text-center py-12 px-6 bg-[#121214] border border-zinc-800 rounded-2xl space-y-3">
+            <MessageSquarePlus className="w-10 h-10 text-zinc-600 mx-auto mb-2" />
             <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wider">No Client Reviews Published Yet</h3>
             <p className="text-xs text-zinc-500 max-w-sm mx-auto">
               Be the first member to share your transformation experience with photo! Click the button above to write a review.
             </p>
           </div>
         ) : current ? (
-          <div className="max-w-4xl mx-auto bg-[#121214] border border-zinc-800 p-8 sm:p-12 relative shadow-2xl text-center rounded-2xl">
+          <div 
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+            className="max-w-4xl mx-auto bg-[#121214] border border-zinc-800 p-8 sm:p-12 relative shadow-2xl text-center rounded-2xl transition-all"
+          >
             <Quote className="w-12 h-12 text-zinc-700 mx-auto mb-4 opacity-50" />
 
             {/* Star Rating */}
@@ -288,26 +334,42 @@ export const TestimonialsSection: React.FC = () => {
               </div>
             </div>
 
-            {/* Carousel Controls */}
+            {/* Carousel Controls with Pagination Dots */}
             {reviews.length > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-10">
-                <button
-                  onClick={prevTestimonial}
-                  className="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white flex items-center justify-center transition-all cursor-pointer"
-                  aria-label="Previous Testimonial"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <span className="text-xs font-mono text-zinc-400">
-                  {currentIndex + 1} / {reviews.length} REVIEWS
-                </span>
-                <button
-                  onClick={nextTestimonial}
-                  className="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white flex items-center justify-center transition-all cursor-pointer"
-                  aria-label="Next Testimonial"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+              <div className="mt-10 flex flex-col items-center gap-4">
+                <div className="flex justify-center items-center gap-4">
+                  <button
+                    onClick={prevTestimonial}
+                    className="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-[#CCFF00] text-white flex items-center justify-center transition-all cursor-pointer"
+                    aria-label="Previous Testimonial"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <span className="text-xs font-mono text-zinc-400 font-bold">
+                    {currentIndex + 1} / {reviews.length} REVIEWS
+                  </span>
+                  <button
+                    onClick={nextTestimonial}
+                    className="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-[#CCFF00] text-white flex items-center justify-center transition-all cursor-pointer"
+                    aria-label="Next Testimonial"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Auto-play pagination indicator dots */}
+                <div className="flex items-center gap-2">
+                  {reviews.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentIndex(idx)}
+                      className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                        idx === currentIndex ? 'w-6 bg-[#CCFF00]' : 'w-2 bg-zinc-700 hover:bg-zinc-500'
+                      }`}
+                      aria-label={`Go to slide ${idx + 1}`}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>

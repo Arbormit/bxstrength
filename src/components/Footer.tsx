@@ -23,7 +23,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
               <img 
-                src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1789401857/WhatsApp_Image_2026-09-08_at_10.50.41_AM.jpg" 
+                src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1789566029/WhatsApp_Image_2026-09-08_at_10.50.41_AM.png" 
                 alt="BxStrength Logo" 
                 className="h-12 sm:h-14 md:h-16 w-auto max-w-[240px] object-contain rounded-lg shadow-md hover:opacity-90 transition-opacity cursor-pointer"
                 onClick={() => handleNav('home')}
