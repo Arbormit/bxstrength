@@ -134,19 +134,19 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-[#121214] text-white border border-zinc-800 shadow-2xl rounded-xl overflow-hidden font-sans max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-md bg-[#121214] text-white border border-zinc-800 shadow-2xl rounded-2xl overflow-hidden font-sans max-h-[92vh] flex flex-col">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer z-10"
+          className="absolute top-3.5 right-3.5 p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer z-10 min-w-[40px] min-h-[40px] flex items-center justify-center"
           aria-label="Close dialog"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="p-5 sm:p-7 space-y-3.5 overflow-y-auto overscroll-contain">
+        <div className="p-4 sm:p-7 space-y-3.5 overflow-y-auto overscroll-contain">
           {/* Brand & Heading */}
           <div className="flex flex-col items-center justify-center text-center space-y-2 pt-1 pb-1">
             <img 
@@ -177,7 +177,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
             type="button"
             onClick={handleGoogleSignUp}
             disabled={googleLoading}
-            className="w-full bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-xs py-2.5 sm:py-3 px-4 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-3 shadow-md hover:shadow-lg active:scale-[0.99] border border-zinc-200"
+            className="w-full min-h-[44px] bg-white hover:bg-zinc-100 text-zinc-900 font-bold text-xs py-2.5 sm:py-3 px-4 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-3 shadow-md hover:shadow-lg active:scale-[0.99] border border-zinc-200"
           >
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -208,10 +208,11 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                   <input
                     type="text"
                     required
+                    autoCapitalize="words"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Shaban Faridi"
-                    className="w-full bg-[#18181b] border border-zinc-800 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 text-white pl-10 pr-3.5 py-2 text-xs font-bold rounded-lg outline-none"
+                    className="w-full min-h-[44px] bg-[#18181b] border border-zinc-800 focus:border-zinc-500 text-white pl-10 pr-3.5 py-2 text-sm sm:text-xs font-bold rounded-lg outline-none"
                   />
                 </div>
               </div>
@@ -224,10 +225,11 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                   <input
                     type="tel"
+                    inputMode="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+44 7911 123456"
-                    className="w-full bg-[#18181b] border border-zinc-800 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 text-white pl-10 pr-3.5 py-2 text-xs font-bold rounded-lg outline-none"
+                    className="w-full min-h-[44px] bg-[#18181b] border border-zinc-800 focus:border-zinc-500 text-white pl-10 pr-3.5 py-2 text-sm sm:text-xs font-bold rounded-lg outline-none"
                   />
                 </div>
               </div>
@@ -241,11 +243,15 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full bg-[#18181b] border border-zinc-800 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 text-white pl-10 pr-3.5 py-2 text-xs font-bold rounded-lg outline-none"
+                  className="w-full min-h-[44px] bg-[#18181b] border border-zinc-800 focus:border-zinc-500 text-white pl-10 pr-3.5 py-2 text-sm sm:text-xs font-bold rounded-lg outline-none"
                 />
               </div>
             </div>
@@ -260,19 +266,22 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    inputMode="text"
+                    autoCapitalize="none"
+                    autoCorrect="off"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     maxLength={128}
                     placeholder="Enter password"
-                    className="w-full bg-[#18181b] border border-zinc-800 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 text-white pl-10 pr-9 py-2 text-xs font-bold rounded-lg outline-none"
+                    className="w-full min-h-[44px] bg-[#18181b] border border-zinc-800 focus:border-zinc-500 text-white pl-10 pr-9 py-2 text-sm sm:text-xs font-bold rounded-lg outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 p-1"
                   >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -285,18 +294,21 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
+                    inputMode="text"
+                    autoCapitalize="none"
+                    autoCorrect="off"
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
-                    className="w-full bg-[#18181b] border border-zinc-800 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 text-white pl-10 pr-9 py-2 text-xs font-bold rounded-lg outline-none"
+                    className="w-full min-h-[44px] bg-[#18181b] border border-zinc-800 focus:border-zinc-500 text-white pl-10 pr-9 py-2 text-sm sm:text-xs font-bold rounded-lg outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 p-1"
                   >
-                    {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -305,7 +317,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest py-3 uppercase transition-all rounded-lg cursor-pointer flex items-center justify-center gap-2 shadow-md mt-2"
+              className="w-full min-h-[48px] bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest py-3.5 uppercase transition-all rounded-lg cursor-pointer flex items-center justify-center gap-2 shadow-md mt-2 active:scale-[0.99]"
             >
               {loading ? (
                 <span>CREATING ACCOUNT...</span>
@@ -323,7 +335,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
             Already have an account?{' '}
             <button
               onClick={onOpenLogin}
-              className="font-bold text-white hover:underline uppercase ml-1 cursor-pointer"
+              className="font-bold text-white hover:underline uppercase ml-1 cursor-pointer py-1"
             >
               Sign In
             </button>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HeroProps {
   onOpenBooking?: () => void;
@@ -28,12 +27,12 @@ export const Hero: React.FC<HeroProps> = () => {
     });
   }, [images]);
 
-  // Auto-play slideshow timer
+  // Automatic slideshow timer - rotates slide every 4 seconds continuously
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % images.length);
-    }, 5000);
+    }, 4000);
     return () => clearInterval(interval);
   }, [isPaused, images.length]);
 
@@ -81,13 +80,13 @@ export const Hero: React.FC<HeroProps> = () => {
         BxStrength — #1 UK &amp; USA Digital Coaching, Boxing, Strength &amp; Fitness Platform
       </h1>
 
-      {/* DYNAMIC RESPONSIVE SLIDESHOW IMAGES (FULL FORM UNCROPPED PRESERVATION) */}
+      {/* DYNAMIC RESPONSIVE AUTOMATIC SLIDESHOW IMAGES */}
       {images.map((imgUrl, idx) => {
         const isActive = idx === currentSlide;
         return (
           <div
             key={idx}
-            className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-700 ease-in-out pointer-events-none ${
+            className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-1000 ease-in-out pointer-events-none ${
               isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
             }`}
           >
@@ -99,38 +98,23 @@ export const Hero: React.FC<HeroProps> = () => {
               className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-25 scale-105 pointer-events-none"
             />
 
-            {/* Main Uncropped Image Display (100% Complete Form — No Cutting / No Cropping) */}
-            <img
-              src={imgUrl}
-              alt={`BxStrength Training Slide ${idx + 1}`}
-              title="BxStrength — Premier Digital Coaching, Boxing & Fitness"
-              className="relative z-10 max-w-full max-h-full w-auto h-auto object-contain drop-shadow-2xl brightness-100 contrast-105"
-              loading="eager"
-              decoding="async"
-            />
+            {/* Main Uncropped Image Display */}
+            <div className="relative z-10 w-full h-full flex items-center justify-center px-4 sm:px-8 py-4 sm:py-6">
+              <img
+                src={imgUrl}
+                alt={`BxStrength Training Slide ${idx + 1}`}
+                title="BxStrength — Premier Digital Coaching, Boxing & Fitness"
+                className="max-w-full max-h-full w-auto h-auto object-contain drop-shadow-2xl brightness-100 contrast-105 rounded-xl sm:rounded-2xl"
+                loading="eager"
+                decoding="async"
+              />
+            </div>
           </div>
         );
       })}
 
       {/* Subtle Top & Bottom Gradient Overlay for Seamless Integration */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-transparent to-black/30 pointer-events-none z-20" />
-
-      {/* SLIDESHOW NAVIGATION PREV/NEXT CONTROLS */}
-      <button
-        onClick={handlePrev}
-        aria-label="Previous Slide"
-        className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/50 hover:bg-black/85 border border-zinc-700/80 hover:border-[#CCFF00] text-white hover:text-[#CCFF00] flex items-center justify-center transition-all backdrop-blur-md cursor-pointer active:scale-95 shadow-xl"
-      >
-        <ChevronLeft className="w-6 h-6" />
-      </button>
-
-      <button
-        onClick={handleNext}
-        aria-label="Next Slide"
-        className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/50 hover:bg-black/85 border border-zinc-700/80 hover:border-[#CCFF00] text-white hover:text-[#CCFF00] flex items-center justify-center transition-all backdrop-blur-md cursor-pointer active:scale-95 shadow-xl"
-      >
-        <ChevronRight className="w-6 h-6" />
-      </button>
 
       {/* SLIDE INDICATOR BULLETS (BOTTOM BAR) */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5">

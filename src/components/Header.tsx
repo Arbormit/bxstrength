@@ -217,7 +217,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Mobile menu toggle & quick search button */}
+          {/* Mobile menu toggle & quick actions */}
           <div className="flex items-center gap-2 sm:hidden">
             <button
               onClick={onOpenSearch}
@@ -228,12 +228,29 @@ export const Header: React.FC<HeaderProps> = ({
               <Search className="w-4 h-4" />
             </button>
 
-            <button
-              onClick={onOpenBooking}
-              className="bg-white text-black text-[10px] font-black tracking-wider px-3 py-1.5 rounded uppercase cursor-pointer"
-            >
-              CONSULT
-            </button>
+            {isAuthenticated ? (
+              <button
+                onClick={() => handleNav(isCoachOrAdmin ? 'admin' : 'dashboard')}
+                className="bg-[#18181b] text-white p-1.5 rounded-lg border border-zinc-700 flex items-center gap-1.5"
+                title="Open Dashboard"
+              >
+                <img
+                  src={user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || '')}`}
+                  alt=""
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              </button>
+            ) : (
+              <button
+                onClick={onOpenLogin}
+                className="bg-[#18181b] border border-zinc-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded flex items-center gap-1 cursor-pointer uppercase shadow-sm active:scale-95"
+                title="Sign In"
+              >
+                <LogIn className="w-3.5 h-3.5 text-emerald-400" />
+                <span>LOGIN</span>
+              </button>
+            )}
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-1.5 text-zinc-300 hover:text-white focus:outline-none"
@@ -297,7 +314,7 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             ))}
 
-            <div className="pt-4 flex flex-col gap-2">
+            <div className="pt-4 flex flex-col gap-2.5">
               {isAuthenticated && user ? (
                 <button
                   onClick={() => {
@@ -319,7 +336,30 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                   <span className="text-xs font-bold text-emerald-400 uppercase">OPEN →</span>
                 </button>
-              ) : null}
+              ) : (
+                <div className="grid grid-cols-2 gap-2 mb-1">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenLogin();
+                    }}
+                    className="bg-[#18181b] border border-zinc-700 text-white text-xs font-bold tracking-wider py-3 rounded-lg uppercase flex items-center justify-center gap-1.5 shadow-sm active:bg-zinc-800"
+                  >
+                    <LogIn className="w-4 h-4 text-emerald-400" />
+                    <span>SIGN IN</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenRegister();
+                    }}
+                    className="bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs tracking-wider py-3 rounded-lg uppercase flex items-center justify-center gap-1.5 shadow-md active:scale-[0.99]"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>SIGN UP</span>
+                  </button>
+                </div>
+              )}
 
               <button
                 onClick={() => {
