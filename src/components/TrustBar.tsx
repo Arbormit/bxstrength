@@ -160,7 +160,7 @@ export const TrustBar: React.FC = () => {
   return (
     <section ref={sectionRef} className="w-full bg-[#121214] border-y border-zinc-800 py-6 text-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6 text-center">
           {trustItems.map((item, idx) => {
             const IconComponent = item.icon;
             const triggerKey = hoverCounts[idx] || 0;
@@ -170,6 +170,8 @@ export const TrustBar: React.FC = () => {
                 key={idx}
                 onMouseEnter={() => handleMouseEnter(idx)}
                 className={`flex flex-col items-center justify-center p-3 rounded-xl group cursor-pointer transition-all duration-300 hover:bg-zinc-800/50 hover:border-zinc-700/60 border border-transparent transform ${
+                  idx === 4 ? 'col-span-2 sm:col-span-1 lg:col-span-1' : ''
+                } ${
                   isVisible
                     ? 'opacity-100 translate-y-0'
                     : 'opacity-0 translate-y-4'

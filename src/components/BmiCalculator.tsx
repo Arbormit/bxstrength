@@ -85,8 +85,7 @@ export const BmiCalculator: React.FC = () => {
             </div>
 
             <p className="text-gray-500 text-xs sm:text-sm font-normal leading-relaxed max-w-xl">
-              Give dry stars form us called won't winged had abundantly land Midst appear for you, good fill. 
-              Kind isn't form and their shall Whose them life be seed them green road bus away.
+              Use our real-time BMI calculator to assess your current body composition baseline. Head Coach Shahban uses these key metrics to tailor custom training protocols and nutritional macro targets for maximum results.
             </p>
 
             {/* Units Toggle */}
@@ -197,10 +196,10 @@ export const BmiCalculator: React.FC = () => {
               </div>
 
               {/* Form Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <button
                   type="submit"
-                  className="bg-[#E52165] hover:bg-[#c41551] text-white font-extrabold text-xs tracking-widest uppercase px-8 py-4 transition-all shadow-md shadow-pink-500/20"
+                  className="w-full sm:w-auto bg-[#E52165] hover:bg-[#c41551] text-white font-extrabold text-xs tracking-widest uppercase px-8 py-4 transition-all shadow-md shadow-pink-500/20 min-h-[44px] flex items-center justify-center"
                   id="btn-calculate-bmi"
                 >
                   CALCULATE NOW
@@ -209,7 +208,7 @@ export const BmiCalculator: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowExplanationModal(true)}
-                  className="bg-gray-900 hover:bg-black text-white font-extrabold text-xs tracking-widest uppercase px-6 py-4 transition-all flex items-center gap-1.5"
+                  className="w-full sm:w-auto bg-gray-900 hover:bg-black text-white font-extrabold text-xs tracking-widest uppercase px-6 py-4 transition-all flex items-center justify-center gap-1.5 min-h-[44px]"
                 >
                   <Info className="w-4 h-4 text-[#E52165]" /> WHAT IS BMI
                 </button>
