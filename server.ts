@@ -177,6 +177,72 @@ interface SendEmailOptions {
   senderName?: string;
 }
 
+function buildFullHtmlEmail(subject: string, rawContent: string): string {
+  // 1. Unescape HTML entities if passed as encoded string
+  let content = rawContent
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&');
+
+  // If content is already a complete HTML document, return as is
+  if (content.toLowerCase().includes('<!doctype html') || content.toLowerCase().includes('<html')) {
+    return content;
+  }
+
+  // 2. Wrap in responsive, bulletproof HTML email template
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>${subject}</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #09090b; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    table { border-collapse: collapse; }
+    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    a { color: #CCFF00; text-decoration: none; }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#09090b; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#09090b; width:100%; margin:0; padding:30px 10px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%; margin:0 auto; background-color:#0d0d12; border:1px solid #27272a; border-radius:12px; overflow:hidden;">
+          
+          <!-- BRAND HEADER -->
+          <tr>
+            <td style="padding:24px; text-align:center; background-color:#121215; border-bottom:2px solid #CCFF00;">
+              <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1789566029/WhatsApp_Image_2026-09-08_at_10.50.41_AM.png" alt="BxStrength Logo" style="max-height:48px; width:auto; display:inline-block;" />
+            </td>
+          </tr>
+
+          <!-- MAIN CONTENT BODY -->
+          <tr>
+            <td style="padding:28px 24px; color:#ffffff; font-size:14px; line-height:1.6;">
+              ${content}
+            </td>
+          </tr>
+
+          <!-- FOOTER & LEGAL BUSINESS INFO -->
+          <tr>
+            <td style="padding:20px 24px; background-color:#0a0a0c; border-top:1px solid #27272a; text-align:center; font-size:11px; color:#71717a;">
+              <p style="margin:0 0 4px 0; font-weight:800; color:#a1a1aa; text-transform:uppercase; letter-spacing:1px;">BXSTRENGTH PERFORMANCE COACHING</p>
+              <p style="margin:0 0 6px 0; color:#71717a;">Trading brand of 7Seas Exim | GSTIN: 07KPUPS3306Q1ZQ</p>
+              <p style="margin:0; color:#71717a;">185/A, Street No. 3, Zakir Nagar, Okhla, New Delhi - 110025, India | Email: bxstrengthuk@gmail.com</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 async function sendServerEmail(options: SendEmailOptions): Promise<{ success: boolean; provider?: string; error?: string; messageId?: string }> {
   const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
   const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'khanshadan96@gmail.com';
@@ -192,6 +258,13 @@ async function sendServerEmail(options: SendEmailOptions): Promise<{ success: bo
   }
 
   try {
+    const finalHtml = buildFullHtmlEmail(options.subject, options.htmlContent);
+    const plainText = options.htmlContent
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
@@ -203,7 +276,8 @@ async function sendServerEmail(options: SendEmailOptions): Promise<{ success: bo
         sender: { name: senderName, email: senderEmail },
         to: [{ email: options.toEmail, name: options.toName || options.toEmail }],
         subject: options.subject,
-        htmlContent: options.htmlContent
+        htmlContent: finalHtml,
+        textContent: plainText
       })
     });
 
