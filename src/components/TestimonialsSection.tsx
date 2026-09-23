@@ -231,51 +231,51 @@ export const TestimonialsSection: React.FC = () => {
   const activeAvatar = current ? formatAvatarSrc(current.avatar) : '';
 
   return (
-    <section className="py-20 bg-[#0a0a0a] text-white border-b border-zinc-800 relative font-sans">
+    <section className="py-12 sm:py-20 bg-[#0a0a0a] text-white border-b border-zinc-800 relative font-sans overflow-hidden">
       
       {/* Dedicated Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#18181b] border-l-4 border-emerald-500 text-white px-5 py-3.5 shadow-2xl rounded-r-lg flex items-center gap-3 animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-6 right-4 sm:right-6 z-50 max-w-[calc(100vw-2rem)] bg-[#18181b] border-l-4 border-emerald-500 text-white px-4 sm:px-5 py-3 sm:py-3.5 shadow-2xl rounded-r-lg flex items-center gap-3 animate-in slide-in-from-bottom-5">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span className="text-xs font-bold uppercase tracking-wide">{toastMsg}</span>
-          <button onClick={() => setToastMsg(null)} className="ml-2 text-zinc-400 hover:text-white cursor-pointer">
+          <span className="text-xs font-bold uppercase tracking-wide truncate">{toastMsg}</span>
+          <button onClick={() => setToastMsg(null)} className="ml-1 text-zinc-400 hover:text-white cursor-pointer shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full">
         
         {/* Section Heading & Write Review CTA */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-6 border-b border-zinc-800/80 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-12 gap-4 sm:gap-6 border-b border-zinc-800/80 pb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-              <span className="text-xs font-black uppercase tracking-widest text-[#CCFF00]">REAL ATHLETE FEEDBACK</span>
+              <Star className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 fill-amber-400 shrink-0" />
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-[#CCFF00]">REAL ATHLETE FEEDBACK</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-white break-words">
               WHAT OUR CLIENTS SAY
             </h2>
           </div>
           <button
             onClick={handleOpenModal}
-            className="bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all cursor-pointer shadow-lg inline-flex items-center gap-2.5 shrink-0 self-start sm:self-auto active:scale-95"
+            className="bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs uppercase tracking-widest px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl transition-all cursor-pointer shadow-lg inline-flex items-center justify-center gap-2.5 shrink-0 w-full sm:w-auto active:scale-95"
           >
-            <Plus className="w-4 h-4 text-black" />
+            <Plus className="w-4 h-4 text-black shrink-0" />
             <span>WRITE A CLIENT REVIEW</span>
           </button>
         </div>
 
         {/* Loading Skeleton */}
         {isLoading ? (
-          <div className="max-w-4xl mx-auto bg-[#121214] border border-zinc-800 p-8 sm:p-12 relative shadow-2xl rounded-2xl space-y-4">
+          <div className="max-w-4xl mx-auto bg-[#121214] border border-zinc-800 p-5 sm:p-12 relative shadow-2xl rounded-2xl space-y-4 w-full overflow-hidden">
             <Skeleton className="h-10 w-10 mx-auto rounded-full bg-zinc-800" />
             <Skeleton className="h-6 w-48 mx-auto bg-zinc-800" />
             <Skeleton className="h-20 w-full bg-zinc-800" />
             <Skeleton className="h-12 w-12 rounded-full mx-auto bg-zinc-800" />
           </div>
         ) : reviews.length === 0 ? (
-          <div className="max-w-md mx-auto text-center py-12 px-6 bg-[#121214] border border-zinc-800 rounded-2xl space-y-3">
+          <div className="max-w-md mx-auto text-center py-8 sm:py-12 px-4 sm:px-6 bg-[#121214] border border-zinc-800 rounded-2xl space-y-3 w-full overflow-hidden">
             <MessageSquarePlus className="w-10 h-10 text-zinc-600 mx-auto mb-2" />
             <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wider">No Client Reviews Published Yet</h3>
             <p className="text-xs text-zinc-500 max-w-sm mx-auto">
@@ -286,25 +286,25 @@ export const TestimonialsSection: React.FC = () => {
           <div 
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            className="max-w-4xl mx-auto bg-[#121214] border border-zinc-800 p-8 sm:p-12 relative shadow-2xl text-center rounded-2xl transition-all"
+            className="max-w-4xl mx-auto bg-[#121214] border border-zinc-800 p-5 sm:p-10 lg:p-12 relative shadow-2xl text-center rounded-2xl transition-all w-full overflow-hidden"
           >
-            <Quote className="w-12 h-12 text-zinc-700 mx-auto mb-4 opacity-50" />
+            <Quote className="w-8 h-8 sm:w-12 sm:h-12 text-zinc-700 mx-auto mb-3 sm:mb-4 opacity-50" />
 
             {/* Star Rating */}
-            <div className="flex justify-center gap-1.5 text-amber-400 mb-6">
+            <div className="flex justify-center gap-1 sm:gap-1.5 text-amber-400 mb-4 sm:mb-6">
               {[...Array(5)].map((_, i) => (
                 <Star 
                   key={i} 
-                  className={`w-5 h-5 ${i < current.rating ? 'fill-amber-400 text-amber-400' : 'text-zinc-700 fill-zinc-800'}`} 
+                  className={`w-4 h-4 sm:w-5 sm:h-5 ${i < current.rating ? 'fill-amber-400 text-amber-400' : 'text-zinc-700 fill-zinc-800'}`} 
                 />
               ))}
             </div>
 
-            <p className="text-zinc-200 text-base sm:text-xl font-medium leading-relaxed mb-8 max-w-3xl mx-auto italic">
+            <p className="text-zinc-200 text-sm sm:text-lg lg:text-xl font-medium leading-relaxed mb-6 sm:mb-8 max-w-3xl mx-auto italic break-words px-1">
               "{current.comment}"
             </p>
 
-            <div className="flex flex-col items-center justify-center gap-3">
+            <div className="flex flex-col items-center justify-center gap-2.5 sm:gap-3 max-w-full px-2">
               <div 
                 className="relative group cursor-pointer"
                 onClick={() => activeAvatar && setSelectedZoomImage(activeAvatar)}
@@ -313,22 +313,22 @@ export const TestimonialsSection: React.FC = () => {
                 <img
                   src={activeAvatar}
                   alt={current.name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 shadow-xl bg-zinc-900 group-hover:scale-105 transition-transform"
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-emerald-500 shadow-xl bg-zinc-900 group-hover:scale-105 transition-transform"
                 />
                 <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <Maximize2 className="w-4 h-4 text-white" />
                 </div>
               </div>
-              <div>
-                <h3 className="text-base font-black text-white uppercase tracking-tight flex items-center justify-center gap-1.5">
+              <div className="max-w-full">
+                <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-tight flex flex-wrap items-center justify-center gap-1.5 break-words">
                   <span>{current.name}</span>
                   {activeAvatar.includes('data:image') && (
-                    <span className="text-[9px] font-mono bg-emerald-950/80 border border-emerald-800 text-emerald-300 px-1.5 py-0.5 rounded-full uppercase">
+                    <span className="text-[9px] font-mono bg-emerald-950/80 border border-emerald-800 text-emerald-300 px-1.5 py-0.5 rounded-full uppercase shrink-0">
                       PHOTO VERIFIED
                     </span>
                   )}
                 </h3>
-                <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mt-0.5">
+                <p className="text-[11px] sm:text-xs font-bold text-emerald-400 uppercase tracking-wider mt-0.5 break-words">
                   {current.role}
                 </p>
               </div>
@@ -336,35 +336,35 @@ export const TestimonialsSection: React.FC = () => {
 
             {/* Carousel Controls with Pagination Dots */}
             {reviews.length > 1 && (
-              <div className="mt-10 flex flex-col items-center gap-4">
-                <div className="flex justify-center items-center gap-4">
+              <div className="mt-8 sm:mt-10 flex flex-col items-center gap-3 sm:gap-4 w-full max-w-full px-1">
+                <div className="flex justify-center items-center gap-3 sm:gap-4">
                   <button
                     onClick={prevTestimonial}
-                    className="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-[#CCFF00] text-white flex items-center justify-center transition-all cursor-pointer"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-[#CCFF00] text-white flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95"
                     aria-label="Previous Testimonial"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  <span className="text-xs font-mono text-zinc-400 font-bold">
+                  <span className="text-[11px] sm:text-xs font-mono text-zinc-400 font-bold tracking-wider">
                     {currentIndex + 1} / {reviews.length} REVIEWS
                   </span>
                   <button
                     onClick={nextTestimonial}
-                    className="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-[#CCFF00] text-white flex items-center justify-center transition-all cursor-pointer"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-[#CCFF00] text-white flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95"
                     aria-label="Next Testimonial"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </div>
 
-                {/* Auto-play pagination indicator dots */}
-                <div className="flex items-center gap-2">
+                {/* Auto-play pagination indicator dots (Wrapped & contained inside review section) */}
+                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 max-w-full px-2 py-1 overflow-hidden">
                   {reviews.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentIndex(idx)}
-                      className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                        idx === currentIndex ? 'w-6 bg-[#CCFF00]' : 'w-2 bg-zinc-700 hover:bg-zinc-500'
+                      className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                        idx === currentIndex ? 'w-5 sm:w-6 bg-[#CCFF00]' : 'w-1.5 sm:w-2 bg-zinc-700 hover:bg-zinc-500'
                       }`}
                       aria-label={`Go to slide ${idx + 1}`}
                     />
