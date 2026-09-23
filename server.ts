@@ -75,6 +75,12 @@ app.use((req, res, next) => {
   next();
 });
 
+function isValidUkMobile(phone: string | null | undefined): boolean {
+  if (!phone || !phone.trim()) return true;
+  const cleaned = phone.trim().replace(/[\s\-\(\)\+\.]/g, '');
+  return /^(?:07\d{9}|447\d{9}|4407\d{9}|00447\d{9}|004407\d{9})$/.test(cleaned);
+}
+
 // 3. RATE LIMITING
 const globalApiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -503,6 +509,11 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const name = sanitizeInput(rawName);
     const email = sanitizeInput(rawEmail).toLowerCase();
     const phone = sanitizeInput(rawPhone || '');
+
+    if (phone && !isValidUkMobile(phone)) {
+      return res.status(400).json({ error: 'Only UK mobile numbers are allowed (e.g. +44 7911 123456 or 07911 123456).' });
+    }
+
     // Public Registration Security: Default role is strictly 'client'.
     // Admin & Coach roles can ONLY be granted/revoked by an Admin.
     const userRole = 'client';

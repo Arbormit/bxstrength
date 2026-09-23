@@ -288,10 +288,10 @@ export const TestimonialsSection: React.FC = () => {
             onMouseLeave={() => setIsPaused(false)}
             className="max-w-4xl mx-auto bg-[#121214] border border-zinc-800 p-5 sm:p-10 lg:p-12 relative shadow-2xl text-center rounded-2xl transition-all w-full overflow-hidden"
           >
-            <Quote className="w-8 h-8 sm:w-12 sm:h-12 text-zinc-700 mx-auto mb-3 sm:mb-4 opacity-50" />
+            <Quote className="w-8 h-8 sm:w-12 sm:h-12 text-zinc-700 mx-auto mb-2 sm:mb-3 opacity-50" />
 
             {/* Star Rating */}
-            <div className="flex justify-center gap-1 sm:gap-1.5 text-amber-400 mb-4 sm:mb-6">
+            <div className="flex justify-center gap-1 sm:gap-1.5 text-amber-400 mb-2 sm:mb-4">
               {[...Array(5)].map((_, i) => (
                 <Star 
                   key={i} 
@@ -300,11 +300,14 @@ export const TestimonialsSection: React.FC = () => {
               ))}
             </div>
 
-            <p className="text-zinc-200 text-sm sm:text-lg lg:text-xl font-medium leading-relaxed mb-6 sm:mb-8 max-w-3xl mx-auto italic break-words px-1">
-              "{current.comment}"
-            </p>
+            {/* Stable Height Container - Prevents Section Expansion or Collapse on Mobile */}
+            <div className="min-h-[120px] sm:min-h-[140px] max-h-[220px] sm:max-h-[260px] overflow-y-auto flex items-center justify-center my-3 sm:my-5 px-2">
+              <p className="text-zinc-200 text-sm sm:text-lg lg:text-xl font-medium leading-relaxed italic break-words text-center">
+                "{current.comment}"
+              </p>
+            </div>
 
-            <div className="flex flex-col items-center justify-center gap-2.5 sm:gap-3 max-w-full px-2">
+            <div className="flex flex-col items-center justify-center gap-2.5 sm:gap-3 max-w-full px-2 mt-2">
               <div 
                 className="relative group cursor-pointer"
                 onClick={() => activeAvatar && setSelectedZoomImage(activeAvatar)}
@@ -334,42 +337,23 @@ export const TestimonialsSection: React.FC = () => {
               </div>
             </div>
 
-            {/* Carousel Controls with Pagination Dots */}
+            {/* Clean Carousel Controls (Prev/Next Arrows Only) */}
             {reviews.length > 1 && (
-              <div className="mt-8 sm:mt-10 flex flex-col items-center gap-3 sm:gap-4 w-full max-w-full px-1">
-                <div className="flex justify-center items-center gap-3 sm:gap-4">
-                  <button
-                    onClick={prevTestimonial}
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-[#CCFF00] text-white flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95"
-                    aria-label="Previous Testimonial"
-                  >
-                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-                  <span className="text-[11px] sm:text-xs font-mono text-zinc-400 font-bold tracking-wider">
-                    {currentIndex + 1} / {reviews.length} REVIEWS
-                  </span>
-                  <button
-                    onClick={nextTestimonial}
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-[#CCFF00] text-white flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95"
-                    aria-label="Next Testimonial"
-                  >
-                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-                </div>
-
-                {/* Auto-play pagination indicator dots (Wrapped & contained inside review section) */}
-                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 max-w-full px-2 py-1 overflow-hidden">
-                  {reviews.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentIndex(idx)}
-                      className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                        idx === currentIndex ? 'w-5 sm:w-6 bg-[#CCFF00]' : 'w-1.5 sm:w-2 bg-zinc-700 hover:bg-zinc-500'
-                      }`}
-                      aria-label={`Go to slide ${idx + 1}`}
-                    />
-                  ))}
-                </div>
+              <div className="mt-6 sm:mt-8 flex justify-center items-center gap-4 w-full">
+                <button
+                  onClick={prevTestimonial}
+                  className="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-[#CCFF00] text-white flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95 shadow-md"
+                  aria-label="Previous Testimonial"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={nextTestimonial}
+                  className="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-[#CCFF00] text-white flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95 shadow-md"
+                  aria-label="Next Testimonial"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
             )}
           </div>

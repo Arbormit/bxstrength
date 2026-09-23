@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, UserRole, SubscriptionTier, BillingStatement } from '../../types';
 import { VelocityAPI, getApiUrl } from '../../services/api';
+import { isValidUkMobile, UK_PHONE_ERROR_MSG } from '../../utils/phoneValidation';
 import { Users, Search, Plus, Edit2, Trash2, CheckCircle2, Filter, X } from 'lucide-react';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
@@ -130,6 +131,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       return;
     }
 
+    if (phone && !isValidUkMobile(phone)) {
+      onShowToast(UK_PHONE_ERROR_MSG);
+      return;
+    }
+
     const targetRole = isCoach ? 'client' : role;
     const finalCoachPos = targetRole === 'coach' ? coachPosition : undefined;
     const numHeight = Number(heightCm) || 175;
@@ -170,10 +176,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     }
   };
 
-  const [deletingUser, setDeletingUser] = useState<{ id: string; name: string } | null>(null);
+  const [deletingUser, setDeletingUser] = useState<{ id: string; name: string; email?: string } | null>(null);
 
-  const handleDeleteTrigger = (id: string, userName: string) => {
-    setDeletingUser({ id, name: userName });
+  const handleDeleteTrigger = (id: string, userName: string, userEmail?: string) => {
+    setDeletingUser({ id, name: userName, email: userEmail });
   };
 
   const confirmDelete = async () => {
@@ -368,7 +374,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteTrigger(u.id, u.name)}
+                        onClick={() => handleDeleteTrigger(u.id, u.name, u.email)}
                         className="p-1.5 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
                         title="Delete Client Account"
                       >
@@ -438,15 +444,24 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                    Phone
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1 flex items-center justify-between">
+                    <span>UK Mobile Phone</span>
+                    <span className="text-[10px] text-emerald-400 font-mono font-bold">🇬🇧 UK</span>
                   </label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-800 text-white px-3.5 py-2 text-sm outline-none"
-                  />
+                  <div className="relative flex items-center">
+                    <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-gray-950 border border-gray-800 px-2 py-0.5 rounded text-xs font-mono font-bold text-white shrink-0 pointer-events-none select-none z-10 shadow-sm">
+                      <span className="text-sm leading-none">🇬🇧</span>
+                      <span className="text-[11px] text-gray-300 font-bold">+44</span>
+                    </div>
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="7911 123456 or 07911 123456"
+                      className="w-full bg-gray-900 border border-gray-800 text-white pl-[76px] pr-3.5 py-2 text-sm outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div>

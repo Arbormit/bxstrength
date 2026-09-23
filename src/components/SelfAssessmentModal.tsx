@@ -3,6 +3,7 @@ import { X, CheckCircle2, ChevronRight, ChevronLeft, Dumbbell, ShieldCheck, Flam
 import { SelfAssessmentData } from '../types';
 import { VelocityAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { isValidUkMobile, UK_PHONE_ERROR_MSG } from '../utils/phoneValidation';
 
 interface SelfAssessmentModalProps {
   isOpen: boolean;
@@ -95,6 +96,10 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.phone && !isValidUkMobile(formData.phone)) {
+      alert(UK_PHONE_ERROR_MSG);
+      return;
+    }
     const finalAssessment = {
       ...formData,
       submittedAt: new Date().toISOString(),
@@ -525,17 +530,25 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                          Phone / WhatsApp *
+                        <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5 flex items-center justify-between">
+                          <span>UK Mobile Phone *</span>
+                          <span className="text-[10px] text-emerald-400 font-mono font-bold">🇬🇧 UK ONLY</span>
                         </label>
-                        <input
-                          type="tel"
-                          required
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          placeholder="+91 98765 43210"
-                          className="w-full bg-[#121214] border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-[#CCFF00] transition-colors"
-                        />
+                        <div className="relative flex items-center">
+                          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-900 border border-zinc-700/80 px-2 py-0.5 rounded text-xs font-mono font-bold text-white shrink-0 pointer-events-none select-none z-10 shadow-sm">
+                            <span className="text-sm leading-none">🇬🇧</span>
+                            <span className="text-[11px] text-zinc-300 font-bold">+44</span>
+                          </div>
+                          <input
+                            type="tel"
+                            inputMode="tel"
+                            required
+                            value={formData.phone}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            placeholder="7911 123456 or 07911 123456"
+                            className="w-full bg-[#121214] border border-zinc-700 rounded-lg pl-[76px] pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#CCFF00] transition-colors"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

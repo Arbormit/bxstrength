@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
 import { loadGoogleGsiScript, decodeGoogleJwt, promptGoogleAccountSelect, GOOGLE_CLIENT_ID } from '../../services/googleAuthService';
+import { isValidUkMobile, UK_PHONE_ERROR_MSG } from '../../utils/phoneValidation';
 import { X, Lock, Mail, User, Phone, Dumbbell, AlertCircle, ArrowRight, ShieldCheck, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
-
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -49,6 +49,10 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
     e.preventDefault();
     if (!name || !email || !password) {
       setError('Please fill in all required fields.');
+      return;
+    }
+    if (phone && !isValidUkMobile(phone)) {
+      setError(UK_PHONE_ERROR_MSG);
       return;
     }
     if (password !== confirmPassword) {
@@ -218,18 +222,22 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1">
-                  Phone (Optional)
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1 flex items-center justify-between">
+                  <span>UK Mobile Phone</span>
+                  <span className="text-[10px] text-emerald-400 font-mono font-bold">🇬🇧 UK ONLY</span>
                 </label>
-                <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <div className="relative flex items-center">
+                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-900 border border-zinc-700/80 px-2 py-0.5 rounded text-xs font-mono font-bold text-white shrink-0 pointer-events-none select-none z-10 shadow-sm">
+                    <span className="text-sm leading-none">🇬🇧</span>
+                    <span className="text-[11px] text-zinc-300 font-bold">+44</span>
+                  </div>
                   <input
                     type="tel"
                     inputMode="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+44 7911 123456"
-                    className="w-full min-h-[44px] bg-[#18181b] border border-zinc-800 focus:border-zinc-500 text-white pl-10 pr-3.5 py-2 text-sm sm:text-xs font-bold rounded-lg outline-none"
+                    placeholder="7911 123456 or 07911 123456"
+                    className="w-full min-h-[44px] bg-[#18181b] border border-zinc-800 focus:border-zinc-500 text-white pl-[76px] pr-3.5 py-2 text-sm sm:text-xs font-bold rounded-lg outline-none"
                   />
                 </div>
               </div>
