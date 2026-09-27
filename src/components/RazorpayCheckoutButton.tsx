@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { CreditCard, ShieldCheck, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { CreditCard, ShieldCheck, Loader2, ArrowRight } from 'lucide-react';
 import { openRazorpayCheckout } from '../services/razorpayService';
+import { detectMarketFromPhone, getMarketConfig, formatMarketPrice } from '../utils/marketService';
 
 interface RazorpayCheckoutButtonProps {
   amount: number;
@@ -20,7 +21,7 @@ interface RazorpayCheckoutButtonProps {
 export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
   amount,
   planName,
-  currency = 'GBP',
+  currency,
   userEmail,
   userName,
   userPhone,
@@ -29,10 +30,16 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
   onSuccess,
   onError,
   className,
-  buttonText = 'PAY SECURELY VIA RAZORPAY'
+  buttonText
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const activeMarketCountry = detectMarketFromPhone(userPhone);
+  const marketConfig = getMarketConfig(activeMarketCountry);
+  const effectiveCurrency = currency || marketConfig.currency;
+  const defaultText = `PAY ${formatMarketPrice(amount, activeMarketCountry)} SECURELY`;
+  const displayText = buttonText || defaultText;
 
   const handlePay = async () => {
     setIsLoading(true);
@@ -40,7 +47,8 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
 
     await openRazorpayCheckout({
       amount: amount,
-      currency: currency,
+      currency: effectiveCurrency,
+      country: activeMarketCountry,
       name: 'BxStrength Performance',
       description: `${planName} (${(serviceType || 'Standard').toUpperCase()})`,
       userEmail: userEmail,
@@ -84,12 +92,12 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
         {isLoading ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin text-black" />
-            <span>CONNECTING TO RAZORPAY...</span>
+            <span>CONNECTING TO SECURE GATEWAY...</span>
           </>
         ) : (
           <>
             <CreditCard className="w-5 h-5 text-black shrink-0" />
-            <span>{buttonText}</span>
+            <span>{displayText}</span>
             <ArrowRight className="w-4 h-4 text-black shrink-0" />
           </>
         )}
@@ -103,7 +111,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
 
       <div className="flex items-center justify-center gap-2 text-[10px] text-zinc-400 font-mono">
         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-        <span>Secured by 256-Bit Razorpay Standard SSL Encryption</span>
+        <span>256-Bit SSL Encrypted &amp; PCI DSS Compliant</span>
       </div>
     </div>
   );

@@ -1,4 +1,16 @@
-export type ViewPage = 'home' | 'about' | 'schedule' | 'trainers' | 'blog' | 'contact' | 'dashboard' | 'admin' | 'terms' | 'privacy';
+export type ViewPage = 'home' | 'about' | 'services' | 'pricing' | 'schedule' | 'trainers' | 'blog' | 'contact' | 'dashboard' | 'admin' | 'terms' | 'privacy';
+
+export type MarketCountry = 'GB' | 'IN'; // GB = United Kingdom (£ GBP), IN = India (₹ INR)
+export type CurrencyCode = 'GBP' | 'INR';
+export type CurrencySymbol = '£' | '₹';
+
+export interface MarketConfig {
+  country: MarketCountry;
+  countryName: string;
+  currency: CurrencyCode;
+  symbol: CurrencySymbol;
+  flagEmoji: string;
+}
 
 export type UserRole = 'admin' | 'coach' | 'client' | 'user';
 
@@ -254,7 +266,9 @@ export interface ServiceItem {
   category?: string;
   servicePlan?: string;           // Service/plan
   duration?: string;              // duration
-  price?: number | string;        // price
+  price?: number | string;        // price (fallback)
+  priceGbp?: number;              // UK price in GBP (£)
+  priceInr?: number;              // India price in INR (₹)
   sessionType?: string;           // session type
   goalPrimaryOutcome?: string;    // goal/primary outcome
   whatYouGet?: string | string[]; // what you get
@@ -325,6 +339,8 @@ export interface MembershipPlan {
   id: string;
   name: string;
   price: number;
+  priceGbp?: number;
+  priceInr?: number;
   period: 'month' | 'year';
   popular?: boolean;
   features: string[];

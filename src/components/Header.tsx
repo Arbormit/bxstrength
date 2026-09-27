@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ViewPage } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { Dumbbell, Menu, X, Calendar, Phone, Search, LogIn, UserPlus, LayoutDashboard } from 'lucide-react';
+import { MarketSelector } from './MarketSelector';
 
 interface HeaderProps {
   currentPage: ViewPage;
@@ -123,6 +124,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="flex items-center gap-4 text-xs">
+            <MarketSelector variant="header" />
             {isAuthenticated ? (
               <span className="text-zinc-400 font-medium flex items-center gap-1.5">
                 <span>Welcome,</span>

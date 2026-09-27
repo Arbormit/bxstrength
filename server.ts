@@ -21,13 +21,21 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'bxstrength_super_secret_jwt_key_2026';
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || '';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
+const getRazorpayInstance = () => {
+  const key_id = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || '';
+  const key_secret = process.env.RAZORPAY_KEY_SECRET || '';
 
-const razorpay = new Razorpay({
-  key_id: RAZORPAY_KEY_ID,
-  key_secret: RAZORPAY_KEY_SECRET,
-});
+  if (!key_id || !key_secret) {
+    return null;
+  }
+
+  try {
+    return new Razorpay({ key_id, key_secret });
+  } catch (err: any) {
+    console.error('[RAZORPAY INIT WARNING]', err?.message || err);
+    return null;
+  }
+};
 
 // 1. HELMET HTTP SECURITY HEADERS
 app.use(
@@ -144,105 +152,411 @@ app.post('/api/create-stripe-checkout-session', async (req, res) => {
   }
 });
 
-// 5. RAZORPAY STANDARD WEB CHECKOUT ENDPOINTS
-// STEP 1: Create Order Endpoint (POST /api/create-order)
-app.post(['/api/create-order', '/api/create-razorpay-order'], async (req, res) => {
+// --- FAULT-TOLERANT SERVER PAYMENT ENGINE & IDEMPOTENCY STORE ---
+interface PaymentTransactionRecord {
+  id: string;
+  idempotencyKey?: string;
+  userEmail: string;
+  userName?: string;
+  planName: string;
+  serviceType: string;
+  customExercises?: string[];
+  amount: number;
+  currency: string;
+  gateway: 'razorpay' | 'stripe';
+  gatewayOrderId?: string;
+  gatewayPaymentId?: string;
+  status: 'initiated' | 'order_created' | 'pending' | 'processing' | 'success' | 'failed' | 'cancelled' | 'reconciled';
+  failureReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const paymentTransactionsStore: PaymentTransactionRecord[] = [];
+const processedWebhooksStore: Set<string> = new Set();
+
+interface MarketPrice {
+  gbpBasePrice: number;
+  inrBasePrice: number;
+  name: string;
+}
+
+const AUTHORITATIVE_PRICING_CATALOG: Record<string, MarketPrice> = {
+  'bx-basic-care': { gbpBasePrice: 20, inrBasePrice: 1999, name: 'BX Basic Care' },
+  'bx-focus': { gbpBasePrice: 40, inrBasePrice: 3999, name: 'BX Focus' },
+  'bx-performance': { gbpBasePrice: 60, inrBasePrice: 5999, name: 'BX Performance' },
+  'bx-complete': { gbpBasePrice: 80, inrBasePrice: 7999, name: 'BX Complete' },
+  'custom-basic': { gbpBasePrice: 30, inrBasePrice: 2999, name: 'Custom Basic' },
+  'custom-focus': { gbpBasePrice: 50, inrBasePrice: 4999, name: 'Custom Focus' },
+  'custom-performance': { gbpBasePrice: 70, inrBasePrice: 6999, name: 'Custom Performance' },
+  'custom-complete': { gbpBasePrice: 90, inrBasePrice: 8999, name: 'Custom Complete' },
+  'fitness-boxing': { gbpBasePrice: 35, inrBasePrice: 3499, name: 'Fitness Boxing' },
+  'strength-training': { gbpBasePrice: 30, inrBasePrice: 2999, name: 'Strength Training' },
+  'mobility-recovery': { gbpBasePrice: 30, inrBasePrice: 2999, name: 'Mobility & Recovery' },
+  'mobility': { gbpBasePrice: 30, inrBasePrice: 2999, name: 'Mobility' },
+  'flexibility': { gbpBasePrice: 30, inrBasePrice: 2999, name: 'Flexibility Training' },
+  'bx-mindset-session': { gbpBasePrice: 45, inrBasePrice: 4499, name: 'BX Mindset Session' },
+  'boxing-fight-camp': { gbpBasePrice: 120, inrBasePrice: 11999, name: 'Boxing Fight Camp' },
+  'hypertrophy-body-recomp': { gbpBasePrice: 100, inrBasePrice: 9999, name: 'Hypertrophy & Body Recomp' },
+  'tactical-metabolic': { gbpBasePrice: 90, inrBasePrice: 8999, name: 'Tactical Metabolic' },
+  'rehab-physio': { gbpBasePrice: 110, inrBasePrice: 10999, name: 'Rehab & Physio' },
+  'tier-1-foundation': { gbpBasePrice: 60, inrBasePrice: 5999, name: 'Tier 1 Foundation' },
+  'tier-2-elite': { gbpBasePrice: 120, inrBasePrice: 11999, name: 'Tier 2 Elite' },
+  'tier-3-vip': { gbpBasePrice: 200, inrBasePrice: 19999, name: 'Tier 3 VIP' },
+  'personal-training': { gbpBasePrice: 50, inrBasePrice: 3999, name: 'Personal Training' },
+  'boxing-training': { gbpBasePrice: 48, inrBasePrice: 4499, name: 'Boxing Training' },
+  'fitness-training': { gbpBasePrice: 30, inrBasePrice: 2499, name: 'Fitness Training' },
+  'basic': { gbpBasePrice: 39, inrBasePrice: 2999, name: 'Basic Pass' },
+  'standard': { gbpBasePrice: 79, inrBasePrice: 5999, name: 'Fitness Pro' },
+  'vip': { gbpBasePrice: 129, inrBasePrice: 9999, name: 'VIP Unlimited' },
+  'default': { gbpBasePrice: 80, inrBasePrice: 7999, name: 'BxStrength Coaching' }
+};
+
+function determineMarketCountry(country?: string, phone?: string): 'IN' | 'GB' {
+  if (country === 'IN' || country === 'GB') {
+    return country;
+  }
+  if (phone) {
+    const cleaned = String(phone).replace(/[\s\-\(\)]/g, '');
+    if (cleaned.startsWith('+91') || cleaned.startsWith('91')) return 'IN';
+    if (cleaned.startsWith('+44') || cleaned.startsWith('44') || cleaned.startsWith('07')) return 'GB';
+  }
+  return 'GB'; // Default market
+}
+
+function calculateAuthoritativePriceForMarket(
+  planName: string,
+  country: 'IN' | 'GB',
+  serviceType?: string,
+  customExercises?: string[]
+): { amount: number; currency: 'INR' | 'GBP'; amountInSubUnits: number } {
+  const normKey = (planName || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+  let matched = AUTHORITATIVE_PRICING_CATALOG['default'];
+
+  for (const [key, val] of Object.entries(AUTHORITATIVE_PRICING_CATALOG)) {
+    if (normKey.includes(key)) {
+      matched = val;
+      break;
+    }
+  }
+
+  const isIndia = country === 'IN';
+  const currency: 'INR' | 'GBP' = isIndia ? 'INR' : 'GBP';
+  let basePrice = isIndia ? matched.inrBasePrice : matched.gbpBasePrice;
+
+  if (serviceType === 'custom' && Array.isArray(customExercises)) {
+    const extraCount = Math.max(0, customExercises.length - 3);
+    const extraFeePerUnit = isIndia ? 499 : 5;
+    basePrice += extraCount * extraFeePerUnit;
+  }
+
+  const amountInSubUnits = Math.round(basePrice * 100);
+
+  return {
+    amount: basePrice,
+    currency,
+    amountInSubUnits
+  };
+}
+
+// 5. SERVER-CONTROLLED PAYMENT ENGINE WITH AUTOMATIC FAILOVER
+// Primary Gateway: Razorpay | Secondary Gateway: Stripe (Automatic Failover)
+app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/create-intent'], async (req, res) => {
   try {
-    const { amount, currency = 'GBP', receipt, notes } = req.body;
+    const { planName = 'BxStrength Protocol', serviceType = 'individual', customExercises = [], userEmail, userName, phone, country: reqCountry, idempotencyKey } = req.body;
 
-    if (amount === undefined || amount === null) {
-      return res.status(400).json({ error: 'Amount parameter is required' });
-    }
+    const country = determineMarketCountry(reqCountry, phone);
+    const { amount, currency, amountInSubUnits } = calculateAuthoritativePriceForMarket(planName, country, serviceType, customExercises);
 
-    let parsedAmount = typeof amount === 'number' ? amount : parseFloat(amount);
-    if (isNaN(parsedAmount)) {
-      return res.status(400).json({ error: 'Invalid amount value' });
-    }
+    const transactionId = `tx_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const effectiveIdempotencyKey = idempotencyKey || `idemp_${userEmail || 'guest'}_${Date.now()}`;
 
-    // Convert major currency (e.g. 50 GBP) to smallest currency sub-unit (5000 pence).
-    // If input is already in sub-units (>= 100), preserve as is.
-    let amountInSubUnits: number;
-    if (parsedAmount < 100) {
-      amountInSubUnits = Math.round(parsedAmount * 100);
-    } else {
-      amountInSubUnits = Math.round(parsedAmount);
-    }
-
-    // Minimum amount requirement: at least 100 sub-units (1 GBP)
-    if (amountInSubUnits < 100) {
-      return res.status(400).json({ 
-        error: 'Minimum amount must be at least 1 GBP' 
+    // 1. Idempotency Check: Prevent duplicate charge orders
+    const existingTx = paymentTransactionsStore.find(t => t.idempotencyKey === effectiveIdempotencyKey && t.status !== 'failed');
+    if (existingTx) {
+      return res.status(200).json({
+        success: true,
+        transactionId: existingTx.id,
+        gateway: existingTx.gateway,
+        order_id: existingTx.gatewayOrderId,
+        amount: existingTx.amount * 100,
+        currency: existingTx.currency,
+        key_id: process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || '',
+        message: 'Reused existing active payment transaction'
       });
     }
 
-    const options = {
-      amount: amountInSubUnits,
-      currency: (currency || 'GBP').toUpperCase(),
-      receipt: receipt || `rcpt_${Date.now()}`,
-      notes: notes || {}
+    // Initialize Payment Record
+    const txRecord: PaymentTransactionRecord = {
+      id: transactionId,
+      idempotencyKey: effectiveIdempotencyKey,
+      userEmail: userEmail || 'guest@bxstrength.com',
+      userName: userName || 'Client Athlete',
+      planName,
+      serviceType,
+      customExercises,
+      amount,
+      currency,
+      gateway: 'razorpay',
+      status: 'initiated',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
+    paymentTransactionsStore.unshift(txRecord);
 
-    const order = await razorpay.orders.create(options);
+    // Save to NeonDB if available
+    if (dbPool) {
+      try {
+        await dbPool.query(
+          `INSERT INTO payment_transactions (id, idempotency_key, user_email, user_name, plan_name, service_type, custom_exercises, amount, currency, gateway, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+          [transactionId, effectiveIdempotencyKey, userEmail || '', userName || '', planName, serviceType, JSON.stringify(customExercises), amount, currency, 'razorpay', 'initiated']
+        );
+      } catch (e: any) {}
+    }
 
-    return res.status(200).json({
-      success: true,
-      order_id: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      key_id: RAZORPAY_KEY_ID,
-      receipt: order.receipt
+    // --- STEP A: TRY PRIMARY GATEWAY (RAZORPAY) ---
+    let primaryError: string | null = null;
+    try {
+      const razorpay = getRazorpayInstance();
+      const activeKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || '';
+
+      if (!razorpay || !activeKeyId) {
+        throw new Error('Razorpay API credentials not configured');
+      }
+
+      const options = {
+        amount: amountInSubUnits,
+        currency,
+        receipt: `rcpt_${transactionId}`,
+        notes: { planName, serviceType, transactionId, country }
+      };
+
+      const order = await razorpay.orders.create(options);
+
+      // Update Transaction Record on Primary Success
+      txRecord.status = 'order_created';
+      txRecord.gatewayOrderId = order.id;
+      txRecord.updatedAt = new Date().toISOString();
+
+      if (dbPool) {
+        dbPool.query(`UPDATE payment_transactions SET gateway_order_id = $1, status = 'order_created', updated_at = NOW() WHERE id = $2`, [order.id, transactionId]).catch(() => {});
+      }
+
+      return res.status(200).json({
+        success: true,
+        gateway: 'razorpay',
+        transactionId,
+        order_id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        key_id: activeKeyId,
+        receipt: order.receipt
+      });
+    } catch (err: any) {
+      primaryError = err?.message || 'Razorpay order creation failed';
+      console.warn(`⚠️ [PAYMENT FAILOVER] Primary gateway (Razorpay) failed: ${primaryError}. Transitioning to secondary gateway (Stripe)...`);
+    }
+
+    // --- STEP B: AUTOMATIC SECONDARY GATEWAY FAILOVER (STRIPE) ---
+    try {
+      txRecord.gateway = 'stripe';
+      const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY;
+
+      if (stripeSecretKey && !stripeSecretKey.includes('placeholder')) {
+        const stripeModule = await (Function('return import("stripe")')() as Promise<any>);
+        const Stripe = stripeModule.default;
+        const stripe = new Stripe(stripeSecretKey);
+
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price_data: {
+                currency: currency.toLowerCase(),
+                product_data: {
+                  name: `${planName} (${serviceType.toUpperCase()} MODE)`,
+                  description: customExercises && customExercises.length > 0 ? `Custom Exercises: ${customExercises.slice(0, 3).join(', ')}...` : 'Bespoke Fitness Protocol'
+                },
+                unit_amount: amountInSubUnits
+              },
+              quantity: 1
+            }
+          ],
+          mode: 'payment',
+          customer_email: userEmail,
+          client_reference_id: transactionId,
+          success_url: `${req.headers.origin || 'http://localhost:3000'}/?payment_success=true&tx=${transactionId}`,
+          cancel_url: `${req.headers.origin || 'http://localhost:3000'}/?payment_cancel=true&tx=${transactionId}`
+        });
+
+        txRecord.status = 'order_created';
+        txRecord.gatewayOrderId = session.id;
+        txRecord.updatedAt = new Date().toISOString();
+
+        if (dbPool) {
+          dbPool.query(`UPDATE payment_transactions SET gateway = 'stripe', gateway_order_id = $1, status = 'order_created', updated_at = NOW() WHERE id = $2`, [session.id, transactionId]).catch(() => {});
+        }
+
+        return res.status(200).json({
+          success: true,
+          gateway: 'stripe',
+          transactionId,
+          checkoutUrl: session.url,
+          amount: amountInSubUnits,
+          currency: 'GBP'
+        });
+      }
+    } catch (stripeErr: any) {
+      console.error('⚠️ [PAYMENT FAILOVER ERROR] Secondary gateway (Stripe) failed:', stripeErr?.message);
+    }
+
+    // Both primary & secondary failed
+    txRecord.status = 'failed';
+    txRecord.failureReason = primaryError || 'Payment gateway services temporarily unavailable';
+
+    return res.status(503).json({
+      success: false,
+      error: 'Payment system is currently undergoing routine maintenance. Please try again in a few moments.'
     });
   } catch (error: any) {
-    console.error('Razorpay Create Order Error:', error);
-    if (error?.statusCode === 401) {
-      return res.status(401).json({ error: 'Razorpay API Authentication failed. Please check key_id and key_secret.' });
-    }
+    console.error('Create Order Global Error:', error);
     return res.status(500).json({
-      error: 'Failed to create Razorpay order',
-      details: error?.message || 'Razorpay API server error'
+      success: false,
+      error: 'Failed to process payment order'
     });
   }
 });
 
-// STEP 3: Verify Payment Signature Endpoint (POST /api/verify-payment)
-app.post(['/api/verify-payment', '/api/verify-razorpay-payment'], async (req, res) => {
+// STEP 2: Cryptographic Signature Verification & Status Reconciliation (POST /api/verify-payment)
+app.post(['/api/verify-payment', '/api/verify-razorpay-payment', '/api/payments/verify'], async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, transactionId } = req.body;
+    const activeKeySecret = process.env.RAZORPAY_KEY_SECRET || '';
+
+    if (!activeKeySecret) {
+      return res.status(500).json({
+        success: false,
+        error: 'Payment gateway configuration secret is missing on server.'
+      });
+    }
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required Razorpay verification fields: razorpay_order_id, razorpay_payment_id, or razorpay_signature'
+        error: 'Missing required payment verification parameters'
       });
     }
 
-    // Generated Signature Algorithm: HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
+    // Replay/Duplicate Protection: Check if already verified
+    const existingTx = paymentTransactionsStore.find(t => t.gatewayOrderId === razorpay_order_id || t.id === transactionId);
+    if (existingTx && existingTx.status === 'reconciled') {
+      return res.status(200).json({
+        success: true,
+        message: 'Payment already verified and reconciled',
+        order_id: razorpay_order_id,
+        payment_id: razorpay_payment_id
+      });
+    }
+
+    // Cryptographic HMAC-SHA256 Signature Verification
     const generatedSignature = crypto
-      .createHmac('sha256', RAZORPAY_KEY_SECRET)
+      .createHmac('sha256', activeKeySecret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
     if (generatedSignature === razorpay_signature) {
+      // Reconcile Status
+      if (existingTx) {
+        existingTx.status = 'reconciled';
+        existingTx.gatewayPaymentId = razorpay_payment_id;
+        existingTx.updatedAt = new Date().toISOString();
+      }
+
+      if (dbPool) {
+        dbPool.query(
+          `UPDATE payment_transactions SET gateway_payment_id = $1, status = 'reconciled', updated_at = NOW() WHERE gateway_order_id = $2 OR id = $3`,
+          [razorpay_payment_id, razorpay_order_id, transactionId || '']
+        ).catch(() => {});
+      }
+
       return res.status(200).json({
         success: true,
-        message: 'Razorpay payment verified successfully',
+        message: 'Payment verified successfully and reconciled',
         order_id: razorpay_order_id,
         payment_id: razorpay_payment_id
       });
     } else {
+      if (existingTx) {
+        existingTx.status = 'failed';
+        existingTx.failureReason = 'Cryptographic signature mismatch';
+      }
+
       return res.status(400).json({
         success: false,
-        error: 'Invalid payment signature. Payment verification failed.',
+        error: 'Invalid payment verification signature. Transaction rejected.',
         message: 'Signature mismatch'
       });
     }
   } catch (error: any) {
-    console.error('Razorpay Verify Signature Error:', error);
+    console.error('Payment Verification Error:', error);
     return res.status(500).json({
       success: false,
-      error: 'Server error during Razorpay payment verification',
-      details: error?.message
+      error: 'Server error during payment signature verification'
     });
+  }
+});
+
+// STEP 3: Webhook Handlers with Replay Protection & Signature Validation
+app.post('/api/webhooks/razorpay', async (req, res) => {
+  try {
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || '';
+    const razorpaySignature = req.headers['x-razorpay-signature'] as string;
+    const eventId = req.headers['x-razorpay-event-id'] as string || `evt_${Date.now()}`;
+
+    // Replay Protection
+    if (processedWebhooksStore.has(eventId)) {
+      return res.status(200).json({ status: 'ignored', message: 'Webhook event already processed' });
+    }
+
+    if (webhookSecret && razorpaySignature) {
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(JSON.stringify(req.body))
+        .digest('hex');
+
+      if (expectedSignature !== razorpaySignature) {
+        return res.status(400).json({ error: 'Invalid webhook signature' });
+      }
+    }
+
+    processedWebhooksStore.add(eventId);
+
+    const event = req.body;
+    if (event.event === 'payment.captured' || event.event === 'order.paid') {
+      const payload = event.payload?.payment?.entity || event.payload?.order?.entity;
+      const orderId = payload?.order_id || payload?.id;
+      const paymentId = payload?.id;
+
+      const tx = paymentTransactionsStore.find(t => t.gatewayOrderId === orderId);
+      if (tx) {
+        tx.status = 'reconciled';
+        tx.gatewayPaymentId = paymentId;
+        tx.updatedAt = new Date().toISOString();
+      }
+
+      if (dbPool) {
+        dbPool.query(
+          `UPDATE payment_transactions SET gateway_payment_id = $1, status = 'reconciled', updated_at = NOW() WHERE gateway_order_id = $2`,
+          [paymentId, orderId]
+        ).catch(() => {});
+      }
+    }
+
+    res.status(200).json({ status: 'success' });
+  } catch (err: any) {
+    console.error('[RAZORPAY WEBHOOK ERROR]', err.message);
+    res.status(500).json({ error: 'Webhook processing error' });
   }
 });
 
@@ -516,6 +830,32 @@ if (dbPool) {
             message TEXT NOT NULL,
             status VARCHAR(50) DEFAULT 'new',
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS payment_transactions (
+            id VARCHAR(64) PRIMARY KEY,
+            idempotency_key VARCHAR(128) UNIQUE,
+            user_email VARCHAR(255) NOT NULL,
+            user_name VARCHAR(255),
+            plan_name VARCHAR(255) NOT NULL,
+            service_type VARCHAR(50) DEFAULT 'individual',
+            custom_exercises TEXT,
+            amount NUMERIC(10, 2) NOT NULL,
+            currency VARCHAR(10) DEFAULT 'GBP',
+            gateway VARCHAR(50) NOT NULL,
+            gateway_order_id VARCHAR(255),
+            gateway_payment_id VARCHAR(255),
+            status VARCHAR(50) NOT NULL DEFAULT 'initiated',
+            failure_reason TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS processed_webhooks (
+            event_id VARCHAR(255) PRIMARY KEY,
+            gateway VARCHAR(50) NOT NULL,
+            event_type VARCHAR(100) NOT NULL,
+            processed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
 
           CREATE TABLE IF NOT EXISTS trainers (

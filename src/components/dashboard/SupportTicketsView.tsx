@@ -19,7 +19,7 @@ export const SupportTicketsView: React.FC<SupportTicketsViewProps> = ({ user, on
 
   // Form states initialized from draft storage if present
   const [subject, setSubject] = useState(() => sessionStorage.getItem('bxstrength_ticket_draft_subj') || '');
-  const [category, setCategory] = useState<TicketCategory>(() => (sessionStorage.getItem('bxstrength_ticket_draft_cat') as TicketCategory) || 'Technical Issue');
+  const [category, setCategory] = useState<TicketCategory>(() => (sessionStorage.getItem('bxstrength_ticket_draft_cat') as TicketCategory) || 'General');
   const [priority, setPriority] = useState<TicketPriority>(() => (sessionStorage.getItem('bxstrength_ticket_draft_prio') as TicketPriority) || 'medium');
   const [description, setDescription] = useState(() => sessionStorage.getItem('bxstrength_ticket_draft_desc') || '');
 

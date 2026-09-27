@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dumbbell, Flame, HeartPulse, Activity, Zap, CheckCircle2, AlertCircle, 
   Target, ShieldCheck, RefreshCw, Home, Video, Trophy, Users, Award, Heart, 
   ChevronDown, ChevronRight, Tag, Clock, Gift, Calendar, Check, Filter, ArrowRight, ArrowUpDown,
   Sparkles, Info, DollarSign, Layers, Percent, UserCheck, HelpCircle, SlidersHorizontal
 } from 'lucide-react';
+import { getActiveMarketCountry, getMarketConfig, getServicePrice } from '../utils/marketService';
+import { MarketCountry } from '../types';
 
 export interface ServiceItem {
   title: string;
@@ -12,6 +14,8 @@ export interface ServiceItem {
   servicePlan: string;            // Service/plan
   duration: string;               // duration
   price: number | string;         // price
+  priceGbp?: number;              // UK price (£)
+  priceInr?: number;              // India price (₹)
   sessionType: string;            // session type
   goalPrimaryOutcome: string;     // goal/primary outcome
   whatYouGet: string | string[];  // what you get
@@ -25,6 +29,7 @@ export interface ServiceItem {
   icon?: React.ElementType;
   discountTag?: string;
   originalPrice?: number;
+  originalPriceInr?: number;
   discountedPrice?: number;
   priceUnit?: string;
   badge?: string;
@@ -42,6 +47,22 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
   const [sortOrder, setSortOrder] = useState<'high-to-low' | 'low-to-high'>('high-to-low');
   const [filterCategory, setFilterCategory] = useState<'all' | 'individual' | 'custom'>('all');
   const [showAllServices, setShowAllServices] = useState<boolean>(false);
+  const [activeMarketCountry, setActiveMarketCountryState] = useState<MarketCountry>(getActiveMarketCountry());
+
+  useEffect(() => {
+    const handleMarketChange = (e: Event) => {
+      const customEvt = e as CustomEvent<{ country: MarketCountry }>;
+      if (customEvt.detail?.country) {
+        setActiveMarketCountryState(customEvt.detail.country);
+      } else {
+        setActiveMarketCountryState(getActiveMarketCountry());
+      }
+    };
+    window.addEventListener('bxstrength_market_changed', handleMarketChange);
+    return () => window.removeEventListener('bxstrength_market_changed', handleMarketChange);
+  }, []);
+
+  const marketConfig = getMarketConfig(activeMarketCountry);
 
   const services: ServiceItem[] = [
     // --- CORE SESSION PACKAGES (BEST VALUE) ---
@@ -395,10 +416,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
     return true;
   });
 
-  // 2. Sort filtered services dynamically based on sortOrder
+  // 2. Sort filtered services dynamically based on active market sort order
   const sortedServices = [...filteredServices].sort((a, b) => {
-    const priceA = getNumericPrice(a.price);
-    const priceB = getNumericPrice(b.price);
+    const priceA = getServicePrice(a, activeMarketCountry).amount;
+    const priceB = getServicePrice(b, activeMarketCountry).amount;
     return sortOrder === 'high-to-low' ? priceB - priceA : priceA - priceB;
   });
 
@@ -415,7 +436,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
             OUR TRAINING SERVICES & PRICING
           </h2>
           <p className="text-zinc-400 text-sm sm:text-base mt-3 leading-relaxed max-w-2xl mx-auto">
-            Personal Coaching. Real Results. Clear, transparent upfront pricing in GBP (£) with zero hidden fees. Select any service or package below.
+            Personal Coaching. Real Results. Clear, transparent upfront pricing in <span className="text-[#CCFF00] font-bold">{marketConfig.currency} ({marketConfig.symbol})</span> for <span className="text-white font-bold">{marketConfig.countryName}</span> with zero hidden fees. Select any service or package below.
           </p>
         </div>
 
@@ -531,6 +552,15 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
             {visibleServices.map((srv, idx) => {
               const IconComp = srv.icon || Dumbbell;
               const displayDiscount = srv.discount || srv.discountTag;
+              const { amount: priceVal, symbol: currSym } = getServicePrice(srv, activeMarketCountry);
+              const formattedPriceStr = `${currSym}${priceVal.toLocaleString()}`;
+
+              let origPriceFormatted = '';
+              if (activeMarketCountry === 'IN' && srv.originalPriceInr) {
+                origPriceFormatted = `₹${srv.originalPriceInr.toLocaleString()}`;
+              } else if (srv.originalPrice) {
+                origPriceFormatted = `£${srv.originalPrice}`;
+              }
 
               return (
                 <div
@@ -577,16 +607,16 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
                     <div className="mb-4 p-4 bg-gradient-to-br from-zinc-900 via-[#18181c] to-zinc-900 border-2 border-zinc-700/80 group-hover:border-[#CCFF00] rounded-2xl flex items-center justify-between shadow-xl transition-all">
                       <div>
                         <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-0.5">
-                          PRICE / SESSION
+                          PRICE / SESSION ({marketConfig.currency})
                         </span>
                         <div className="flex items-baseline gap-2 flex-wrap">
-                          {srv.originalPrice && (
+                          {origPriceFormatted && (
                             <span className="text-base sm:text-lg font-bold text-zinc-400 line-through decoration-red-500/80 decoration-2">
-                              £{srv.originalPrice}
+                              {origPriceFormatted}
                             </span>
                           )}
                           <span className="text-3xl sm:text-4xl font-black text-[#CCFF00] tracking-tight drop-shadow-[0_2px_10px_rgba(204,255,0,0.25)]">
-                            £{srv.price}
+                            {formattedPriceStr}
                           </span>
                           <span className="text-xs font-bold text-zinc-300">/ {srv.duration}</span>
                         </div>
@@ -642,10 +672,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
                   {/* Single High-Contrast Action Button */}
                   <div className="pt-3 border-t border-zinc-800/80">
                     <button
-                      onClick={() => onSelectService ? onSelectService(srv) : onOpenBooking()}
+                      onClick={() => onSelectService ? onSelectService({ ...srv, price: priceVal, priceGbp: srv.priceGbp || Number(srv.price), priceInr: srv.priceInr || 3999 }) : onOpenBooking()}
                       className="w-full bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-[0.99]"
                     >
-                      <span>SELECT &amp; BOOK — £{srv.price}</span>
+                      <span>SELECT &amp; BOOK — {formattedPriceStr}</span>
                       <ArrowRight className="w-4 h-4 text-black group-hover:translate-x-1 transition-transform" />
                     </button>
                     <p className="text-[10px] text-center text-zinc-400 font-medium mt-1.5">

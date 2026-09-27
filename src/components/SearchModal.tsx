@@ -297,20 +297,34 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       matchesQuery(cls.trainerName)
     );
 
-    // Filter Expert Coaches
-    const matchedTrainers = TRAINERS_DATA.filter(coach => 
+    // Filter Expert Coaches from Database or Static Data
+    const coachPool: User[] = dbCoaches.length > 0 
+      ? dbCoaches 
+      : TRAINERS_DATA.map(t => ({
+          id: t.id,
+          name: t.name,
+          email: `${t.name.toLowerCase().replace(/\s+/g, '.')}@bxstrength.com`,
+          role: 'coach',
+          coachPosition: t.role,
+          avatarUrl: t.image,
+          isVerified: true,
+          status: 'active',
+          createdAt: new Date().toISOString()
+        }));
+
+    const matchedTrainers = coachPool.filter(coach => 
       matchesQuery(coach.name) || 
       matchesQuery(coach.role) || 
       matchesQuery(coach.coachPosition || '') || 
-      matchesQuery(coach.bio) ||
-      (coach.specialties && coach.specialties.some(s => matchesQuery(s)))
+      matchesQuery(coach.email)
     );
 
     // Filter Services
     const matchedServices = SERVICES_DATA.filter(svc => 
       matchesQuery(svc.title) || 
-      matchesQuery(svc.description) || 
-      svc.benefits.some(ben => matchesQuery(ben))
+      (svc.description ? matchesQuery(svc.description) : false) || 
+      (svc.benefits ? svc.benefits.some(ben => matchesQuery(ben)) : false) ||
+      (svc.whatYouGet ? (Array.isArray(svc.whatYouGet) ? svc.whatYouGet.some(w => matchesQuery(w)) : matchesQuery(svc.whatYouGet)) : false)
     );
 
     // Filter Blogs

@@ -11,6 +11,8 @@ import { Subscription } from '../types';
 import { isValidUkMobile, UK_PHONE_ERROR_MSG } from '../utils/phoneValidation';
 import { RazorpayCheckoutButton } from './RazorpayCheckoutButton';
 import { PhoneInput } from './PhoneInput';
+import { getMarketConfig, detectMarketFromPhone, formatMarketPrice } from '../utils/marketService';
+import { MarketSelector } from './MarketSelector';
 
 interface ServiceCustomizationModalProps {
   isOpen: boolean;
@@ -19,6 +21,8 @@ interface ServiceCustomizationModalProps {
     title: string;
     category: string;
     price?: number | string;
+    priceGbp?: number | string;
+    priceInr?: number | string;
     discountedPrice?: number;
     originalPrice?: number;
     priceUnit?: string;
@@ -108,15 +112,23 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
 
   if (!isOpen || !service) return null;
 
-  // Base & Dynamic Pricing Calculations derived directly from card's price
-  const rawPrice = service.price ?? service.discountedPrice ?? 0;
+  const activeCountry = detectMarketFromPhone(user?.phone || authPhone);
+  const marketConfig = getMarketConfig(activeCountry);
+  const currencySymbol = marketConfig.symbol;
+  const isIndia = activeCountry === 'IN';
+
+  // Base & Dynamic Pricing Calculations derived directly from market pricing catalog
+  const rawPrice: number | string = isIndia 
+    ? (service.priceInr ?? service.price ?? 7999) 
+    : (service.priceGbp ?? service.price ?? 80);
+
   const basePrice = typeof rawPrice === 'string'
     ? (parseFloat(rawPrice.replace(/[^0-9.]/g, '')) || 0)
     : Number(rawPrice);
 
-  // If user selects multiple trainings in custom mode, add cost for additional selected trainings beyond 1
-  const additionalTrainingsCount = Math.max(0, selectedExercises.length - 1);
-  const extraTrainingsCost = serviceType === 'custom' ? additionalTrainingsCount * 10 : 0;
+  const extraFeePerExercise = isIndia ? 499 : 5;
+  const additionalTrainingsCount = Math.max(0, selectedExercises.length - 3);
+  const extraTrainingsCost = serviceType === 'custom' ? additionalTrainingsCount * extraFeePerExercise : 0;
   const totalPrice = basePrice + extraTrainingsCost;
 
   // Expiry Date (1 Month / 30 Days from today)
@@ -360,17 +372,17 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                 if (!user) {
                   if (step === 3) return 'STEP 1 OF 3: ACCOUNT SIGNUP';
                   if (step === 4) return 'STEP 2 OF 3: ORDER PREVIEW';
-                  if (step === 5) return 'STEP 3 OF 3: STRIPE PAYMENT';
+                  if (step === 5) return 'STEP 3 OF 3: SECURE PAYMENT';
                 } else {
                   if (step === 4) return 'STEP 1 OF 2: ORDER PREVIEW';
-                  if (step === 5) return 'STEP 2 OF 2: STRIPE PAYMENT';
+                  if (step === 5) return 'STEP 2 OF 2: SECURE PAYMENT';
                 }
               }
               return `STEP ${step} OF 5: ${
                 step === 1 ? 'CATEGORY SELECT' : 
                 step === 2 ? 'CUSTOM EXERCISES' : 
                 step === 3 ? 'ACCOUNT SIGNUP' : 
-                step === 4 ? 'ORDER PREVIEW' : 'STRIPE PAYMENT'
+                step === 4 ? 'ORDER PREVIEW' : 'SECURE PAYMENT'
               }`;
             };
 
@@ -738,46 +750,42 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
             </div>
           )}
 
-          {/* STEP 5: RAZORPAY & SECURE PAYMENT GATEWAY */}
+          {/* STEP 5: SECURE PAYMENT CHECKOUT */}
           {step === 5 && (
             <div className="space-y-6 animate-in fade-in duration-150">
               <div>
                 <span className="text-[10px] font-black text-[#CCFF00] uppercase tracking-widest block mb-1">STEP 5 OF 5</span>
                 <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white mb-1.5 flex items-center gap-2">
                   <Lock className="w-5 h-5 text-emerald-400" />
-                  Razorpay Secure Checkout
+                  Secure Payment Checkout
                 </h2>
-                <p className="text-xs text-zinc-400">Standard Web Checkout with Instant Order Creation &amp; Signature Verification.</p>
+                <p className="text-xs text-zinc-400">Encrypted 256-Bit SSL Checkout with Instant Order Verification.</p>
               </div>
 
               {/* Itemized Price Summary */}
               <div className="bg-[#18181b] p-4 rounded-xl border border-zinc-800 space-y-2 text-xs">
                 <div className="flex justify-between text-zinc-400">
                   <span>Base Program Fee ({serviceType.toUpperCase()})</span>
-                  <span>£{basePrice}.00</span>
+                  <span>{currencySymbol}{basePrice.toLocaleString()}</span>
                 </div>
                 {serviceType === 'custom' && (
                   <div className="flex justify-between text-zinc-400">
                     <span>Additional Training Additions ({additionalTrainingsCount})</span>
-                    <span>+£{extraTrainingsCost}.00</span>
+                    <span>+{currencySymbol}{extraTrainingsCost.toLocaleString()}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-[#CCFF00] font-bold">
-                  <span>Promotional Discount Applied</span>
-                  <span>-20% SAVINGS INCLUDED</span>
-                </div>
                 <div className="pt-2 border-t border-zinc-800 flex justify-between text-base font-black text-white">
-                  <span>TOTAL DUE TODAY:</span>
-                  <span className="text-[#CCFF00]">£{totalPrice}.00</span>
+                  <span>TOTAL DUE TODAY ({marketConfig.currency}):</span>
+                  <span className="text-[#CCFF00]">{currencySymbol}{totalPrice.toLocaleString()}</span>
                 </div>
               </div>
 
-              {/* Razorpay Standard Checkout Component */}
+              {/* Secure Checkout Component */}
               <div className="bg-[#18181b] p-5 rounded-xl border border-zinc-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
                     <CreditCard className="w-4 h-4 text-[#CCFF00]" />
-                    Official Razorpay Payment Gateway
+                    Secure Payment Gateway
                   </span>
                   <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-md">
                     <ShieldCheck className="w-3.5 h-3.5" />
@@ -786,23 +794,23 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                 </div>
 
                 <p className="text-xs text-zinc-300 leading-relaxed">
-                  Complete your order instantly using Razorpay Standard Checkout. Supports Credit Cards, Debit Cards, International Cards &amp; Wallets. A verified email receipt will be sent directly to <span className="text-[#CCFF00] font-bold">{user?.email || authEmail}</span>.
+                  Complete your order securely using 256-bit encrypted checkout. Supports Credit Cards, Debit Cards &amp; {marketConfig.countryName} Payment Methods. A verified receipt will be sent directly to <span className="text-[#CCFF00] font-bold">{user?.email || authEmail}</span>.
                 </p>
 
-                {/* Razorpay Checkout Button Component */}
+                {/* Secure Checkout Button Component */}
                 <RazorpayCheckoutButton
                   amount={totalPrice}
                   planName={service.title}
-                  currency="GBP"
+                  currency={marketConfig.currency}
                   userEmail={user?.email || authEmail}
                   userName={user?.name || authName}
                   userPhone={user?.phone || authPhone}
                   serviceType={serviceType}
                   customExercises={selectedExercises}
-                  buttonText={`PAY £${totalPrice} VIA RAZORPAY`}
+                  buttonText={`PAY ${currencySymbol}${totalPrice.toLocaleString()} SECURELY`}
                   onSuccess={(result) => handleRazorpayPaymentSuccess(result)}
                   onError={(err) => {
-                    console.error('Razorpay payment error:', err);
+                    console.error('Payment error:', err);
                     sendBrevoPaymentFailedEmail({
                       clientName: user?.name || authName || 'Client Athlete',
                       clientEmail: user?.email || authEmail || 'client@domain.com',
@@ -812,18 +820,6 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                     }).catch(() => {});
                   }}
                 />
-
-                <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] text-zinc-400 font-mono">
-                  <span>Alternative Option:</span>
-                  <button
-                    type="button"
-                    onClick={handleStripePayment}
-                    disabled={isProcessingPayment}
-                    className="text-xs text-zinc-300 hover:text-white underline cursor-pointer font-sans"
-                  >
-                    Pay via Stripe Gateway Instead →
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -837,7 +833,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
 
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-emerald-950/60 text-emerald-400 rounded-full border border-emerald-800">
-                  STRIPE PAYMENT SUCCESSFUL (REF: {createdSubscription.id})
+                  PAYMENT CONFIRMED &amp; ACTIVE (REF: {createdSubscription.id})
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mt-3">
                   Service Plan Activated!
@@ -855,7 +851,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-500 font-bold uppercase block">Price Paid</span>
-                  <span className="font-bold text-[#CCFF00] block">£{createdSubscription.price}</span>
+                  <span className="font-bold text-[#CCFF00] block">{currencySymbol}{createdSubscription.price.toLocaleString()}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-500 font-bold uppercase block">Start Date</span>
