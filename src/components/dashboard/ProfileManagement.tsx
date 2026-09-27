@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { isValidUkMobile, UK_PHONE_ERROR_MSG } from '../../utils/phoneValidation';
+import { PhoneInput } from '../PhoneInput';
 import { Camera, CheckCircle2, ShieldCheck, Mail, Phone, Lock, Save, AlertCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
 
 interface ProfileManagementProps {
@@ -233,26 +234,12 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1 flex items-center justify-between">
-                    <span>UK Mobile Phone</span>
-                    <span className="text-[10px] text-emerald-400 font-mono font-bold">🇬🇧 UK ONLY</span>
-                  </label>
-                  <div className="relative flex items-center">
-                    <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-gray-950 border border-gray-800 px-2 py-0.5 rounded text-xs font-mono font-bold text-white shrink-0 pointer-events-none select-none z-10 shadow-sm">
-                      <span className="text-sm leading-none">🇬🇧</span>
-                      <span className="text-[11px] text-gray-300 font-bold">+44</span>
-                    </div>
-                    <input
-                      type="tel"
-                      inputMode="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="7911 123456 or 07911 123456"
-                      className="w-full bg-gray-900 border border-gray-800 focus:border-[#CCFF00] text-white pl-[76px] pr-3.5 py-2.5 text-sm rounded-none outline-none"
-                    />
-                  </div>
-                </div>
+                <PhoneInput
+                  value={phone}
+                  onChange={setPhone}
+                  label="Mobile Phone"
+                  inputClassName="w-full bg-gray-900 border border-gray-800 focus:border-[#CCFF00] text-white pl-[84px] pr-3.5 py-2.5 text-sm rounded-none outline-none"
+                />
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>

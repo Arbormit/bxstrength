@@ -165,23 +165,15 @@ export const TRAINERS_DATA: BxTrainer[] = [
       'Former Business Developer & Fitness Trainer at WOW Gym'
     ],
     galleryPhotos: [
-      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384983/WhatsApp_Image_2026-08-29_at_4.56.54_AM.jpg?auto=format&fit=crop&q=80&w=800',
-      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384983/WhatsApp_Image_2026-08-29_at_4.56.54_AM_1.jpg?auto=format&fit=crop&q=80&w=800',
-      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384983/WhatsApp_Image_2026-08-29_at_4.56.54_AM_2.jpg?auto=format&fit=crop&q=80&w=800',
-      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384982/WhatsApp_Image_2026-08-29_at_4.56.53_AM_3.jpg?auto=format&fit=crop&q=80&w=800',
-      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789384982/WhatsApp_Image_2026-08-29_at_4.56.43_AM_1.jpg?auto=format&fit=crop&q=80&w=800'
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790173781/WhatsApp_Image_2026-09-23_at_7.50.17_PM.jpg?auto=format&fit=crop&q=80&w=600',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790173783/WhatsApp_Image_2026-09-23_at_7.50.19_PM_2.jpg?auto=format&fit=crop&q=80&w=600',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790173784/WhatsApp_Image_2026-09-23_at_7.50.19_PM.jpg?auto=format&fit=crop&q=80&w=600',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790173786/WhatsApp_Image_2026-09-23_at_7.50.51_PM.jpg?auto=format&fit=crop&q=80&w=600',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790173781/WhatsApp_Image_2026-09-23_at_7.50.19_PM_1.jpg?auto=format&fit=crop&q=80&w=600',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790173790/WhatsApp_Image_2026-09-23_at_7.50.52_PM.jpg?auto=format&fit=crop&q=80&w=600',
+      'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790173787/WhatsApp_Image_2026-09-23_at_7.50.52_PM_1.jpg?auto=format&fit=crop&q=80&w=600',
     ],
-    galleryVideos: [
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789385001/WhatsApp_Video_2026-08-29_at_4.58.45_AM.mp4',
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384992/WhatsApp_Video_2026-08-29_at_6.06.53_AM.mp4',
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384989/WhatsApp_Video_2026-08-29_at_6.06.59_AM.mp4',
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384987/WhatsApp_Video_2026-08-29_at_6.06.50_AM.mp4',
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384987/WhatsApp_Video_2026-08-29_at_4.57.12_AM.mp4',
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384986/WhatsApp_Video_2026-08-29_at_6.06.57_AM.mp4',
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384985/WhatsApp_Video_2026-08-29_at_6.06.48_AM.mp4',
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384984/WhatsApp_Video_2026-08-29_at_6.06.45_AM.mp4',
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789384984/WhatsApp_Video_2026-08-29_at_6.06.42_AM.mp4',
-    ],
+    galleryVideos: [],
     socials: { instagram: 'https://instagram.com/bxstrength', linkedin: 'https://linkedin.com/' }
   },
   {
@@ -228,12 +220,7 @@ export const TRAINERS_DATA: BxTrainer[] = [
     galleryPhotos: [
       'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789448786/WhatsApp_Image_2026-08-29_at_4.59.56_AM.jpg?auto=format&fit=crop&q=80&w=800'
     ],
-    galleryVideos: [
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789448788/WhatsApp_Video_2026-08-29_at_4.59.57_AM.mp4',
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789448789/WhatsApp_Video_2026-08-29_at_5.05.33_AM.mp4',
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789448793/WhatsApp_Video_2026-08-29_at_4.59.58_AM.mp4',
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789448793/WhatsApp_Video_2026-08-29_at_5.04.58_AM.mp4',
-    ],
+    galleryVideos: [],
     socials: { instagram: 'https://instagram.com/', linkedin: 'https://linkedin.com/' }
   },
   {
@@ -283,9 +270,7 @@ export const TRAINERS_DATA: BxTrainer[] = [
       'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789573309/Moheeb_3.png?auto=format&fit=crop&q=80&w=800',
       'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789573806/Moheeb_4.png?auto=format&fit=crop&q=80&w=800',
     ],
-    galleryVideos: [
-      'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789465266/WhatsApp_Video_2026-08-29_at_6.04.06_AM.mp4'
-    ],
+    galleryVideos: [],
     socials: { instagram: 'https://instagram.com/', linkedin: 'https://linkedin.com/' }
   }
 ];

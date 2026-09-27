@@ -9,6 +9,8 @@ import { Pool } from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 
 dotenv.config({ quiet: true });
 
@@ -19,21 +21,30 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'bxstrength_super_secret_jwt_key_2026';
 
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || '';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
+
+const razorpay = new Razorpay({
+  key_id: RAZORPAY_KEY_ID,
+  key_secret: RAZORPAY_KEY_SECRET,
+});
+
 // 1. HELMET HTTP SECURITY HEADERS
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", 'https://checkout.razorpay.com'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:', 'https://images.unsplash.com', 'https://api.dicebear.com'],
-        connectSrc: ["'self'", 'http://localhost:*', 'ws://localhost:*']
+        imgSrc: ["'self'", 'data:', 'https://images.unsplash.com', 'https://api.dicebear.com', 'https://*.razorpay.com'],
+        frameSrc: ["'self'", 'https://api.razorpay.com', 'https://checkout.razorpay.com'],
+        connectSrc: ["'self'", 'http://localhost:*', 'ws://localhost:*', 'https://api.razorpay.com', 'https://lumberjack.razorpay.com']
       }
     },
     crossOriginEmbedderPolicy: false,
-    frameguard: { action: 'deny' },
+    frameguard: false,
     noSniff: true,
     xssFilter: true
   })
@@ -130,6 +141,108 @@ app.post('/api/create-stripe-checkout-session', async (req, res) => {
     return res.json({ url: fallbackStripeUrl });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || 'Stripe session initialization error' });
+  }
+});
+
+// 5. RAZORPAY STANDARD WEB CHECKOUT ENDPOINTS
+// STEP 1: Create Order Endpoint (POST /api/create-order)
+app.post(['/api/create-order', '/api/create-razorpay-order'], async (req, res) => {
+  try {
+    const { amount, currency = 'GBP', receipt, notes } = req.body;
+
+    if (amount === undefined || amount === null) {
+      return res.status(400).json({ error: 'Amount parameter is required' });
+    }
+
+    let parsedAmount = typeof amount === 'number' ? amount : parseFloat(amount);
+    if (isNaN(parsedAmount)) {
+      return res.status(400).json({ error: 'Invalid amount value' });
+    }
+
+    // Convert major currency (e.g. 50 GBP) to smallest currency sub-unit (5000 pence).
+    // If input is already in sub-units (>= 100), preserve as is.
+    let amountInSubUnits: number;
+    if (parsedAmount < 100) {
+      amountInSubUnits = Math.round(parsedAmount * 100);
+    } else {
+      amountInSubUnits = Math.round(parsedAmount);
+    }
+
+    // Minimum amount requirement: at least 100 sub-units (1 GBP)
+    if (amountInSubUnits < 100) {
+      return res.status(400).json({ 
+        error: 'Minimum amount must be at least 1 GBP' 
+      });
+    }
+
+    const options = {
+      amount: amountInSubUnits,
+      currency: (currency || 'GBP').toUpperCase(),
+      receipt: receipt || `rcpt_${Date.now()}`,
+      notes: notes || {}
+    };
+
+    const order = await razorpay.orders.create(options);
+
+    return res.status(200).json({
+      success: true,
+      order_id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      key_id: RAZORPAY_KEY_ID,
+      receipt: order.receipt
+    });
+  } catch (error: any) {
+    console.error('Razorpay Create Order Error:', error);
+    if (error?.statusCode === 401) {
+      return res.status(401).json({ error: 'Razorpay API Authentication failed. Please check key_id and key_secret.' });
+    }
+    return res.status(500).json({
+      error: 'Failed to create Razorpay order',
+      details: error?.message || 'Razorpay API server error'
+    });
+  }
+});
+
+// STEP 3: Verify Payment Signature Endpoint (POST /api/verify-payment)
+app.post(['/api/verify-payment', '/api/verify-razorpay-payment'], async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required Razorpay verification fields: razorpay_order_id, razorpay_payment_id, or razorpay_signature'
+      });
+    }
+
+    // Generated Signature Algorithm: HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
+    const generatedSignature = crypto
+      .createHmac('sha256', RAZORPAY_KEY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
+
+    if (generatedSignature === razorpay_signature) {
+      return res.status(200).json({
+        success: true,
+        message: 'Razorpay payment verified successfully',
+        order_id: razorpay_order_id,
+        payment_id: razorpay_payment_id
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid payment signature. Payment verification failed.',
+        message: 'Signature mismatch'
+      });
+    }
+  } catch (error: any) {
+    console.error('Razorpay Verify Signature Error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error during Razorpay payment verification',
+      details: error?.message
+    });
   }
 });
 
@@ -265,9 +378,16 @@ async function sendServerEmail(options: SendEmailOptions): Promise<{ success: bo
 
   try {
     const finalHtml = buildFullHtmlEmail(options.subject, options.htmlContent);
-    const plainText = options.htmlContent
+    const plainText = finalHtml
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, '&')
       .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 

@@ -3,7 +3,7 @@ import { Testimonial } from '../types';
 import { VelocityAPI, getApiUrl, decodeHtmlEntities } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
-  Star, Quote, ChevronLeft, ChevronRight, Plus, X, CheckCircle2, 
+  Star, Quote, ChevronLeft, ChevronRight, ChevronDown, Plus, X, CheckCircle2, 
   MessageSquarePlus, Trophy, ShieldCheck, Upload, Image as ImageIcon, 
   Trash2, AlertCircle, Maximize2 
 } from 'lucide-react';
@@ -133,6 +133,12 @@ export const TestimonialsSection: React.FC = () => {
   };
 
   const [isPaused, setIsPaused] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Reset comment expansion whenever active review slide changes
+  useEffect(() => {
+    setIsExpanded(false);
+  }, [currentIndex]);
 
   // Auto-slide reviews every 4 seconds (pauses on hover or when review modal is open)
   useEffect(() => {
@@ -300,11 +306,30 @@ export const TestimonialsSection: React.FC = () => {
               ))}
             </div>
 
-            {/* Stable Height Container - Prevents Section Expansion or Collapse on Mobile */}
-            <div className="min-h-[120px] sm:min-h-[140px] max-h-[220px] sm:max-h-[260px] overflow-y-auto flex items-center justify-center my-3 sm:my-5 px-2">
-              <p className="text-zinc-200 text-sm sm:text-lg lg:text-xl font-medium leading-relaxed italic break-words text-center">
-                "{current.comment}"
-              </p>
+            {/* Review Comment Container with Read More / Read Less & Scrollable Option */}
+            <div className="my-3 sm:my-5 px-1 max-w-3xl mx-auto flex flex-col items-center min-h-[110px] sm:min-h-[130px] justify-center">
+              <div 
+                className={`w-full text-center transition-all duration-300 ${
+                  isExpanded 
+                    ? 'max-h-56 sm:max-h-64 overflow-y-auto pr-1' 
+                    : 'line-clamp-3 sm:line-clamp-4 overflow-hidden'
+                }`}
+              >
+                <p className="text-zinc-200 text-sm sm:text-base lg:text-lg font-medium leading-relaxed italic break-words">
+                  "{current.comment}"
+                </p>
+              </div>
+
+              {current.comment && current.comment.length > 130 && (
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="mt-2.5 text-[11px] sm:text-xs font-bold font-mono uppercase tracking-wider text-[#CCFF00] hover:text-[#b8e600] inline-flex items-center gap-1.5 cursor-pointer bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 px-3 py-1 rounded-full transition-all shadow-sm active:scale-95"
+                >
+                  <span>{isExpanded ? 'Read Less' : 'Read Full Review...'}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                </button>
+              )}
             </div>
 
             <div className="flex flex-col items-center justify-center gap-2.5 sm:gap-3 max-w-full px-2 mt-2">

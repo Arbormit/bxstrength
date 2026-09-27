@@ -229,41 +229,43 @@ export interface PaymentReceiptEmailParams {
   amountPaid: number;
   expiryDate: string;
   selectedExercises?: string[];
+  paymentMethod?: string;
 }
 
 export const sendBrevoPaymentReceiptEmail = async (params: PaymentReceiptEmailParams): Promise<{ success: boolean; message: string }> => {
   const { senderEmail } = getBrevoConfig();
+  const gatewayName = params.paymentMethod || 'Razorpay Secure Gateway';
 
   const exercisesListHtml = params.selectedExercises && params.selectedExercises.length > 0
-    ? `<div style="margin-top: 12px;"><strong style="color: #CCFF00; font-size: 12px; text-transform: uppercase;">Purchased Exercises (${params.selectedExercises.length}):</strong><ul style="margin: 6px 0; padding-left: 18px; font-size: 12px; color: #e4e4e7;">${params.selectedExercises.map(ex => `<li style="margin-bottom: 4px;">${ex}</li>`).join('')}</ul></div>`
+    ? `<div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #27272a;"><strong style="color: #CCFF00; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Selected Protocol Exercises (${params.selectedExercises.length}):</strong><ul style="margin: 8px 0 0 0; padding-left: 18px; font-size: 12px; color: #e4e4e7;">${params.selectedExercises.map(ex => `<li style="margin-bottom: 4px;">${ex}</li>`).join('')}</ul></div>`
     : '';
 
   const htmlBody = `
-    <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
-      <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 24px;">
-        <h1 style="color: #CCFF00; margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900;">BXSTRENGTH PAYMENT RECEIPT</h1>
-        <p style="color: #a1a1aa; font-size: 13px; margin-top: 6px;">Order / Receipt ID: <strong style="color: #ffffff;">${params.orderId}</strong></p>
+    <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 24px; border-radius: 12px; max-width: 580px; margin: 0 auto; border: 1px solid #27272a;">
+      <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 20px;">
+        <h2 style="color: #CCFF00; margin: 0; font-size: 22px; text-transform: uppercase; font-weight: 900; letter-spacing: 0.5px;">BXSTRENGTH PAYMENT RECEIPT</h2>
+        <p style="color: #a1a1aa; font-size: 12px; margin: 6px 0 0 0;">Order / Receipt ID: <strong style="color: #ffffff;">${params.orderId}</strong></p>
       </div>
 
-      <p style="font-size: 15px; line-height: 1.6; color: #e4e4e7;">Dear <strong>${params.clientName}</strong>,</p>
-      <p style="font-size: 14px; line-height: 1.6; color: #a1a1aa;">Thank you for your purchase! Your payment of <strong style="color: #CCFF00;">£${params.amountPaid}.00 GBP</strong> has been successfully processed via Stripe.</p>
+      <p style="font-size: 14px; line-height: 1.6; color: #e4e4e7; margin-bottom: 8px;">Dear <strong>${params.clientName}</strong>,</p>
+      <p style="font-size: 14px; line-height: 1.6; color: #a1a1aa; margin-top: 0;">Thank you for your purchase! Your payment of <strong style="color: #CCFF00;">£${params.amountPaid}.00 GBP</strong> has been successfully processed via ${gatewayName}.</p>
 
-      <div style="background-color: #18181b; border: 1px solid #27272a; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <h3 style="color: #CCFF00; margin-top: 0; font-size: 14px; text-transform: uppercase;">PAYMENT TRANSACTION RECEIPT</h3>
+      <div style="background-color: #18181b; border: 1px solid #27272a; padding: 18px; border-radius: 8px; margin: 20px 0;">
+        <h4 style="color: #CCFF00; margin-top: 0; margin-bottom: 14px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">PAYMENT TRANSACTION RECEIPT</h4>
         <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #e4e4e7;">
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Client Name:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.clientName}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Purchased Service:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.planName}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Amount Paid:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">£${params.amountPaid}.00 GBP</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Payment Method:</td><td style="padding: 6px 0; font-weight: bold;">Stripe Secure Gateway</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Expiry Date:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.expiryDate}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Client Account:</td><td style="padding: 6px 0; font-weight: bold;">${params.clientEmail}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Client Name:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff; text-align: right;">${params.clientName}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Purchased Service:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00; text-align: right;">${params.planName}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Amount Paid:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00; text-align: right;">£${params.amountPaid}.00 GBP</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Payment Method:</td><td style="padding: 6px 0; font-weight: bold; text-align: right;">${gatewayName}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Expiry Date:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff; text-align: right;">${params.expiryDate}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Client Account:</td><td style="padding: 6px 0; font-weight: bold; text-align: right;">${params.clientEmail}</td></tr>
         </table>
         ${exercisesListHtml}
       </div>
 
-      <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">Your plan is now active on your client dashboard. Log in anytime to view your custom exercises, workout logs, and coach messaging.</p>
+      <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5; margin-bottom: 20px;">Your plan is now active on your client dashboard. Log in anytime to view your custom exercises, workout logs, and coach messaging.</p>
 
-      <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
+      <div style="border-top: 1px solid #27272a; padding-top: 14px; margin-top: 20px; font-size: 11px; color: #71717a; text-align: center;">
         BxStrength Performance Coaching | Official Support: ${senderEmail}
       </div>
     </div>
@@ -278,6 +280,56 @@ export const sendBrevoPaymentReceiptEmail = async (params: PaymentReceiptEmailPa
   });
 
   return { success: true, message: `Payment receipt recorded and sent to ${params.clientEmail}` };
+};
+
+export interface PaymentFailedEmailParams {
+  clientName: string;
+  clientEmail: string;
+  planName: string;
+  amount: number;
+  reason?: string;
+}
+
+export const sendBrevoPaymentFailedEmail = async (params: PaymentFailedEmailParams): Promise<{ success: boolean; message: string }> => {
+  const { senderEmail } = getBrevoConfig();
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 24px; border-radius: 12px; max-width: 580px; margin: 0 auto; border: 1px solid #27272a;">
+      <div style="text-align: center; border-bottom: 2px solid #ef4444; padding-bottom: 16px; margin-bottom: 20px;">
+        <h2 style="color: #ef4444; margin: 0; font-size: 20px; text-transform: uppercase; font-weight: 900; letter-spacing: 0.5px;">⚠️ PAYMENT TRANSACTION UNSUCCESSFUL</h2>
+      </div>
+
+      <p style="font-size: 14px; line-height: 1.6; color: #e4e4e7;">Dear <strong>${params.clientName}</strong>,</p>
+      <p style="font-size: 14px; line-height: 1.6; color: #a1a1aa;">
+        We were unable to complete your payment of <strong style="color: #ffffff;">£${params.amount}.00 GBP</strong> for 
+        <strong style="color: #CCFF00;">${params.planName}</strong>.
+      </p>
+
+      <div style="background-color: #18181b; border-left: 4px solid #ef4444; padding: 14px; margin: 20px 0; border-radius: 6px;">
+        <p style="margin: 0; font-size: 13px; color: #fca5a5;">
+          <strong>Transaction Status Note:</strong> ${params.reason || 'Payment was cancelled or declined by card issuer.'}
+        </p>
+      </div>
+
+      <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">
+        No funds were charged to your account. You can log into your BxStrength account anytime and try checking out again.
+      </p>
+
+      <div style="border-top: 1px solid #27272a; padding-top: 14px; margin-top: 20px; font-size: 11px; color: #71717a; text-align: center;">
+        BxStrength Performance Coaching | Support Desk: ${senderEmail}
+      </div>
+    </div>
+  `;
+
+  await sendViaBackendApi({
+    toEmail: params.clientEmail,
+    toName: params.clientName,
+    subject: `[ALERT] Payment Unsuccessful - ${params.planName}`,
+    htmlContent: htmlBody,
+    senderName: 'BxStrength Billing Desk'
+  });
+
+  return { success: true, message: `Payment failed alert sent to ${params.clientEmail}` };
 };
 
 export interface ContactEnquiryEmailParams {

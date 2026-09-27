@@ -6,9 +6,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { VelocityAPI, getApiUrl } from '../services/api';
-import { sendBrevoPaymentReceiptEmail } from '../services/emailService';
+import { sendBrevoPaymentReceiptEmail, sendBrevoPaymentFailedEmail } from '../services/emailService';
 import { Subscription } from '../types';
 import { isValidUkMobile, UK_PHONE_ERROR_MSG } from '../utils/phoneValidation';
+import { RazorpayCheckoutButton } from './RazorpayCheckoutButton';
+import { PhoneInput } from './PhoneInput';
 
 interface ServiceCustomizationModalProps {
   isOpen: boolean;
@@ -30,7 +32,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
   service,
   onNavigateToDashboard
 }) => {
-  const { user, login } = useAuth();
+  const { user, login, register } = useAuth();
 
   // Wizard Step: 1 = Mode Select, 2 = Custom Exercises (if custom), 3 = Account/Signup, 4 = Preview, 5 = Stripe Payment, 6 = Success
   const [step, setStep] = useState<number>(1);
@@ -173,20 +175,18 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
 
     try {
       // Register or authenticate client account
-      const res = await VelocityAPI.register({
-        name: authName || authEmail.split('@')[0],
-        email: authEmail,
-        password: authPassword,
-        phone: authPhone,
-        role: 'client'
-      });
-      login(res.user, res.token);
+      await register(
+        authName || authEmail.split('@')[0],
+        authEmail,
+        authPhone,
+        'client',
+        authPassword
+      );
       setStep(4); // Advance to Order Preview
     } catch (err: any) {
       // If already registered, attempt login
       try {
-        const loggedUser = await VelocityAPI.login(authEmail, authPassword);
-        login(loggedUser.user, loggedUser.token);
+        await login(authEmail, authPassword);
         setStep(4);
       } catch (loginErr: any) {
         setAuthError(err.message || 'Account registration note: proceeding to checkout.');
@@ -236,7 +236,8 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
         serviceType: serviceType,
         amountPaid: totalPrice,
         expiryDate: formattedExpiryDate,
-        selectedExercises: serviceType === 'custom' ? selectedExercises : undefined
+        selectedExercises: serviceType === 'custom' ? selectedExercises : undefined,
+        paymentMethod: 'Stripe Secure Gateway'
       }).catch(() => {});
 
       // 3. Initiate Real Stripe Checkout Session Redirect
@@ -266,6 +267,49 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
       setIsProcessingPayment(false);
       setStep(6);
     }
+  };
+
+  const handleRazorpayPaymentSuccess = (paymentResult: { orderId: string; paymentId: string }) => {
+    setIsProcessingPayment(false);
+    
+    const targetEmail = user?.email || authEmail || 'client@domain.com';
+    const targetName = user?.name || authName || 'Client Athlete';
+    const activeUser = user || { id: 'usr-client-' + Date.now(), name: targetName, email: targetEmail };
+    const subId = paymentResult.orderId || ('SUB-' + Math.floor(100000 + Math.random() * 900000));
+    
+    const newSub: Subscription = {
+      id: subId,
+      userId: activeUser.id,
+      userName: activeUser.name,
+      userEmail: activeUser.email,
+      planName: `${service.title} (${serviceType.toUpperCase()})`,
+      billingCycle: 'monthly',
+      price: totalPrice,
+      startDate: new Date().toISOString(),
+      nextBillingDate: expiryDateObj.toISOString(),
+      expiryDate: formattedExpiryDate,
+      status: 'active',
+      autoRenew: true,
+      serviceType: serviceType,
+      customExercises: serviceType === 'custom' ? selectedExercises : ['Preset Program Architecture']
+    };
+
+    VelocityAPI.createSubscription(newSub);
+    setCreatedSubscription(newSub);
+
+    sendBrevoPaymentReceiptEmail({
+      orderId: subId,
+      clientName: activeUser.name,
+      clientEmail: activeUser.email,
+      planName: newSub.planName,
+      serviceType: serviceType,
+      amountPaid: totalPrice,
+      expiryDate: formattedExpiryDate,
+      selectedExercises: serviceType === 'custom' ? selectedExercises : undefined,
+      paymentMethod: 'Razorpay Secure Gateway'
+    }).catch(() => {});
+
+    setStep(6);
   };
 
   return (
@@ -562,27 +606,12 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                       className="w-full bg-[#121214] border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-[#CCFF00]"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5 flex items-center justify-between">
-                      <span>UK Mobile Phone *</span>
-                      <span className="text-[10px] text-emerald-400 font-mono font-bold">🇬🇧 UK ONLY</span>
-                    </label>
-                    <div className="relative flex items-center">
-                      <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-900 border border-zinc-700/80 px-2 py-0.5 rounded text-xs font-mono font-bold text-white shrink-0 pointer-events-none select-none z-10 shadow-sm">
-                        <span className="text-sm leading-none">🇬🇧</span>
-                        <span className="text-[11px] text-zinc-300 font-bold">+44</span>
-                      </div>
-                      <input
-                        type="tel"
-                        inputMode="tel"
-                        required
-                        value={authPhone}
-                        onChange={(e) => setAuthPhone(e.target.value)}
-                        placeholder="7911 123456 or 07911 123456"
-                        className="w-full bg-[#121214] border border-zinc-700 rounded-lg pl-[76px] pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#CCFF00]"
-                      />
-                    </div>
-                  </div>
+                  <PhoneInput
+                    value={authPhone}
+                    onChange={setAuthPhone}
+                    label="Mobile Phone Number"
+                    required
+                  />
                 </div>
 
                 <div>
@@ -702,23 +731,23 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                   onClick={() => setStep(5)}
                   className="w-full sm:flex-1 bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs uppercase tracking-widest py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xl cursor-pointer"
                 >
-                  <span>CONFIRM &amp; PAY £{totalPrice} WITH STRIPE</span>
+                  <span>CONFIRM &amp; PROCEED TO PAYMENT</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 5: STRIPE SECURE PAYMENT GATEWAY */}
+          {/* STEP 5: RAZORPAY & SECURE PAYMENT GATEWAY */}
           {step === 5 && (
             <div className="space-y-6 animate-in fade-in duration-150">
               <div>
                 <span className="text-[10px] font-black text-[#CCFF00] uppercase tracking-widest block mb-1">STEP 5 OF 5</span>
                 <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white mb-1.5 flex items-center gap-2">
                   <Lock className="w-5 h-5 text-emerald-400" />
-                  Stripe Secure Payment Gateway
+                  Razorpay Secure Checkout
                 </h2>
-                <p className="text-xs text-zinc-400">256-Bit SSL Encrypted Credit Card Checkout.</p>
+                <p className="text-xs text-zinc-400">Standard Web Checkout with Instant Order Creation &amp; Signature Verification.</p>
               </div>
 
               {/* Itemized Price Summary */}
@@ -743,12 +772,12 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                 </div>
               </div>
 
-              {/* Real Stripe Gateway Notice Card */}
-              <div className="bg-[#18181b] p-5 rounded-xl border border-zinc-800 space-y-3">
+              {/* Razorpay Standard Checkout Component */}
+              <div className="bg-[#18181b] p-5 rounded-xl border border-zinc-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
                     <CreditCard className="w-4 h-4 text-[#CCFF00]" />
-                    Official Stripe Checkout Gateway
+                    Official Razorpay Payment Gateway
                   </span>
                   <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-md">
                     <ShieldCheck className="w-3.5 h-3.5" />
@@ -757,33 +786,45 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                 </div>
 
                 <p className="text-xs text-zinc-300 leading-relaxed">
-                  Upon clicking below, you will be redirected to our official <strong>Stripe Checkout Gateway</strong> to complete your payment securely. A real email payment receipt will be sent directly to <span className="text-[#CCFF00] font-bold">{user?.email || authEmail}</span>.
+                  Complete your order instantly using Razorpay Standard Checkout. Supports Credit Cards, Debit Cards, International Cards &amp; Wallets. A verified email receipt will be sent directly to <span className="text-[#CCFF00] font-bold">{user?.email || authEmail}</span>.
                 </p>
 
-                <div className="pt-2 text-[11px] text-zinc-400 font-mono flex items-center justify-between border-t border-zinc-800/80">
-                  <span>Merchant: BxStrength Ltd</span>
-                  <span>Currency: GBP (£)</span>
+                {/* Razorpay Checkout Button Component */}
+                <RazorpayCheckoutButton
+                  amount={totalPrice}
+                  planName={service.title}
+                  currency="GBP"
+                  userEmail={user?.email || authEmail}
+                  userName={user?.name || authName}
+                  userPhone={user?.phone || authPhone}
+                  serviceType={serviceType}
+                  customExercises={selectedExercises}
+                  buttonText={`PAY £${totalPrice} VIA RAZORPAY`}
+                  onSuccess={(result) => handleRazorpayPaymentSuccess(result)}
+                  onError={(err) => {
+                    console.error('Razorpay payment error:', err);
+                    sendBrevoPaymentFailedEmail({
+                      clientName: user?.name || authName || 'Client Athlete',
+                      clientEmail: user?.email || authEmail || 'client@domain.com',
+                      planName: service?.title || 'BxStrength Protocol',
+                      amount: totalPrice,
+                      reason: err
+                    }).catch(() => {});
+                  }}
+                />
+
+                <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                  <span>Alternative Option:</span>
+                  <button
+                    type="button"
+                    onClick={handleStripePayment}
+                    disabled={isProcessingPayment}
+                    className="text-xs text-zinc-300 hover:text-white underline cursor-pointer font-sans"
+                  >
+                    Pay via Stripe Gateway Instead →
+                  </button>
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={handleStripePayment}
-                disabled={isProcessingPayment}
-                className="w-full bg-[#CCFF00] hover:bg-[#b8e600] disabled:opacity-50 text-black font-black text-xs uppercase tracking-widest py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xl cursor-pointer"
-              >
-                {isProcessingPayment ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>REDIRECTING TO STRIPE CHECKOUT GATEWAY...</span>
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="w-4 h-4" />
-                    <span>PROCEED TO REAL STRIPE CHECKOUT (£{totalPrice}.00)</span>
-                  </>
-                )}
-              </button>
             </div>
           )}
 
