@@ -79,7 +79,7 @@ export const Hero: React.FC<HeroProps> = () => {
     >
       {/* Hidden H1 for SEO & Screen Reader Accessibility */}
       <h1 className="sr-only">
-        BxStrength — #1 UK &amp; USA Digital Coaching, Boxing, Strength &amp; Fitness Platform
+        BxStrength — UK &amp; India Digital Coaching, Boxing, Strength &amp; Fitness Platform
       </h1>
 
       {/* DYNAMIC RESPONSIVE AUTOMATIC SLIDESHOW IMAGES */}

@@ -31,7 +31,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </div>
             
             <p className="text-xs text-zinc-400 leading-relaxed">
-              #1 UK &amp; USA Direct Boxing, Strength &amp; Conditioning Coaching Platform. Engineered by Head Coach Shaban Faridi for elite physical transformation.
+              #1 UK &amp; India Direct Boxing, Strength &amp; Conditioning Coaching Platform. Engineered by Head Coach Shaban Faridi for elite physical transformation.
             </p>
 
             <div className="space-y-2 text-xs pt-1">

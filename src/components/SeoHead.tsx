@@ -7,9 +7,9 @@ interface SeoHeadProps {
 
 export const SeoHead: React.FC<SeoHeadProps> = ({ currentPage }) => {
   useEffect(() => {
-    let title = 'BxStrength — #1 UK & USA Digital Coaching, Boxing, Strength & Fitness Platform';
-    let description = 'BxStrength (BX) is the premier UK & USA digital coaching platform for boxing, strength training, physiotherapy rehab, and 1-on-1 expert fitness coaching.';
-    let keywords = 'BxStrength, Bx Strength, BX, Strength, fitness, training, boxing, coaches, coach, personal trainer, UK fitness, USA fitness';
+    let title = 'BxStrength — UK & India Digital Coaching, Boxing, Strength & Fitness Platform';
+    let description = 'BxStrength (BX) is the premier UK & India digital coaching platform for boxing, strength training, physiotherapy rehab, and 1-on-1 expert fitness coaching.';
+    let keywords = 'BxStrength, Bx Strength, BX, Strength, fitness, training, boxing, coaches, coach, personal trainer, UK fitness, India fitness';
     let canonical = 'https://bxstrength.com/';
 
     switch (currentPage) {
@@ -33,7 +33,7 @@ export const SeoHead: React.FC<SeoHeadProps> = ({ currentPage }) => {
         break;
       case 'pricing':
         title = 'Coaching Membership & Packages — Bespoke Performance Plans | BxStrength';
-        description = 'Flexible UK & USA coaching membership plans. Tier 1 Foundation, Tier 2 Elite Athletic Transformation, and Tier 3 VIP 1-on-1 Fight Camp.';
+        description = 'Flexible UK & India coaching membership plans. Tier 1 Foundation, Tier 2 Elite Athletic Transformation, and Tier 3 VIP 1-on-1 Fight Camp.';
         keywords = 'BxStrength pricing, fitness membership, coaching package, 15-min session, fitness plans';
         canonical = 'https://bxstrength.com/#pricing';
         break;
