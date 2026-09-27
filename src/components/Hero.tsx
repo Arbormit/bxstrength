@@ -12,7 +12,6 @@ export const Hero: React.FC<HeroProps> = () => {
   const touchEndX = useRef<number>(0);
 
   const images: string[] = [
-    'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790532727/WhatsApp_Image_2026-09-27_at_4.41.50_PM.jpg?auto=format&q=80&w=2000',
     'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790509652/WhatsApp_Image_2026-09-27_at_5.09.17_PM.jpg?auto=format&q=80&w=2000',
     'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790509654/WhatsApp_Image_2026-09-27_at_5.09.18_PM.jpg?auto=format&q=80&w=2000',
     'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789572014/Hero_1.png?auto=format&q=80&w=2000',

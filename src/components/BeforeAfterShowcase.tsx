@@ -64,6 +64,18 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({
       duration: '16 Weeks Athletic Protocol',
       badge: '14KG FAT LOSS',
       description: 'Added 14kg of pure lean athletic muscle while improving joint mobility and posture alignment.'
+    },
+    {
+      id: 4,
+      image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790532727/WhatsApp_Image_2026-09-27_at_4.41.50_PM.jpg',
+      clientName: 'Alex Nicole',
+      startingWeight: '89 kg',
+      currentWeight: '75 kg',
+      weightChange: '-14 kg Fat Loss',
+      exerciseName: 'Progressive Resistance & Heavy Bag Power',
+      duration: '16 Weeks Athletic Protocol',
+      badge: '14KG FAT LOSS',
+      description: 'Added 14kg of pure lean athletic muscle while improving joint mobility and posture alignment.'
     }
   ];
 
