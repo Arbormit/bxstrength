@@ -9,26 +9,21 @@ export const MARKETS: Record<MarketCountry, MarketConfig> = {
     flagEmoji: '🇬🇧'
   },
   IN: {
-    country: 'IN',
-    countryName: 'India',
-    currency: 'INR',
-    symbol: '₹',
-    flagEmoji: '🇮🇳'
+    country: 'GB',
+    countryName: 'United Kingdom',
+    currency: 'GBP',
+    symbol: '£',
+    flagEmoji: '🇬🇧'
   }
 };
 
 const STORAGE_KEY = 'bxstrength_market_country';
 
 /**
- * Gets currently selected market country ('GB' or 'IN')
+ * Gets currently selected market country ('GB')
  */
 export const getActiveMarketCountry = (): MarketCountry => {
-  if (typeof window === 'undefined') return 'GB';
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved === 'IN' || saved === 'GB') {
-    return saved;
-  }
-  return 'GB'; // Default UK
+  return 'GB'; // Strictly UK / GBP (£)
 };
 
 /**
@@ -36,67 +31,45 @@ export const getActiveMarketCountry = (): MarketCountry => {
  */
 export const setActiveMarketCountry = (country: MarketCountry): void => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, country);
-    window.dispatchEvent(new CustomEvent('bxstrength_market_changed', { detail: { country } }));
+    localStorage.setItem(STORAGE_KEY, 'GB');
+    window.dispatchEvent(new CustomEvent('bxstrength_market_changed', { detail: { country: 'GB' } }));
   }
 };
 
 /**
- * Detects market country signal from phone number or country selection
+ * Detects market country signal - Defaults to UK market (GB / GBP £)
  */
-export const detectMarketFromPhone = (phone?: string): MarketCountry => {
-  if (!phone) return getActiveMarketCountry();
-  const cleaned = phone.trim().replace(/[\s\-\(\)]/g, '');
-  if (cleaned.startsWith('+91') || cleaned.startsWith('91')) {
-    return 'IN';
-  }
-  if (cleaned.startsWith('+44') || cleaned.startsWith('44') || cleaned.startsWith('07')) {
-    return 'GB';
-  }
-  return getActiveMarketCountry();
+export const detectMarketFromPhone = (_phone?: string): MarketCountry => {
+  return 'GB';
 };
 
 /**
- * Returns MarketConfig for given country or active market
+ * Returns MarketConfig for given country or active market (GBP £)
  */
-export const getMarketConfig = (country?: MarketCountry): MarketConfig => {
-  const code = country || getActiveMarketCountry();
-  return MARKETS[code] || MARKETS.GB;
+export const getMarketConfig = (_country?: MarketCountry): MarketConfig => {
+  return MARKETS.GB;
 };
 
 /**
- * Returns numeric price for a service item based on selected market
+ * Returns numeric price for a service item in GBP (£)
  */
-export const getServicePrice = (service: ServiceItem, country?: MarketCountry): { amount: number; symbol: string; currency: string } => {
-  const config = getMarketConfig(country);
-  if (config.country === 'IN') {
-    const amount = service.priceInr ?? 3999;
-    return { amount, symbol: '₹', currency: 'INR' };
-  }
-  const amount = service.priceGbp ?? (Number(service.price) || 50);
+export const getServicePrice = (service: ServiceItem, _country?: MarketCountry): { amount: number; symbol: string; currency: string } => {
+  const amount = Number(service.priceGbp ?? service.price) || 50;
   return { amount, symbol: '£', currency: 'GBP' };
 };
 
 /**
- * Returns numeric price for a membership plan based on selected market
+ * Returns numeric price for a membership plan in GBP (£)
  */
-export const getMembershipPrice = (plan: MembershipPlan, country?: MarketCountry): { amount: number; symbol: string; currency: string } => {
-  const config = getMarketConfig(country);
-  if (config.country === 'IN') {
-    const amount = plan.priceInr ?? (plan.id === 'basic' ? 2999 : plan.id === 'standard' ? 5999 : 9999);
-    return { amount, symbol: '₹', currency: 'INR' };
-  }
-  const amount = plan.priceGbp ?? plan.price ?? 79;
+export const getMembershipPrice = (plan: MembershipPlan, _country?: MarketCountry): { amount: number; symbol: string; currency: string } => {
+  const amount = Number(plan.priceGbp ?? plan.price) || 79;
   return { amount, symbol: '£', currency: 'GBP' };
 };
 
 /**
- * Formats amount with active currency symbol
+ * Formats amount with GBP (£) currency symbol
  */
-export const formatMarketPrice = (amount: number, country?: MarketCountry): string => {
-  const config = getMarketConfig(country);
-  if (config.country === 'IN') {
-    return `₹${amount.toLocaleString('en-IN')}`;
-  }
+export const formatMarketPrice = (amount: number, _country?: MarketCountry): string => {
   return `£${amount.toLocaleString('en-GB')}`;
 };
+

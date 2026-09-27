@@ -36,8 +36,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Check current logged in user from store on boot
+    // Sync active session and fetch latest user roster from NeonDB
     syncUser();
+    VelocityAPI.fetchUsers().catch(() => {});
 
     // Listen to storage events and poll every 2 seconds for manual role updates
     const handleStorageChange = () => syncUser();

@@ -154,11 +154,22 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
         <div className="p-4 sm:p-7 space-y-3.5 overflow-y-auto overscroll-contain">
           {/* Brand & Heading */}
           <div className="flex flex-col items-center justify-center text-center space-y-2 pt-1 pb-1">
-            <img 
-              src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" 
-              alt="BxStrength Logo" 
-              className="h-10 sm:h-11 md:h-12 w-auto max-w-[160px] sm:max-w-[180px] object-contain rounded-lg shadow-md mx-auto"
-            />
+            <div className="flex items-center justify-center p-1.5 bg-[#0a0a0c] border border-zinc-800 rounded-xl shadow-lg mx-auto">
+              <img 
+                src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1789566029/WhatsApp_Image_2026-09-08_at_10.50.41_AM.png" 
+                alt="BxStrength Logo" 
+                className="h-10 sm:h-12 w-auto max-w-[200px] object-contain rounded-lg"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.parentElement?.querySelector('.logo-fallback');
+                  if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                }}
+              />
+              <div className="logo-fallback hidden items-center gap-1.5 px-3 py-1 font-black text-base text-white tracking-tighter uppercase">
+                <Dumbbell className="w-5 h-5 text-[#CCFF00]" />
+                <span>BX<span className="text-[#CCFF00]">STRENGTH</span></span>
+              </div>
+            </div>
             <div>
               <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
                 CREATE ACCOUNT

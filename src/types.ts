@@ -54,6 +54,9 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  password?: string;
+  password_or_hash?: string;
+  password_hash?: string;
   coachPosition?: CoachPosition | string;
   avatarUrl?: string;
   phone?: string;

@@ -201,7 +201,7 @@ export const PrivacyView: React.FC = () => {
       icon: CreditCard,
       content: (
         <p>
-          Payments may be processed by authorised third-party payment providers such as Razorpay, Stripe or another approved provider. These providers may collect payment credentials, device information and transaction data directly. Their processing is governed by their own privacy notices and legal obligations. BXStrength receives only the information reasonably required to confirm, reconcile, support or refund a transaction.
+          Payments may be processed by authorised third-party payment providers such as Razorpay, Cashfree or another approved provider. These providers may collect payment credentials, device information and transaction data directly. Their processing is governed by their own privacy notices and legal obligations. BXStrength receives only the information reasonably required to confirm, reconcile, support or refund a transaction.
         </p>
       )
     },

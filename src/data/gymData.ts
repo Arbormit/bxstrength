@@ -48,7 +48,6 @@ export const SERVICES_DATA: ServiceItem[] = [
     duration: '60Min / session',
     price: 50,
     priceGbp: 50,
-    priceInr: 3999,
     sessionType: '1-on-1 Personal Session',
     goalPrimaryOutcome: 'Maximized strength power, anatomical leverage optimization, and muscle hypertrophy.',
     whatYouGet: 'One-on-one custom workout plan, dedicated nutritional guidance, bi-weekly body composition analysis.',
@@ -69,7 +68,6 @@ export const SERVICES_DATA: ServiceItem[] = [
     duration: '45Min / session',
     price: 48,
     priceGbp: 48,
-    priceInr: 4499,
     sessionType: '1-on-1 Pro Coaching',
     goalPrimaryOutcome: 'Authentic boxing mechanics, explosive stamina, and sharp reflex development.',
     whatYouGet: 'Professional ring technique, stamina & core conditioning, stress relief & reflexes.',
@@ -90,7 +88,6 @@ export const SERVICES_DATA: ServiceItem[] = [
     duration: '20Min / session',
     price: 30,
     priceGbp: 30,
-    priceInr: 2499,
     sessionType: '1-on-1 Personal Session',
     goalPrimaryOutcome: 'High-yield metabolic conditioning, rapid fat loss, and peak daily energy.',
     whatYouGet: 'Full-body functional movement, modern cardio & machine zone, progress benchmarks.',
@@ -342,7 +339,6 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     name: 'BASIC PASS',
     price: 39,
     priceGbp: 39,
-    priceInr: 2999,
     period: 'month',
     features: [
       'Access to Gym Floor & Cardio Zone',
@@ -357,7 +353,6 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     name: 'FITNESS PRO',
     price: 79,
     priceGbp: 79,
-    priceInr: 5999,
     period: 'month',
     popular: true,
     features: [
@@ -374,7 +369,6 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     name: 'VIP UNLIMITED',
     price: 129,
     priceGbp: 129,
-    priceInr: 9999,
     period: 'month',
     features: [
       '24/7 VIP Gym Access',

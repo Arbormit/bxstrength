@@ -138,7 +138,7 @@ export const TermsView: React.FC = () => {
       content: (
         <div className="space-y-3">
           <p>
-            Payment is required through an authorised BXStrength checkout or payment method unless BXStrength confirms another arrangement in writing. Payments may be processed by third-party payment providers such as Razorpay, Stripe or another approved provider. BXStrength does not need to receive or store your complete card credentials where the payment provider handles them directly.
+            Payment is required through an authorised BXStrength checkout or payment method unless BXStrength confirms another arrangement in writing. Payments may be processed by third-party payment providers such as Razorpay, Cashfree or another approved provider. BXStrength does not need to receive or store your complete card credentials where the payment provider handles them directly.
           </p>
           <p className="text-xs text-zinc-400">
             A booking is not confirmed merely because you started checkout. Confirmation occurs when payment has been successfully authorised or received and BXStrength or its booking system issues a confirmation.

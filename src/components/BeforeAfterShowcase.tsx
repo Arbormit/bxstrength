@@ -26,24 +26,25 @@ interface BeforeAfterShowcaseProps {
 
 export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({
   onOpenConsultation,
+  onOpenAssessment,
 }) => {
   const slides: TransformationSlide[] = [
     {
       id: 1,
-      image: '/client-transformation.jpg',
-      clientName: 'David Vance',
-      startingWeight: '86 kg',
-      currentWeight: '68 kg',
-      weightChange: '-18 kg Fat Loss',
+      image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790509640/WhatsApp_Image_2026-09-27_at_4.45.24_PM.jpg',
+      clientName: 'Fahad Chris',
+      startingWeight: '96 kg',
+      currentWeight: '78 kg',
+      weightChange: '-20 kg Fat Loss',
       exerciseName: 'Boxing Power, Footwork & Compound Lifting',
       duration: '16 Weeks 1-on-1 Personal Coaching',
       badge: 'FEATURED TRANSFORMATION',
-      description: 'Achieved 18kg body fat loss while increasing bench press & metabolic endurance under Head Coach Shaban Faridi.'
+      description: 'Achieved 20kg body fat loss while increasing bench press & metabolic endurance under Head Coach Shaban Faridi.'
     },
     {
       id: 2,
-      image: '/client-transformation-2.jpg',
-      clientName: 'Marcus Miller',
+      image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790509640/WhatsApp_Image_2026-09-27_at_4.49.10_PM.jpg',
+      clientName: 'Naail James',
       startingWeight: '92 kg',
       currentWeight: '78 kg',
       weightChange: '-14 kg Fat Loss',
@@ -54,21 +55,22 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({
     },
     {
       id: 3,
-      image: '/client-transformation-3.jpg',
-      clientName: 'Alex Turner',
-      startingWeight: '72 kg',
-      currentWeight: '78 kg',
-      weightChange: '+6 kg Muscle Gain',
+      image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790509651/WhatsApp_Image_2026-09-27_at_4.59.04_PM.jpg',
+      clientName: 'Abdullah Jones',
+      startingWeight: '89 kg',
+      currentWeight: '75 kg',
+      weightChange: '-14 kg Fat Loss',
       exerciseName: 'Progressive Resistance & Heavy Bag Power',
       duration: '16 Weeks Athletic Protocol',
-      badge: 'STRENGTH & HYPERTROPHY',
-      description: 'Added 6kg of pure lean athletic muscle while improving joint mobility and posture alignment.'
+      badge: '14KG FAT LOSS',
+      description: 'Added 14kg of pure lean athletic muscle while improving joint mobility and posture alignment.'
     }
   ];
 
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [displayMode, setDisplayMode] = useState<'full' | 'split'>('full');
 
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -146,82 +148,153 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({
             {/* LEFT SIDE: DUAL BEFORE ---> AFTER IMAGES (BIGGER & PROPER DISPLAY) */}
             <div className="lg:col-span-7 relative w-full rounded-2xl bg-black/80 border border-zinc-800/80 p-3 sm:p-4 shadow-2xl overflow-hidden group">
               
-              {slides.map((slide, idx) => (
-                <div
-                  key={slide.id}
-                  className={`transition-opacity duration-700 ease-in-out ${
-                    currentIndex === idx ? 'opacity-100 relative z-10 block pointer-events-auto' : 'opacity-0 absolute inset-0 z-0 hidden pointer-events-none'
-                  }`}
-                >
-                  {/* TWO IMAGES SIDE-BY-SIDE: BEFORE ---> AFTER */}
-                  <div className="grid grid-cols-2 gap-2.5 sm:gap-4 relative items-center">
-                    
-                    {/* BEFORE IMAGE CONTAINER */}
-                    <div className="relative w-full h-[260px] sm:h-[360px] lg:h-[420px] rounded-xl overflow-hidden bg-zinc-950 border border-red-500/40 group/before shadow-lg">
-                      {/* BEFORE Badge */}
-                      <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/85 backdrop-blur-md border border-red-500/40 text-red-400 text-[10px] sm:text-xs font-black uppercase tracking-wider">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                        <span>BEFORE</span>
-                        <span className="text-zinc-400 font-mono font-normal ml-0.5">({slide.startingWeight})</span>
-                      </div>
+              {slides.map((slide, idx) => {
+                const isCurrent = currentIndex === idx;
+                const showFullMode = displayMode === 'full' || (!slide.beforeImage && !slide.afterImage && displayMode !== 'split');
 
-                      {/* Image Frame */}
-                      <div className="w-full h-full overflow-hidden relative">
+                return (
+                  <div
+                    key={slide.id}
+                    className={`transition-opacity duration-700 ease-in-out ${
+                      isCurrent ? 'opacity-100 relative z-10 block pointer-events-auto' : 'opacity-0 absolute inset-0 z-0 hidden pointer-events-none'
+                    }`}
+                  >
+                    {showFullMode ? (
+                      /* FULL TRANSFORMATION PHOTO FRAME (100% COMPLETE & UNCUT) */
+                      <div className="relative w-full h-[280px] sm:h-[380px] lg:h-[440px] rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800 shadow-2xl group/full flex items-center justify-center p-2">
+                        {/* Ambient Glow Backdrop */}
                         <img 
-                          src={slide.beforeImage || slide.image} 
-                          alt={`${slide.clientName} Before`} 
-                          title={`${slide.clientName} Before`}
-                          loading="eager"
-                          className={`w-full h-full block brightness-105 contrast-105 transition-transform duration-500 group-hover/before:scale-105 ${
-                            slide.beforeImage ? 'object-cover' : 'w-[200%] max-w-none object-cover object-left'
-                          }`}
+                          src={slide.image} 
+                          alt="" 
+                          aria-hidden="true" 
+                          className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-25 scale-110 pointer-events-none"
                         />
-                      </div>
-                    </div>
-
-                    {/* CENTER ARROW BADGE: BEFORE ---> AFTER */}
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
-                      <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/95 border-2 border-[#CCFF00] text-[#CCFF00] shadow-[0_0_20px_rgba(204,255,0,0.5)] flex items-center justify-center font-black">
-                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-[#CCFF00]" />
-                      </div>
-                    </div>
-
-                    {/* AFTER IMAGE CONTAINER */}
-                    <div className="relative w-full h-[260px] sm:h-[360px] lg:h-[420px] rounded-xl overflow-hidden bg-zinc-950 border border-[#CCFF00]/50 group/after shadow-lg">
-                      {/* AFTER Badge */}
-                      <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/85 backdrop-blur-md border border-[#CCFF00]/50 text-[#CCFF00] text-[10px] sm:text-xs font-black uppercase tracking-wider">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#CCFF00]" />
-                        <span>AFTER</span>
-                        <span className="text-emerald-300 font-mono font-normal ml-0.5">({slide.currentWeight})</span>
-                      </div>
-
-                      {/* Image Frame */}
-                      <div className="w-full h-full overflow-hidden relative">
+                        
+                        {/* Complete Uncut Foreground Image */}
                         <img 
-                          src={slide.afterImage || slide.image} 
-                          alt={`${slide.clientName} After`} 
-                          title={`${slide.clientName} After`}
+                          src={slide.image} 
+                          alt={`${slide.clientName} Complete Transformation`} 
+                          title={`${slide.clientName} Complete Transformation`}
                           loading="eager"
-                          className={`w-full h-full block brightness-105 contrast-105 transition-transform duration-500 group-hover/after:scale-105 ${
-                            slide.afterImage ? 'object-cover' : 'w-[200%] max-w-none object-cover object-right'
-                          }`}
+                          className="relative z-10 max-w-full max-h-full w-auto h-auto object-contain rounded-xl drop-shadow-[0_10px_25px_rgba(0,0,0,0.85)] transition-transform duration-500 group-hover/full:scale-[1.01]" 
                         />
-                      </div>
-                    </div>
 
+                        {/* Top-Left Floating Badge */}
+                        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/90 backdrop-blur-md border border-zinc-700/80 text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-lg">
+                          <span className="text-red-400 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                            BEFORE <span className="font-mono text-zinc-400 font-normal">({slide.startingWeight})</span>
+                          </span>
+                          <ArrowRight className="w-3.5 h-3.5 text-[#CCFF00]" />
+                          <span className="text-[#CCFF00] flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#CCFF00]" />
+                            AFTER <span className="font-mono text-emerald-300 font-normal">({slide.currentWeight})</span>
+                          </span>
+                        </div>
+
+                        {/* Bottom-Right Result Pill */}
+                        <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/90 backdrop-blur-md border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold shadow-lg">
+                          <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <span>{slide.weightChange}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      /* TWO IMAGES SIDE-BY-SIDE: BEFORE ---> AFTER */
+                      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 relative items-center">
+                        
+                        {/* BEFORE IMAGE CONTAINER */}
+                        <div className="relative w-full h-[260px] sm:h-[360px] lg:h-[420px] rounded-xl overflow-hidden bg-zinc-950 border border-red-500/40 group/before shadow-lg">
+                          {/* BEFORE Badge */}
+                          <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/85 backdrop-blur-md border border-red-500/40 text-red-400 text-[10px] sm:text-xs font-black uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                            <span>BEFORE</span>
+                            <span className="text-zinc-400 font-mono font-normal ml-0.5">({slide.startingWeight})</span>
+                          </div>
+
+                          {/* Image Frame */}
+                          <div className="w-full h-full overflow-hidden relative flex items-center justify-center bg-black">
+                            <img 
+                              src={slide.beforeImage || slide.image} 
+                              alt={`${slide.clientName} Before`} 
+                              title={`${slide.clientName} Before`}
+                              loading="eager"
+                              className={`w-full h-full block brightness-105 contrast-105 transition-transform duration-500 group-hover/before:scale-105 ${
+                                slide.beforeImage ? 'object-cover object-top' : 'w-[200%] max-w-none object-cover object-left'
+                              }`}
+                            />
+                          </div>
+                        </div>
+
+                        {/* CENTER ARROW BADGE: BEFORE ---> AFTER */}
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
+                          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/95 border-2 border-[#CCFF00] text-[#CCFF00] shadow-[0_0_20px_rgba(204,255,0,0.5)] flex items-center justify-center font-black">
+                            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-[#CCFF00]" />
+                          </div>
+                        </div>
+
+                        {/* AFTER IMAGE CONTAINER */}
+                        <div className="relative w-full h-[260px] sm:h-[360px] lg:h-[420px] rounded-xl overflow-hidden bg-zinc-950 border border-[#CCFF00]/50 group/after shadow-lg">
+                          {/* AFTER Badge */}
+                          <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/85 backdrop-blur-md border border-[#CCFF00]/50 text-[#CCFF00] text-[10px] sm:text-xs font-black uppercase tracking-wider">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#CCFF00]" />
+                            <span>AFTER</span>
+                            <span className="text-emerald-300 font-mono font-normal ml-0.5">({slide.currentWeight})</span>
+                          </div>
+
+                          {/* Image Frame */}
+                          <div className="w-full h-full overflow-hidden relative flex items-center justify-center bg-black">
+                            <img 
+                              src={slide.afterImage || slide.image} 
+                              alt={`${slide.clientName} After`} 
+                              title={`${slide.clientName} After`}
+                              loading="eager"
+                              className={`w-full h-full block brightness-105 contrast-105 transition-transform duration-500 group-hover/after:scale-105 ${
+                                slide.afterImage ? 'object-cover object-top' : 'w-[200%] max-w-none object-cover object-right'
+                              }`}
+                            />
+                          </div>
+                        </div>
+
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
-              {/* Zoom Photo Button Overlay */}
-              <button
-                type="button"
-                onClick={() => setZoomImage(currentSlide.image)}
-                className="absolute top-4 right-4 z-30 p-2 bg-black/80 hover:bg-black text-white rounded-lg backdrop-blur-md border border-zinc-700 transition-colors cursor-pointer shadow-lg"
-                title="Click to view full transformation image"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </button>
+              {/* Top-Right Control Toolbar (Toggle View & Zoom) */}
+              <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+                {/* View Mode Toggle Pill */}
+                <div className="flex items-center bg-black/85 p-1 rounded-lg border border-zinc-700/80 backdrop-blur-md text-[10px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setDisplayMode('full')}
+                    className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                      displayMode === 'full' ? 'bg-[#CCFF00] text-black font-black' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    FULL PHOTO
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDisplayMode('split')}
+                    className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                      displayMode === 'split' ? 'bg-[#CCFF00] text-black font-black' : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    SPLIT VIEW
+                  </button>
+                </div>
+
+                {/* Zoom Photo Button */}
+                <button
+                  type="button"
+                  onClick={() => setZoomImage(currentSlide.image)}
+                  className="p-2 bg-black/85 hover:bg-black text-white rounded-lg backdrop-blur-md border border-zinc-700 transition-colors cursor-pointer shadow-lg"
+                  title="Click to view full transformation image in high resolution"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </button>
+              </div>
 
               {/* Left Chevron Navigation Button */}
               <button
@@ -244,78 +317,51 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({
               </button>
             </div>
 
-            {/* RIGHT SIDE: BASIC DETAILS & TRANSFORMATION CTA */}
-            <div className="lg:col-span-5 flex flex-col justify-between space-y-5 text-left p-1 sm:p-2">
+            {/* RIGHT SIDE: CLEAN MINIMAL HIGHLIGHTS & CTA */}
+            <div className="lg:col-span-5 flex flex-col justify-between space-y-6 text-left p-2 sm:p-4">
               
-              {/* Badge & Name */}
-              <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 text-[#CCFF00] text-[10px] font-mono font-bold uppercase tracking-wider mb-2.5">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>{currentSlide.badge}</span>
+              {/* Client Name & Key Impact Stat */}
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 text-[#CCFF00] text-xs font-mono font-bold uppercase tracking-wider">
+                  <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>{currentSlide.weightChange}</span>
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-black uppercase text-white tracking-tight flex items-center gap-2">
-                  <User className="w-5 h-5 text-emerald-400 shrink-0" />
+                <h3 className="text-2xl sm:text-3xl font-black uppercase text-white tracking-tight flex items-center gap-2.5">
+                  <User className="w-6 h-6 text-[#CCFF00] shrink-0" />
                   <span>{currentSlide.clientName}</span>
                 </h3>
               </div>
 
-              {/* Basic Details Grid */}
-              <div className="space-y-3 bg-[#121216] border border-zinc-800/90 rounded-2xl p-4 shadow-inner">
+              {/* Clean High-Impact Stats Card */}
+              <div className="bg-[#121216] border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-4 shadow-inner">
                 
-                {/* Weight Loss / Result */}
-                <div className="flex items-start justify-between border-b border-zinc-800/80 pb-3 gap-2">
-                  <div className="flex items-center gap-2 text-zinc-400 text-xs font-bold uppercase tracking-wider">
-                    <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>Weight Result</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-black text-white font-mono">
-                      {currentSlide.startingWeight} <span className="text-zinc-500 font-sans">➔</span> {currentSlide.currentWeight}
-                    </div>
-                    <span className="text-[10px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/70 px-2 py-0.5 rounded-full inline-block mt-0.5">
-                      {currentSlide.weightChange}
-                    </span>
+                {/* Weight Progress Stat */}
+                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+                  <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Weight Progress</span>
+                  <div className="text-right font-mono font-black text-sm text-white">
+                    <span className="text-red-400">{currentSlide.startingWeight}</span>
+                    <span className="text-zinc-500 mx-1.5">➔</span>
+                    <span className="text-[#CCFF00]">{currentSlide.currentWeight}</span>
                   </div>
                 </div>
 
-                {/* Exercise Name & Protocol */}
-                <div className="border-b border-zinc-800/80 pb-3">
-                  <div className="flex items-center gap-2 text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">
-                    <Dumbbell className="w-4 h-4 text-[#CCFF00] shrink-0" />
-                    <span>Exercise & Program</span>
-                  </div>
-                  <p className="text-xs sm:text-sm font-extrabold text-white leading-snug">
-                    {currentSlide.exerciseName}
-                  </p>
-                </div>
-
-                {/* Duration */}
-                <div className="border-b border-zinc-800/80 pb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-zinc-400 text-xs font-bold uppercase tracking-wider">
-                    <Activity className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Coaching Duration</span>
-                  </div>
-                  <span className="text-xs font-bold text-zinc-200 font-mono">
+                {/* Duration Stat */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Program Duration</span>
+                  <span className="text-xs font-extrabold text-zinc-200 font-mono">
                     {currentSlide.duration}
                   </span>
                 </div>
 
-                {/* Description */}
-                <div>
-                  <p className="text-xs text-zinc-400 font-medium leading-relaxed italic">
-                    "{currentSlide.description}"
-                  </p>
-                </div>
-
               </div>
 
-              {/* Start Your Transformation Button */}
+              {/* Primary Transformation CTA */}
               <button
                 onClick={onOpenConsultation}
-                className="w-full bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs sm:text-sm uppercase tracking-wider py-3.5 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer"
+                className="w-full bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs sm:text-sm uppercase tracking-wider py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <span>START YOUR TRANSFORMATION TODAY</span>
+                <span>START YOUR TRANSFORMATION</span>
                 <ArrowRight className="w-4 h-4 text-black shrink-0" />
               </button>
 

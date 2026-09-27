@@ -156,11 +156,21 @@ export const ForgotPasswordModal: FC<ForgotPasswordModalProps> = ({
         {/* Top Branding Header */}
         <div className="bg-[#18181b] p-5 flex items-center justify-between border-b border-zinc-800">
           <div className="flex items-center gap-3">
-            <img 
-              src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" 
-              alt="BxStrength Logo" 
-              className="h-9 w-auto max-w-[150px] object-contain rounded-lg shadow-md"
-            />
+            <div className="flex items-center justify-center p-1 bg-[#0a0a0c] border border-zinc-800 rounded-lg shadow-sm">
+              <img 
+                src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1789566029/WhatsApp_Image_2026-09-08_at_10.50.41_AM.png" 
+                alt="BxStrength Logo" 
+                className="h-9 w-auto max-w-[150px] object-contain rounded"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.parentElement?.querySelector('.logo-fallback');
+                  if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                }}
+              />
+              <div className="logo-fallback hidden items-center gap-1 px-2 py-0.5 font-black text-sm text-white tracking-tighter uppercase">
+                <span>BX<span className="text-[#CCFF00]">STRENGTH</span></span>
+              </div>
+            </div>
             <div className="border-l border-zinc-700 pl-3">
               <h3 className="text-xs font-black uppercase tracking-wider text-white">ACCOUNT RECOVERY</h3>
               <p className="text-[10px] text-zinc-400">Password Reset Service</p>

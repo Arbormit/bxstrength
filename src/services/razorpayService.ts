@@ -147,8 +147,8 @@ export const openRazorpayCheckout = async (options: RazorpayCheckoutOptions): Pr
       options.userPhone
     );
 
-    // If primary gateway (Razorpay) failed over to secondary gateway (Stripe)
-    if (orderData.gateway === 'stripe' && orderData.checkoutUrl) {
+    // If primary gateway (Razorpay) failed over to secondary gateway (Cashfree PG)
+    if ((orderData.gateway === 'cashfree' || orderData.gateway === 'stripe') && orderData.checkoutUrl) {
       window.location.href = orderData.checkoutUrl;
       return;
     }
@@ -159,8 +159,10 @@ export const openRazorpayCheckout = async (options: RazorpayCheckoutOptions): Pr
       throw new Error('Payment gateway SDK failed to load. Please check your network connection.');
     }
 
+    const metaEnv = (import.meta as any).env || {};
     const keyId =
-      import.meta.env.VITE_RAZORPAY_KEY_ID ||
+      metaEnv.VITE_RAZORPAY_KEY_ID ||
+      metaEnv.RAZORPAY_KEY_ID ||
       orderData.key_id;
 
     // 3. Configure Razorpay Standard Modal Options

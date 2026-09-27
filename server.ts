@@ -64,10 +64,10 @@ app.use(express.json({ limit: '10mb' }));
 
 // Global Request Body & Query XSS Protection Sanitizer
 app.use((req, res, next) => {
-  const sanitize = (obj: any): any => {
+  const sanitize = (obj: any, keyName?: string): any => {
     if (typeof obj === 'string') {
-      // Preserve base64 image data URLs as-is so base64 character integrity is maintained
-      if (obj.startsWith('data:image/')) {
+      // Do not escape HTML markup strings meant for email body or base64 images
+      if (keyName === 'htmlContent' || keyName === 'html' || keyName === 'htmlBody' || obj.startsWith('data:image/')) {
         return obj;
       }
       return obj
@@ -81,10 +81,10 @@ app.use((req, res, next) => {
     }
     if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
       for (const k of Object.keys(obj)) {
-        obj[k] = sanitize(obj[k]);
+        obj[k] = sanitize(obj[k], k);
       }
     } else if (Array.isArray(obj)) {
-      return obj.map(sanitize);
+      return obj.map(item => sanitize(item, keyName));
     }
     return obj;
   };
@@ -97,7 +97,7 @@ app.use((req, res, next) => {
 function isValidUkMobile(phone: string | null | undefined): boolean {
   if (!phone || !phone.trim()) return true;
   const cleaned = phone.trim().replace(/[\s\-\(\)\+\.]/g, '');
-  return /^(?:07\d{9}|447\d{9}|4407\d{9}|00447\d{9}|004407\d{9})$/.test(cleaned);
+  return /^\d{7,15}$/.test(cleaned);
 }
 
 // 3. RATE LIMITING
@@ -111,44 +111,65 @@ const globalApiLimiter = rateLimit({
 
 app.use('/api/', globalApiLimiter);
 
-// 4. STRIPE REAL CHECKOUT ENDPOINT
-app.post('/api/create-stripe-checkout-session', async (req, res) => {
-  try {
-    const { planName, amount, clientEmail, serviceType, customExercises } = req.body;
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY;
+// 4. CASHFREE PAYMENT GATEWAY SECONDARY ENGINE
+const getCashfreeConfig = () => {
+  const appId = process.env.CASHFREE_APP_ID || process.env.VITE_CASHFREE_APP_ID || process.env.CASHFREE_CLIENT_ID || '';
+  const secretKey = process.env.CASHFREE_SECRET_KEY || process.env.VITE_CASHFREE_SECRET_KEY || process.env.CASHFREE_CLIENT_SECRET || '';
+  const isProd = process.env.CASHFREE_ENV === 'production' || (appId && !appId.includes('TEST') && !appId.includes('sandbox'));
+  return { appId, secretKey, isProd };
+};
 
-    if (stripeSecretKey && !stripeSecretKey.includes('placeholder')) {
-      const stripeModule = await (Function('return import("stripe")')() as Promise<any>);
-      const Stripe = stripeModule.default;
-      const stripe = new Stripe(stripeSecretKey);
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price_data: {
-              currency: 'gbp',
-              product_data: {
-                name: `${planName} (${(serviceType || 'individual').toUpperCase()} MODE)`,
-                description: customExercises && customExercises.length > 0 ? `Custom Exercises: ${customExercises.slice(0, 3).join(', ')}...` : 'Bespoke Fitness Protocol'
-              },
-              unit_amount: Math.round((amount || 40) * 100)
-            },
-            quantity: 1
-          }
-        ],
-        mode: 'payment',
-        customer_email: clientEmail,
-        success_url: `${req.headers.origin || 'http://localhost:3000'}/?stripe_success=true`,
-        cancel_url: `${req.headers.origin || 'http://localhost:3000'}/?stripe_cancel=true`
+app.post(['/api/create-cashfree-order', '/api/create-cashfree-checkout-session'], async (req, res) => {
+  try {
+    const { planName = 'BxStrength Protocol', amount = 40, currency = 'GBP', clientEmail, userName, phone, serviceType = 'individual' } = req.body;
+    const { appId, secretKey, isProd } = getCashfreeConfig();
+
+    const orderId = `cf_ord_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const baseUrl = isProd ? 'https://api.cashfree.com/pg/orders' : 'https://sandbox.cashfree.com/pg/orders';
+    const checkoutBase = isProd ? 'https://payments.cashfree.com/order/#' : 'https://payments-test.cashfree.com/order/#';
+
+    if (appId && secretKey && !appId.includes('placeholder')) {
+      const response = await fetch(baseUrl, {
+        method: 'POST',
+        headers: {
+          'x-client-id': appId,
+          'x-client-secret': secretKey,
+          'x-api-version': '2023-08-01',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          order_id: orderId,
+          order_amount: Number(amount),
+          order_currency: currency.toUpperCase(),
+          customer_details: {
+            customer_id: `cust_${Date.now()}`,
+            customer_name: userName || 'Client Athlete',
+            customer_email: clientEmail || 'client@bxstrength.com',
+            customer_phone: (phone || '9876543210').replace(/[\s\-\(\)\+]/g, '').slice(-10) || '9876543210'
+          },
+          order_meta: {
+            return_url: `${req.headers.origin || 'http://localhost:3000'}/?cashfree_order_id={order_id}&payment_status={order_status}`
+          },
+          order_note: `${planName} (${serviceType.toUpperCase()})`
+        })
       });
 
-      return res.json({ url: session.url });
+      const cfData = await response.json();
+      if (response.ok && cfData.payment_session_id) {
+        return res.json({
+          success: true,
+          gateway: 'cashfree',
+          order_id: cfData.order_id || orderId,
+          payment_session_id: cfData.payment_session_id,
+          url: `${checkoutBase}${cfData.payment_session_id}`
+        });
+      }
     }
 
-    const fallbackStripeUrl = `https://checkout.stripe.com/pay/#plan=${encodeURIComponent(planName || 'BxStrength')}&amount=${amount || 40}`;
-    return res.json({ url: fallbackStripeUrl });
+    const fallbackUrl = `https://payments.cashfree.com/order/#plan=${encodeURIComponent(planName)}&amount=${amount}`;
+    return res.json({ success: true, gateway: 'cashfree', url: fallbackUrl });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Stripe session initialization error' });
+    return res.status(500).json({ error: err.message || 'Cashfree Order initialization error' });
   }
 });
 
@@ -163,7 +184,7 @@ interface PaymentTransactionRecord {
   customExercises?: string[];
   amount: number;
   currency: string;
-  gateway: 'razorpay' | 'stripe';
+  gateway: 'razorpay' | 'cashfree' | 'stripe';
   gatewayOrderId?: string;
   gatewayPaymentId?: string;
   status: 'initiated' | 'order_created' | 'pending' | 'processing' | 'success' | 'failed' | 'cancelled' | 'reconciled';
@@ -212,24 +233,16 @@ const AUTHORITATIVE_PRICING_CATALOG: Record<string, MarketPrice> = {
   'default': { gbpBasePrice: 80, inrBasePrice: 7999, name: 'BxStrength Coaching' }
 };
 
-function determineMarketCountry(country?: string, phone?: string): 'IN' | 'GB' {
-  if (country === 'IN' || country === 'GB') {
-    return country;
-  }
-  if (phone) {
-    const cleaned = String(phone).replace(/[\s\-\(\)]/g, '');
-    if (cleaned.startsWith('+91') || cleaned.startsWith('91')) return 'IN';
-    if (cleaned.startsWith('+44') || cleaned.startsWith('44') || cleaned.startsWith('07')) return 'GB';
-  }
-  return 'GB'; // Default market
+function determineMarketCountry(_country?: string, _phone?: string): 'GB' {
+  return 'GB'; // Strictly UK Market
 }
 
 function calculateAuthoritativePriceForMarket(
   planName: string,
-  country: 'IN' | 'GB',
+  _country?: 'IN' | 'GB',
   serviceType?: string,
   customExercises?: string[]
-): { amount: number; currency: 'INR' | 'GBP'; amountInSubUnits: number } {
+): { amount: number; currency: 'GBP'; amountInSubUnits: number } {
   const normKey = (planName || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
   let matched = AUTHORITATIVE_PRICING_CATALOG['default'];
 
@@ -240,13 +253,12 @@ function calculateAuthoritativePriceForMarket(
     }
   }
 
-  const isIndia = country === 'IN';
-  const currency: 'INR' | 'GBP' = isIndia ? 'INR' : 'GBP';
-  let basePrice = isIndia ? matched.inrBasePrice : matched.gbpBasePrice;
+  const currency: 'GBP' = 'GBP';
+  let basePrice = matched.gbpBasePrice;
 
   if (serviceType === 'custom' && Array.isArray(customExercises)) {
     const extraCount = Math.max(0, customExercises.length - 3);
-    const extraFeePerUnit = isIndia ? 499 : 5;
+    const extraFeePerUnit = 5; // £5 GBP per additional custom exercise
     basePrice += extraCount * extraFeePerUnit;
   }
 
@@ -355,60 +367,87 @@ app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/crea
       });
     } catch (err: any) {
       primaryError = err?.message || 'Razorpay order creation failed';
-      console.warn(`⚠️ [PAYMENT FAILOVER] Primary gateway (Razorpay) failed: ${primaryError}. Transitioning to secondary gateway (Stripe)...`);
+      console.warn(`⚠️ [PAYMENT FAILOVER] Primary gateway (Razorpay) failed: ${primaryError}. Transitioning to secondary gateway (Cashfree PG)...`);
     }
 
-    // --- STEP B: AUTOMATIC SECONDARY GATEWAY FAILOVER (STRIPE) ---
+    // --- STEP B: AUTOMATIC SECONDARY GATEWAY FAILOVER (CASHFREE PG) ---
     try {
-      txRecord.gateway = 'stripe';
-      const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY;
+      txRecord.gateway = 'cashfree';
+      const { appId: cfAppId, secretKey: cfSecretKey, isProd: cfIsProd } = getCashfreeConfig();
 
-      if (stripeSecretKey && !stripeSecretKey.includes('placeholder')) {
-        const stripeModule = await (Function('return import("stripe")')() as Promise<any>);
-        const Stripe = stripeModule.default;
-        const stripe = new Stripe(stripeSecretKey);
+      const cfApiUrl = cfIsProd ? 'https://api.cashfree.com/pg/orders' : 'https://sandbox.cashfree.com/pg/orders';
+      const cfCheckoutBase = cfIsProd ? 'https://payments.cashfree.com/order/#' : 'https://payments-test.cashfree.com/order/#';
 
-        const session = await stripe.checkout.sessions.create({
-          payment_method_types: ['card'],
-          line_items: [
-            {
-              price_data: {
-                currency: currency.toLowerCase(),
-                product_data: {
-                  name: `${planName} (${serviceType.toUpperCase()} MODE)`,
-                  description: customExercises && customExercises.length > 0 ? `Custom Exercises: ${customExercises.slice(0, 3).join(', ')}...` : 'Bespoke Fitness Protocol'
-                },
-                unit_amount: amountInSubUnits
-              },
-              quantity: 1
-            }
-          ],
-          mode: 'payment',
-          customer_email: userEmail,
-          client_reference_id: transactionId,
-          success_url: `${req.headers.origin || 'http://localhost:3000'}/?payment_success=true&tx=${transactionId}`,
-          cancel_url: `${req.headers.origin || 'http://localhost:3000'}/?payment_cancel=true&tx=${transactionId}`
+      if (cfAppId && cfSecretKey && !cfAppId.includes('placeholder')) {
+        const cfResponse = await fetch(cfApiUrl, {
+          method: 'POST',
+          headers: {
+            'x-client-id': cfAppId,
+            'x-client-secret': cfSecretKey,
+            'x-api-version': '2023-08-01',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            order_id: transactionId,
+            order_amount: amount,
+            order_currency: currency.toUpperCase(),
+            customer_details: {
+              customer_id: `cust_${transactionId}`,
+              customer_name: userName || 'Client Athlete',
+              customer_email: userEmail || 'client@bxstrength.com',
+              customer_phone: (phone || '9876543210').replace(/[\s\-\(\)\+]/g, '').slice(-10) || '9876543210'
+            },
+            order_meta: {
+              return_url: `${req.headers.origin || 'http://localhost:3000'}/?cashfree_order_id={order_id}&payment_status={order_status}&tx=${transactionId}`
+            },
+            order_note: `${planName} (${serviceType.toUpperCase()} MODE)`
+          })
         });
 
-        txRecord.status = 'order_created';
-        txRecord.gatewayOrderId = session.id;
-        txRecord.updatedAt = new Date().toISOString();
+        const cfData = await cfResponse.json();
+        if (cfResponse.ok && cfData.payment_session_id) {
+          const checkoutUrl = `${cfCheckoutBase}${cfData.payment_session_id}`;
+          txRecord.status = 'order_created';
+          txRecord.gatewayOrderId = cfData.order_id || transactionId;
+          txRecord.updatedAt = new Date().toISOString();
 
-        if (dbPool) {
-          dbPool.query(`UPDATE payment_transactions SET gateway = 'stripe', gateway_order_id = $1, status = 'order_created', updated_at = NOW() WHERE id = $2`, [session.id, transactionId]).catch(() => {});
+          if (dbPool) {
+            dbPool.query(`UPDATE payment_transactions SET gateway = 'cashfree', gateway_order_id = $1, status = 'order_created', updated_at = NOW() WHERE id = $2`, [cfData.order_id || transactionId, transactionId]).catch(() => {});
+          }
+
+          return res.status(200).json({
+            success: true,
+            gateway: 'cashfree',
+            transactionId,
+            order_id: cfData.order_id || transactionId,
+            payment_session_id: cfData.payment_session_id,
+            checkoutUrl,
+            amount: amountInSubUnits,
+            currency
+          });
         }
-
-        return res.status(200).json({
-          success: true,
-          gateway: 'stripe',
-          transactionId,
-          checkoutUrl: session.url,
-          amount: amountInSubUnits,
-          currency: 'GBP'
-        });
       }
-    } catch (stripeErr: any) {
-      console.error('⚠️ [PAYMENT FAILOVER ERROR] Secondary gateway (Stripe) failed:', stripeErr?.message);
+
+      // Cashfree Fallback Checkout URL if production keys are pending
+      const fallbackCashfreeUrl = `https://payments.cashfree.com/order/#plan=${encodeURIComponent(planName)}&amount=${amount}&tx=${transactionId}`;
+      txRecord.status = 'order_created';
+      txRecord.gatewayOrderId = transactionId;
+      txRecord.updatedAt = new Date().toISOString();
+
+      if (dbPool) {
+        dbPool.query(`UPDATE payment_transactions SET gateway = 'cashfree', gateway_order_id = $1, status = 'order_created', updated_at = NOW() WHERE id = $2`, [transactionId, transactionId]).catch(() => {});
+      }
+
+      return res.status(200).json({
+        success: true,
+        gateway: 'cashfree',
+        transactionId,
+        checkoutUrl: fallbackCashfreeUrl,
+        amount: amountInSubUnits,
+        currency
+      });
+    } catch (cfErr: any) {
+      console.error('⚠️ [PAYMENT FAILOVER ERROR] Secondary gateway (Cashfree PG) failed:', cfErr?.message);
     }
 
     // Both primary & secondary failed
@@ -507,6 +546,518 @@ app.post(['/api/verify-payment', '/api/verify-razorpay-payment', '/api/payments/
   }
 });
 
+// --- UK CUSTOMER 5-STEP JOURNEY & BOOKING STATE MACHINE ---
+export type UkJourneyState =
+  | 'SERVICE_SELECTED'
+  | 'CHECKOUT_CREATED'
+  | 'PAYMENT_PENDING'
+  | 'PAYMENT_SUCCESS'
+  | 'SCHEDULING_PENDING'
+  | 'BOOKING_CONFIRMED'
+  | 'PAYMENT_FAILED'
+  | 'PAYMENT_CANCELLED'
+  | 'BOOKING_CANCELLED';
+
+export interface UkBookingJourneyRecord {
+  id: string; // Booking ID e.g. BXSC47291
+  sessionId: string;
+  transactionId?: string; // e.g. BX10028473
+  userEmail: string;
+  userName: string;
+  userPhone?: string;
+  serviceTitle: string;
+  serviceCategory: string;
+  serviceType: 'individual' | 'custom';
+  customExercises?: string[];
+  amountGbp: number;
+  currency: 'GBP';
+  paymentDate?: string;
+  paymentStatus: 'Paid' | 'Failed' | 'Pending';
+  journeyState: UkJourneyState;
+  
+  // Health & Onboarding Disclosures (Screen 1)
+  is18PlusConfirmed: boolean;
+  isVirtualCoachingConfirmed: boolean;
+  isHealthDisclosureConfirmed: boolean;
+  isSafeSpaceConfirmed: boolean;
+  
+  // Terms Consent (Screen 2)
+  termsConsentAccepted: boolean;
+  termsConsentTimestamp?: string;
+  
+  // Confirmed Session Details (Screen 5 - populated by Admin)
+  coachName?: string;
+  coachTitle?: string;
+  coachAvatar?: string;
+  scheduledDate?: string;
+  scheduledTime?: string;
+  timeZone?: string;
+  duration?: string;
+  joinUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const ukJourneyStore: UkBookingJourneyRecord[] = [];
+
+// 1. INITIATE SERVICE SELECTION (Screen 1 -> SERVICE_SELECTED)
+app.post('/api/journey/initiate', async (req, res) => {
+  try {
+    const {
+      serviceTitle = 'BX Complete',
+      serviceCategory = 'Core Package',
+      serviceType = 'individual',
+      customExercises = [],
+      userEmail = 'client@domain.com',
+      userName = 'Client Athlete',
+      userPhone = '',
+      disclosures = {}
+    } = req.body;
+
+    const { amount } = calculateAuthoritativePriceForMarket(serviceTitle, 'GB', serviceType, customExercises);
+    const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const bookingId = `BXSC${Math.floor(10000 + Math.random() * 90000)}`;
+
+    const record: UkBookingJourneyRecord = {
+      id: bookingId,
+      sessionId,
+      userEmail,
+      userName,
+      userPhone,
+      serviceTitle,
+      serviceCategory,
+      serviceType,
+      customExercises,
+      amountGbp: amount,
+      currency: 'GBP',
+      paymentStatus: 'Pending',
+      journeyState: 'SERVICE_SELECTED',
+      is18PlusConfirmed: disclosures.is18PlusConfirmed ?? true,
+      isVirtualCoachingConfirmed: disclosures.isVirtualCoachingConfirmed ?? true,
+      isHealthDisclosureConfirmed: disclosures.isHealthDisclosureConfirmed ?? true,
+      isSafeSpaceConfirmed: disclosures.isSafeSpaceConfirmed ?? true,
+      termsConsentAccepted: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    ukJourneyStore.unshift(record);
+
+    return res.status(200).json({
+      success: true,
+      sessionId,
+      bookingId,
+      serviceTitle,
+      amountGbp: amount,
+      currency: 'GBP',
+      journeyState: 'SERVICE_SELECTED'
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to initiate journey' });
+  }
+});
+
+// 2. CREATE CHECKOUT INTENT & VALIDATE CONSENT (Screen 2 -> CHECKOUT_CREATED -> PAYMENT_PENDING)
+app.post('/api/journey/create-checkout-intent', async (req, res) => {
+  try {
+    const { sessionId, termsConsent, idempotencyKey } = req.body;
+
+    if (!termsConsent) {
+      return res.status(400).json({
+        success: false,
+        error: 'Mandatory consent required: You must accept the Terms & Conditions and Privacy Policy.'
+      });
+    }
+
+    const record = ukJourneyStore.find(r => r.sessionId === sessionId || r.id === sessionId);
+    if (!record) {
+      return res.status(404).json({ success: false, error: 'Journey session not found' });
+    }
+
+    // Record Terms Consent
+    record.termsConsentAccepted = true;
+    record.termsConsentTimestamp = new Date().toISOString();
+    record.journeyState = 'CHECKOUT_CREATED';
+
+    // Calculate authoritative price
+    const { amount, amountInSubUnits } = calculateAuthoritativePriceForMarket(
+      record.serviceTitle,
+      'GB',
+      record.serviceType,
+      record.customExercises
+    );
+    record.amountGbp = amount;
+
+    const transactionId = `BX${Math.floor(10000000 + Math.random() * 90000000)}`;
+    record.transactionId = transactionId;
+    record.journeyState = 'PAYMENT_PENDING';
+    record.updatedAt = new Date().toISOString();
+
+    const razorpay = getRazorpayInstance();
+    const activeKeyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || '';
+
+    if (razorpay && activeKeyId) {
+      const order = await razorpay.orders.create({
+        amount: amountInSubUnits,
+        currency: 'GBP',
+        receipt: `rcpt_${transactionId}`,
+        notes: { bookingId: record.id, transactionId, planName: record.serviceTitle }
+      });
+
+      return res.status(200).json({
+        success: true,
+        gateway: 'razorpay',
+        journeyState: 'PAYMENT_PENDING',
+        bookingId: record.id,
+        transactionId,
+        order_id: order.id,
+        amount: order.amount,
+        currency: 'GBP',
+        key_id: activeKeyId
+      });
+    }
+
+    // Secondary Stripe Gateway
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY;
+    if (stripeSecretKey && !stripeSecretKey.includes('placeholder')) {
+      const stripeModule = await (Function('return import("stripe")')() as Promise<any>);
+      const Stripe = stripeModule.default;
+      const stripe = new Stripe(stripeSecretKey);
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'gbp',
+            product_data: { name: record.serviceTitle },
+            unit_amount: amountInSubUnits
+          },
+          quantity: 1
+        }],
+        mode: 'payment',
+        customer_email: record.userEmail,
+        client_reference_id: transactionId,
+        success_url: `${req.headers.origin || 'http://localhost:3000'}/?payment_success=true&bookingId=${record.id}`,
+        cancel_url: `${req.headers.origin || 'http://localhost:3000'}/?payment_cancel=true&bookingId=${record.id}`
+      });
+
+      return res.status(200).json({
+        success: true,
+        gateway: 'stripe',
+        journeyState: 'PAYMENT_PENDING',
+        bookingId: record.id,
+        transactionId,
+        checkoutUrl: session.url,
+        amount: amountInSubUnits,
+        currency: 'GBP'
+      });
+    }
+
+    // Direct Sandbox order fallback if offline/mock
+    return res.status(200).json({
+      success: true,
+      gateway: 'sandbox',
+      journeyState: 'PAYMENT_PENDING',
+      bookingId: record.id,
+      transactionId,
+      order_id: `order_sandbox_${Date.now()}`,
+      amount: amountInSubUnits,
+      currency: 'GBP',
+      key_id: 'rzp_test_placeholder'
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to create checkout intent' });
+  }
+});
+
+// 3. VERIFY PAYMENT CRYPTOGRAPHIC SIGNATURE & TRANSITION TO SCHEDULING_PENDING (Screen 3 -> PAYMENT_SUCCESS -> SCHEDULING_PENDING)
+app.post('/api/journey/verify-payment', async (req, res) => {
+  try {
+    const { sessionId, bookingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const activeKeySecret = process.env.RAZORPAY_KEY_SECRET || '';
+
+    const record = ukJourneyStore.find(r => r.id === bookingId || r.sessionId === sessionId || r.sessionId === bookingId);
+    if (!record) {
+      return res.status(404).json({ success: false, error: 'Booking record not found' });
+    }
+
+    if (activeKeySecret && razorpay_order_id && razorpay_payment_id && razorpay_signature) {
+      const generatedSignature = crypto
+        .createHmac('sha256', activeKeySecret)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest('hex');
+
+      if (generatedSignature !== razorpay_signature) {
+        record.journeyState = 'PAYMENT_FAILED';
+        record.paymentStatus = 'Failed';
+        return res.status(400).json({
+          success: false,
+          journeyState: 'PAYMENT_FAILED',
+          error: 'Cryptographic signature mismatch. Payment verification failed.'
+        });
+      }
+    }
+
+    // Mark Payment Verified & Transition to SCHEDULING_PENDING
+    record.paymentStatus = 'Paid';
+    record.journeyState = 'SCHEDULING_PENDING';
+    record.paymentDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    record.updatedAt = new Date().toISOString();
+
+    // Send automated email receipt via Brevo to customer
+    sendServerEmail({
+      toEmail: record.userEmail,
+      toName: record.userName,
+      subject: `[BXSTRENGTH] Payment Received - Order ${record.id}`,
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+          <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 24px;">
+            <h1 style="color: #CCFF00; margin: 0; font-size: 22px; text-transform: uppercase; font-weight: 900;">✓ PAYMENT RECEIVED SUCCESSFULLY</h1>
+            <p style="color: #a1a1aa; font-size: 12px; margin-top: 6px;">Booking Ref: <strong style="color: #ffffff;">${record.id}</strong></p>
+          </div>
+          <p style="font-size: 15px; color: #e4e4e7;">Dear <strong>${record.userName}</strong>,</p>
+          <p style="font-size: 14px; color: #a1a1aa; line-height: 1.6;">Thank you for choosing BXSTRENGTH! Your payment of <strong style="color: #CCFF00;">£${record.amountGbp}.00 GBP</strong> for <strong>${record.serviceTitle}</strong> has been received and verified.</p>
+          <div style="background-color: #18181b; border: 1px solid #27272a; padding: 18px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 13px; color: #CCFF00; font-weight: bold;">STATUS: AWAITING COACH ALIGNMENT (STEP 4)</p>
+            <p style="margin: 6px 0 0 0; font-size: 12px; color: #a1a1aa;">Our head coaching team is reviewing schedule availability to match you with your dedicated UK performance coach. You will receive an official schedule confirmation email as soon as your coach is aligned!</p>
+          </div>
+          <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
+            BXSTRENGTH Coaching Platform
+          </div>
+        </div>
+      `
+    }).catch(() => {});
+
+    // Send urgent notification to Admin team regarding pending coach assignment
+    const adminEmail = process.env.VITE_ADMIN_EMAIL || process.env.BREVO_SENDER_EMAIL || 'khanshadan96@gmail.com';
+    sendServerEmail({
+      toEmail: adminEmail,
+      toName: 'BXSTRENGTH Head Coach & Admin Team',
+      subject: `🚨 [URGENT ACTION REQUIRED] Assign Coach for ${record.userName} (Ref: ${record.id})`,
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+          <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 24px;">
+            <h1 style="color: #CCFF00; margin: 0; font-size: 20px; text-transform: uppercase; font-weight: 900;">🚨 ACTION REQUIRED: COACH ASSIGNMENT PENDING</h1>
+            <p style="color: #a1a1aa; font-size: 12px; margin-top: 4px;">Booking Ref: <strong style="color: #ffffff;">${record.id}</strong></p>
+          </div>
+          <p style="font-size: 14px; color: #e4e4e7;">Customer <strong>${record.userName}</strong> has completed payment and is waiting on <strong>Step 4 (Coach Assignment Pending)</strong>.</p>
+          <div style="background-color: #18181b; border: 1px solid #27272a; padding: 18px; border-radius: 8px; margin: 20px 0; font-size: 13px;">
+            <p style="margin: 4px 0;"><strong>Customer Name:</strong> ${record.userName}</p>
+            <p style="margin: 4px 0;"><strong>Email:</strong> ${record.userEmail}</p>
+            <p style="margin: 4px 0;"><strong>Phone / WhatsApp:</strong> ${record.userPhone || 'Not provided'}</p>
+            <p style="margin: 4px 0;"><strong>Purchased Service:</strong> ${record.serviceTitle} (${record.serviceType.toUpperCase()})</p>
+            <p style="margin: 4px 0;"><strong>Amount Paid:</strong> <span style="color: #CCFF00; font-weight: bold;">£${record.amountGbp}.00 GBP</span></p>
+          </div>
+          <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">Please open the Admin CRM dashboard to assign a dedicated UK coach and confirm their training schedule.</p>
+        </div>
+      `
+    }).catch(() => {});
+
+    return res.status(200).json({
+      success: true,
+      journeyState: 'SCHEDULING_PENDING',
+      bookingId: record.id,
+      transactionId: record.transactionId || `BX${Math.floor(10000000 + Math.random() * 90000000)}`,
+      amountGbp: record.amountGbp,
+      serviceTitle: record.serviceTitle,
+      paymentDate: record.paymentDate,
+      paymentStatus: 'Paid',
+      record
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Payment verification failed' });
+  }
+});
+
+// 4. FETCH VERIFIED JOURNEY / BOOKING STATUS (Screen 4 / Screen 5 State Check)
+app.get('/api/journey/booking/:id', (req, res) => {
+  const { id } = req.params;
+  const record = ukJourneyStore.find(r => r.id === id || r.sessionId === id);
+  if (!record) {
+    return res.status(404).json({ success: false, error: 'Booking not found' });
+  }
+  return res.status(200).json({ success: true, record });
+});
+
+// FETCH LATEST JOURNEY BY USER EMAIL (For persistent logout/login dashboard state)
+app.get('/api/journey/latest-by-email/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email parameter required' });
+    }
+
+    const cleanEmail = decodeURIComponent(email).trim().toLowerCase();
+
+    // 1. Search in-memory store
+    const userRecords = ukJourneyStore.filter(
+      r => r.userEmail && r.userEmail.trim().toLowerCase() === cleanEmail
+    );
+    userRecords.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    if (userRecords.length > 0) {
+      return res.status(200).json({ success: true, record: userRecords[0] });
+    }
+
+    // 2. Query NeonDB PostgreSQL
+    if (dbPool) {
+      try {
+        const dbRes = await dbPool.query(
+          'SELECT * FROM uk_booking_journeys WHERE LOWER(user_email) = $1 ORDER BY created_at DESC LIMIT 1',
+          [cleanEmail]
+        );
+        if (dbRes.rows.length > 0) {
+          const dbRow = dbRes.rows[0];
+          const record: UkBookingJourneyRecord = {
+            id: dbRow.id,
+            sessionId: dbRow.session_id || dbRow.id,
+            userEmail: dbRow.user_email,
+            userName: dbRow.user_name,
+            userPhone: dbRow.user_phone,
+            serviceTitle: dbRow.service_title,
+            serviceCategory: dbRow.service_category || 'Core Package',
+            serviceType: dbRow.service_type || 'individual',
+            customExercises: dbRow.custom_exercises ? JSON.parse(dbRow.custom_exercises) : [],
+            amountGbp: parseFloat(dbRow.amount_gbp) || 0,
+            currency: dbRow.currency || 'GBP',
+            paymentDate: dbRow.payment_date,
+            paymentStatus: dbRow.payment_status || 'Paid',
+            journeyState: dbRow.journey_state || 'SCHEDULING_PENDING',
+            is18PlusConfirmed: true,
+            isVirtualCoachingConfirmed: true,
+            isHealthDisclosureConfirmed: true,
+            isSafeSpaceConfirmed: true,
+            termsConsentAccepted: true,
+            coachName: dbRow.coach_name,
+            coachTitle: dbRow.coach_title,
+            coachAvatar: dbRow.coach_avatar,
+            scheduledDate: dbRow.scheduled_date,
+            scheduledTime: dbRow.scheduled_time,
+            timeZone: dbRow.time_zone,
+            duration: dbRow.duration,
+            joinUrl: dbRow.join_url,
+            transactionId: dbRow.transaction_id,
+            createdAt: dbRow.created_at,
+            updatedAt: dbRow.updated_at
+          };
+          ukJourneyStore.unshift(record);
+          return res.status(200).json({ success: true, record });
+        }
+      } catch (e: any) {}
+    }
+
+    return res.status(404).json({ success: false, error: 'No active journey found for user' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 5. ADMIN CONFIRM BOOKING & ASSIGN COACH (Screen 4 -> Screen 5: BOOKING_CONFIRMED)
+app.post('/api/admin/journey/confirm-booking', async (req, res) => {
+  try {
+    const {
+      bookingId,
+      coachName = 'Coach Jordan Ellis',
+      coachTitle = 'Strength & Conditioning Specialist',
+      coachAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+      scheduledDate = 'Mon, 27 Jan 2026',
+      scheduledTime = '7:00 PM (GMT)',
+      timeZone = 'GMT',
+      duration = '60 Mins',
+      joinUrl = `https://bxstrength.co.uk/join/${req.body.bookingId || 'BXSC47291'}`
+    } = req.body;
+
+    const record = ukJourneyStore.find(r => r.id === bookingId);
+    if (!record) {
+      return res.status(404).json({ success: false, error: 'Booking record not found' });
+    }
+
+    record.journeyState = 'BOOKING_CONFIRMED';
+    record.coachName = coachName;
+    record.coachTitle = coachTitle;
+    record.coachAvatar = coachAvatar;
+    record.scheduledDate = scheduledDate;
+    record.scheduledTime = scheduledTime;
+    record.timeZone = timeZone;
+    record.duration = duration;
+    record.joinUrl = joinUrl;
+    record.updatedAt = new Date().toISOString();
+
+    if (dbPool) {
+      try {
+        await dbPool.query(
+          `UPDATE uk_booking_journeys 
+           SET journey_state = 'BOOKING_CONFIRMED', coach_name = $1, coach_title = $2, coach_avatar = $3, scheduled_date = $4, scheduled_time = $5, time_zone = $6, duration = $7, join_url = $8, updated_at = NOW() 
+           WHERE id = $9 OR session_id = $9`,
+          [coachName, coachTitle, coachAvatar, scheduledDate, scheduledTime, timeZone, duration, joinUrl, bookingId]
+        );
+      } catch (e: any) {}
+    }
+
+    // Send professional training schedule confirmation email to customer
+    sendServerEmail({
+      toEmail: record.userEmail,
+      toName: record.userName,
+      subject: `✓ [CONFIRMED] Your BXSTRENGTH Training Schedule with ${coachName}`,
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+          <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 24px;">
+            <h1 style="color: #CCFF00; margin: 0; font-size: 22px; text-transform: uppercase; font-weight: 900;">✓ OFFICIAL TRAINING SCHEDULE CONFIRMED</h1>
+            <p style="color: #a1a1aa; font-size: 12px; margin-top: 6px;">Booking Ref: <strong style="color: #ffffff;">${record.id}</strong></p>
+          </div>
+
+          <p style="font-size: 15px; color: #e4e4e7;">Dear <strong>${record.userName}</strong>,</p>
+          <p style="font-size: 14px; color: #a1a1aa; line-height: 1.6;">
+            Great news! Your dedicated UK performance coach has been assigned and your live 1-on-1 coaching session schedule is officially confirmed.
+          </p>
+
+          <div style="background-color: #18181b; border: 1px solid #27272a; padding: 20px; border-radius: 8px; margin: 24px 0;">
+            <h3 style="color: #CCFF00; margin-top: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">CONFIRMED SESSION &amp; COACH DETAILS</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #e4e4e7;">
+              <tr><td style="padding: 6px 0; color: #a1a1aa;">Assigned Coach:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${coachName} (${coachTitle})</td></tr>
+              <tr><td style="padding: 6px 0; color: #a1a1aa;">Training Program:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${record.serviceTitle}</td></tr>
+              <tr><td style="padding: 6px 0; color: #a1a1aa;">Confirmed Date:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${scheduledDate}</td></tr>
+              <tr><td style="padding: 6px 0; color: #a1a1aa;">Confirmed Time:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${scheduledTime}</td></tr>
+            </table>
+          </div>
+
+          <div style="background-color: #121214; border-left: 4px solid #CCFF00; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+            <h4 style="color: #ffffff; margin: 0 0 8px 0; font-size: 13px; font-weight: bold;">PRE-SESSION CHECKLIST:</h4>
+            <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #a1a1aa; line-height: 1.6;">
+              <li>Ensure you have a safe 2m x 2m clear space at home or in your gym.</li>
+              <li>Wear athletic attire and hydration bottle.</li>
+              <li>Click the secure join link 5 minutes prior to start time.</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${joinUrl}" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">
+              JOIN LIVE SESSION ROOM
+            </a>
+          </div>
+
+          <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
+            BXSTRENGTH Performance Coaching
+          </div>
+        </div>
+      `
+    }).catch(() => {});
+
+    return res.status(200).json({
+      success: true,
+      message: 'Booking successfully confirmed and coach assigned',
+      record
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to confirm booking' });
+  }
+});
+
+// 6. ADMIN GET ALL JOURNEY BOOKINGS
+app.get('/api/admin/journey/bookings', (req, res) => {
+  return res.status(200).json({ success: true, bookings: ukJourneyStore });
+});
+
 // STEP 3: Webhook Handlers with Replay Protection & Signature Validation
 app.post('/api/webhooks/razorpay', async (req, res) => {
   try {
@@ -557,6 +1108,42 @@ app.post('/api/webhooks/razorpay', async (req, res) => {
   } catch (err: any) {
     console.error('[RAZORPAY WEBHOOK ERROR]', err.message);
     res.status(500).json({ error: 'Webhook processing error' });
+  }
+});
+
+app.post(['/api/webhooks/cashfree', '/api/payments/cashfree-webhook'], async (req, res) => {
+  try {
+    const eventId = (req.headers['x-cashfree-event-id'] as string) || `evt_cf_${Date.now()}`;
+    if (processedWebhooksStore.has(eventId)) {
+      return res.status(200).json({ status: 'ignored', message: 'Webhook event already processed' });
+    }
+    processedWebhooksStore.add(eventId);
+
+    const data = req.body?.data || req.body;
+    const orderId = data?.order?.order_id || data?.order_id;
+    const paymentId = data?.payment?.cf_payment_id || data?.referenceId || `cf_pay_${Date.now()}`;
+    const paymentStatus = data?.payment?.payment_status || data?.txStatus;
+
+    if (paymentStatus === 'SUCCESS' || paymentStatus === 'PAID' || req.body.type === 'PAYMENT_SUCCESS_WEBHOOK') {
+      const tx = paymentTransactionsStore.find(t => t.gatewayOrderId === orderId || t.id === orderId);
+      if (tx) {
+        tx.status = 'reconciled';
+        tx.gatewayPaymentId = String(paymentId);
+        tx.updatedAt = new Date().toISOString();
+      }
+
+      if (dbPool) {
+        dbPool.query(
+          `UPDATE payment_transactions SET gateway_payment_id = $1, status = 'reconciled', updated_at = NOW() WHERE gateway_order_id = $2 OR id = $2`,
+          [String(paymentId), orderId]
+        ).catch(() => {});
+      }
+    }
+
+    return res.status(200).json({ status: 'success', gateway: 'cashfree' });
+  } catch (err: any) {
+    console.error('[CASHFREE WEBHOOK ERROR]', err.message);
+    return res.status(500).json({ error: 'Cashfree webhook processing error' });
   }
 });
 
@@ -611,12 +1198,14 @@ interface SendEmailOptions {
 }
 
 function buildFullHtmlEmail(subject: string, rawContent: string): string {
-  // 1. Unescape HTML entities if passed as encoded string
+  // 1. Unescape all HTML entities (including escaped slashes from sanitizer)
   let content = rawContent
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+    .replace(/&#x2F;/gi, '/')
+    .replace(/&#x2f;/gi, '/')
     .replace(/&amp;/g, '&');
 
   // If content is already a complete HTML document, return as is
@@ -633,38 +1222,37 @@ function buildFullHtmlEmail(subject: string, rawContent: string): string {
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>${subject}</title>
   <style>
-    body { margin: 0; padding: 0; background-color: #09090b; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    body { margin: 0; padding: 0; background-color: #09090b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
     table { border-collapse: collapse; }
     img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
     a { color: #CCFF00; text-decoration: none; }
   </style>
 </head>
-<body style="margin:0; padding:0; background-color:#09090b; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased;">
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#09090b; width:100%; margin:0; padding:30px 10px;">
+<body style="margin:0; padding:0; background-color:#09090b; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#09090b; width:100%; margin:0; padding:24px 10px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%; margin:0 auto; background-color:#0d0d12; border:1px solid #27272a; border-radius:12px; overflow:hidden;">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:580px; width:100%; margin:0 auto; background-color:#0d0d12; border:1px solid #27272a; border-radius:12px; overflow:hidden;">
           
           <!-- BRAND HEADER -->
           <tr>
-            <td style="padding:24px; text-align:center; background-color:#121215; border-bottom:2px solid #CCFF00;">
-              <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1789566029/WhatsApp_Image_2026-09-08_at_10.50.41_AM.png" alt="BxStrength Logo" style="max-height:48px; width:auto; display:inline-block;" />
+            <td style="padding:20px; text-align:center; background-color:#121215; border-bottom:2px solid #CCFF00;">
+              <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1789566029/WhatsApp_Image_2026-09-08_at_10.50.41_AM.png" alt="BxStrength Logo" style="max-height:42px; width:auto; display:inline-block;" />
             </td>
           </tr>
 
           <!-- MAIN CONTENT BODY -->
           <tr>
-            <td style="padding:28px 24px; color:#ffffff; font-size:14px; line-height:1.6;">
+            <td style="padding:24px 20px; color:#ffffff; font-size:14px; line-height:1.6;">
               ${content}
             </td>
           </tr>
 
-          <!-- FOOTER & LEGAL BUSINESS INFO -->
+          <!-- CLEAN CONCISE FOOTER -->
           <tr>
-            <td style="padding:20px 24px; background-color:#0a0a0c; border-top:1px solid #27272a; text-align:center; font-size:11px; color:#71717a;">
-              <p style="margin:0 0 4px 0; font-weight:800; color:#a1a1aa; text-transform:uppercase; letter-spacing:1px;">BXSTRENGTH PERFORMANCE COACHING</p>
-              <p style="margin:0 0 6px 0; color:#71717a;">Trading brand of 7Seas Exim | GSTIN: 07KPUPS3306Q1ZQ</p>
-              <p style="margin:0; color:#71717a;">185/A, Street No. 3, Zakir Nagar, Okhla, New Delhi - 110025, India | Email: bxstrengthuk@gmail.com</p>
+            <td style="padding:16px 20px; background-color:#0a0a0c; border-top:1px solid #27272a; text-align:center; font-size:11px; color:#71717a;">
+              <p style="margin:0 0 4px 0; font-weight:800; color:#a1a1aa; text-transform:uppercase; letter-spacing:0.5px;">BXSTRENGTH PERFORMANCE COACHING</p>
+              <p style="margin:0; color:#71717a;">Support: support@bxstrength.com | WhatsApp: +91 8423594482</p>
             </td>
           </tr>
 
@@ -858,6 +1446,42 @@ if (dbPool) {
             processed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
 
+          CREATE TABLE IF NOT EXISTS announcements (
+            id VARCHAR(64) PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            message TEXT NOT NULL,
+            target_role VARCHAR(50) DEFAULT 'all',
+            priority VARCHAR(50) DEFAULT 'medium',
+            author_name VARCHAR(255) DEFAULT 'System Admin',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          CREATE TABLE IF NOT EXISTS uk_booking_journeys (
+            id VARCHAR(64) PRIMARY KEY,
+            session_id VARCHAR(128),
+            user_email VARCHAR(255) NOT NULL,
+            user_name VARCHAR(255),
+            user_phone VARCHAR(100),
+            service_title VARCHAR(255) NOT NULL,
+            service_category VARCHAR(255),
+            service_type VARCHAR(50) DEFAULT 'individual',
+            custom_exercises TEXT,
+            amount_gbp NUMERIC(10, 2) NOT NULL,
+            currency VARCHAR(10) DEFAULT 'GBP',
+            payment_date VARCHAR(100),
+            payment_status VARCHAR(50) DEFAULT 'Pending',
+            journey_state VARCHAR(50) DEFAULT 'SERVICE_SELECTED',
+            coach_name VARCHAR(255),
+            coach_title VARCHAR(255),
+            coach_avatar TEXT,
+            scheduled_date VARCHAR(255),
+            scheduled_time VARCHAR(255),
+            time_zone VARCHAR(50),
+            duration VARCHAR(50),
+            join_url TEXT,
+            transaction_id VARCHAR(128),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
           CREATE TABLE IF NOT EXISTS trainers (
             id VARCHAR(64) PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
@@ -971,7 +1595,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const phone = sanitizeInput(rawPhone || '');
 
     if (phone && !isValidUkMobile(phone)) {
-      return res.status(400).json({ error: 'Only UK mobile numbers are allowed (e.g. +44 7911 123456 or 07911 123456).' });
+      return res.status(400).json({ error: 'Please enter a valid mobile phone number (7 to 15 digits).' });
     }
 
     // Public Registration Security: Default role is strictly 'client'.
@@ -1488,18 +2112,19 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
       subject: `[CONFIRMED] Your BxStrength Consultation (${bookingRef})`,
       senderName: 'BxStrength Coaching',
       htmlContent: `
-        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
-          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">BXSTRENGTH CONSULTATION CONFIRMED</h2>
-          <p style="color: #a1a1aa; font-size: 13px;">Booking Ref: <strong>${bookingRef}</strong></p>
-          <p style="font-size: 14px;">Dear <strong>${leadName}</strong>,</p>
-          <p style="font-size: 14px; color: #a1a1aa;">Your 1-on-1 Strategy &amp; Assessment Session has been scheduled.</p>
-          <div style="background-color: #18181b; padding: 18px; border-radius: 8px; margin: 16px 0; border: 1px solid #27272a;">
-            <p style="margin: 4px 0;"><strong>Primary Goal:</strong> ${leadGoal}</p>
-            <p style="margin: 4px 0;"><strong>Session Duration:</strong> ${leadDuration}</p>
-            <p style="margin: 4px 0;"><strong>Scheduled Date:</strong> ${date}</p>
-            <p style="margin: 4px 0;"><strong>Time Slot:</strong> ${time}</p>
+        <div style="font-family: Arial, sans-serif; color: #ffffff;">
+          <h2 style="color: #CCFF00; margin: 0 0 6px 0; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Appointment Confirmed</h2>
+          <p style="color: #a1a1aa; font-size: 13px; margin: 0 0 16px 0;">Reference Code: <strong style="color: #ffffff;">${bookingRef}</strong></p>
+          <p style="font-size: 14px; margin: 0 0 12px 0;">Hi <strong>${leadName}</strong>,</p>
+          <p style="font-size: 14px; color: #d4d4d8; margin: 0 0 20px 0; line-height: 1.5;">Your 1-on-1 strategy session with BxStrength has been scheduled successfully.</p>
+          <div style="background-color: #18181b; border: 1px solid #27272a; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <tr><td style="padding: 6px 0; color: #a1a1aa;">Goal:</td><td style="padding: 6px 0; font-weight: 700; color: #CCFF00; text-align: right;">${leadGoal}</td></tr>
+              <tr><td style="padding: 6px 0; color: #a1a1aa;">Date &amp; Time:</td><td style="padding: 6px 0; font-weight: 700; color: #ffffff; text-align: right;">${date} (${time})</td></tr>
+              <tr><td style="padding: 6px 0; color: #a1a1aa;">Duration:</td><td style="padding: 6px 0; font-weight: 700; color: #ffffff; text-align: right;">${leadDuration}</td></tr>
+            </table>
           </div>
-          <p style="font-size: 12px; color: #71717a;">BxStrength Coaching | Support: ${senderEmail} | Phone: 8423594482</p>
+          <p style="font-size: 13px; color: #a1a1aa; margin: 0; line-height: 1.5;">Our lead coach will reach out to you at the scheduled time. If you need to make any changes, simply reply to this email.</p>
         </div>
       `
     }).catch((err) => console.error('[CONSULTATION CLIENT EMAIL ERROR]', err.message));
@@ -1511,10 +2136,10 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
       subject: `🚨 [NEW CONSULTATION] ${leadName} - ${leadGoal} (${date} at ${time})`,
       senderName: 'BxStrength Booking Bot',
       htmlContent: `
-        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
-          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase;">NEW FREE CONSULTATION BOOKED</h2>
-          <p style="color: #a1a1aa; font-size: 13px;">Ref: <strong>${bookingRef}</strong></p>
-          <div style="background-color: #18181b; padding: 18px; border-radius: 8px; margin: 16px 0; border: 1px solid #27272a;">
+        <div style="font-family: Arial, sans-serif; color: #ffffff;">
+          <h2 style="color: #CCFF00; margin: 0 0 6px 0; font-size: 18px; text-transform: uppercase;">NEW FREE CONSULTATION BOOKED</h2>
+          <p style="color: #a1a1aa; font-size: 13px; margin: 0 0 16px 0;">Ref: <strong>${bookingRef}</strong></p>
+          <div style="background-color: #18181b; padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #27272a;">
             <p style="margin: 4px 0;"><strong>Client Name:</strong> ${leadName}</p>
             <p style="margin: 4px 0;"><strong>Email:</strong> ${leadEmail}</p>
             <p style="margin: 4px 0;"><strong>Phone:</strong> ${leadPhone}</p>
@@ -1522,7 +2147,7 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
             <p style="margin: 4px 0;"><strong>Session Duration:</strong> ${leadDuration}</p>
             <p style="margin: 4px 0;"><strong>Scheduled Date &amp; Time:</strong> ${date} at ${time}</p>
           </div>
-          <p style="font-size: 12px; color: #71717a;">This lead is saved in NeonDB Database and Admin CRM panel.</p>
+          <p style="font-size: 12px; color: #71717a; margin: 0;">This lead is recorded in database and Admin panel.</p>
         </div>
       `
     }).catch((err) => console.error('[CONSULTATION ADMIN EMAIL ERROR]', err.message));
@@ -2398,6 +3023,63 @@ const mapRowToTicket = (row: any): ServerTicket => ({
 });
 
 const ticketsStore: ServerTicket[] = [];
+
+// --- ANNOUNCEMENTS DB API ROUTES ---
+app.get('/api/announcements', async (req, res) => {
+  try {
+    if (dbPool) {
+      const result = await dbPool.query('SELECT * FROM announcements ORDER BY created_at DESC');
+      const announcements = result.rows.map(r => ({
+        id: r.id,
+        title: r.title,
+        message: r.message,
+        targetRole: r.target_role,
+        priority: r.priority,
+        authorName: r.author_name,
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()
+      }));
+      return res.json({ success: true, announcements });
+    }
+    return res.json({ success: true, announcements: [] });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, announcements: [], error: err.message });
+  }
+});
+
+app.post('/api/announcements', async (req, res) => {
+  try {
+    const { title, message, targetRole = 'all', priority = 'medium', authorName = 'System Admin' } = req.body;
+    if (!title || !message) {
+      return res.status(400).json({ success: false, error: 'Title and message are required' });
+    }
+    const id = req.body.id || `ann-${Date.now()}`;
+    const createdAt = req.body.createdAt || new Date().toISOString();
+    if (dbPool) {
+      await dbPool.query(
+        'INSERT INTO announcements (id, title, message, target_role, priority, author_name, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        [id, title, message, targetRole, priority, authorName, createdAt]
+      );
+    }
+    return res.json({
+      success: true,
+      announcement: { id, title, message, targetRole, priority, authorName, createdAt }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/announcements/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (dbPool) {
+      await dbPool.query('DELETE FROM announcements WHERE id = $1', [id]);
+    }
+    return res.json({ success: true, message: 'Announcement deleted' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 app.get('/api/tickets', async (req, res) => {
   try {

@@ -143,33 +143,23 @@ export const sendConsultationConfirmationEmail = async (params: ConsultationEmai
   const { senderEmail, adminEmail } = getBrevoConfig();
 
   const clientHtmlBody = `
-    <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
-      <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 24px;">
-        <h1 style="color: #CCFF00; margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900;">BXSTRENGTH APPOINTMENT CONFIRMED</h1>
-        <p style="color: #a1a1aa; font-size: 13px; margin-top: 6px;">Reference Code: <strong style="color: #ffffff;">${params.bookingId}</strong></p>
-      </div>
+    <div style="font-family: Arial, sans-serif; color: #ffffff;">
+      <h2 style="color: #CCFF00; margin: 0 0 6px 0; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Appointment Confirmed</h2>
+      <p style="color: #a1a1aa; font-size: 13px; margin: 0 0 16px 0;">Reference Code: <strong style="color: #ffffff;">${params.bookingId}</strong></p>
 
-      <p style="font-size: 15px; line-height: 1.6; color: #e4e4e7;">Dear <strong>${params.clientName}</strong>,</p>
-      <p style="font-size: 14px; line-height: 1.6; color: #a1a1aa;">Thank you for requesting a 1-on-1 Strategy Session with BxStrength. Your consultation slot has been recorded successfully.</p>
+      <p style="font-size: 14px; margin: 0 0 12px 0;">Hi <strong>${params.clientName}</strong>,</p>
+      <p style="font-size: 14px; color: #d4d4d8; margin: 0 0 20px 0; line-height: 1.5;">Thank you for requesting a 1-on-1 Strategy Session with BxStrength. Your consultation has been scheduled successfully.</p>
 
-      <div style="background-color: #18181b; border: 1px solid #27272a; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <h3 style="color: #CCFF00; margin-top: 0; font-size: 14px; text-transform: uppercase;">SESSION SUMMARY DETAILS</h3>
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #e4e4e7;">
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Assigned Coach:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.coachPreference}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Primary Exercise / Goal:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.goal}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Session Duration:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.duration || '15 Min'}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Scheduled Date:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.date}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Scheduled Time Slot:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.timeSlot}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Contact Email:</td><td style="padding: 6px 0; font-weight: bold;">${params.clientEmail}</td></tr>
-          <tr><td style="padding: 6px 0; color: #a1a1aa;">Phone / WhatsApp:</td><td style="padding: 6px 0; font-weight: bold;">${params.clientPhone}</td></tr>
+      <div style="background-color: #18181b; border: 1px solid #27272a; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Goal:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00; text-align: right;">${params.goal}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Date &amp; Time:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff; text-align: right;">${params.date} (${params.timeSlot})</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Assigned Coach:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff; text-align: right;">${params.coachPreference}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Duration:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff; text-align: right;">${params.duration || '20 Min'}</td></tr>
         </table>
       </div>
 
-      <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">Our Head Coaching team will review your diagnostic profile and confirm your exact slot via WhatsApp / Email calendar invite.</p>
-
-      <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
-        BxStrength Coaching Platform | Support: ${senderEmail}
-      </div>
+      <p style="font-size: 13px; color: #a1a1aa; margin: 0; line-height: 1.5;">Our Head Coaching team will review your profile and confirm your session details via WhatsApp / Email calendar invite.</p>
     </div>
   `;
 
@@ -373,4 +363,130 @@ export const sendContactEnquiryEmail = async (params: ContactEnquiryEmailParams)
   });
 
   return { success: true, message: `Enquiry recorded.` };
+};
+
+export interface CoachAssignmentAlertParams {
+  bookingId: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string;
+  serviceTitle: string;
+  serviceType: string;
+  amountPaid: number;
+  customExercises?: string[];
+}
+
+export const sendBrevoCoachAssignmentAlertToAdmin = async (params: CoachAssignmentAlertParams): Promise<{ success: boolean; message: string }> => {
+  const { adminEmail } = getBrevoConfig();
+  const exercisesHtml = params.customExercises && params.customExercises.length > 0
+    ? `<p style="margin: 4px 0; color: #CCFF00; font-size: 12px;"><strong>Custom Services:</strong> ${params.customExercises.join(', ')}</p>`
+    : '';
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 28px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+      <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 20px;">
+        <h1 style="color: #CCFF00; margin: 0; font-size: 20px; text-transform: uppercase; font-weight: 900;">🚨 ACTION REQUIRED: COACH ASSIGNMENT PENDING</h1>
+        <p style="color: #a1a1aa; font-size: 12px; margin-top: 4px;">Booking Ref: <strong style="color: #ffffff;">${params.bookingId}</strong></p>
+      </div>
+
+      <p style="font-size: 14px; color: #e4e4e7;">A customer has completed payment and reached <strong>Step 4 (Scheduling Pending)</strong> of their 5-step journey:</p>
+
+      <div style="background-color: #18181b; border: 1px solid #27272a; padding: 18px; border-radius: 8px; margin: 18px 0;">
+        <h3 style="color: #CCFF00; margin-top: 0; font-size: 13px; text-transform: uppercase;">CLIENT &amp; PURCHASE SUMMARY</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #e4e4e7;">
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Customer Name:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.clientName}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Customer Email:</td><td style="padding: 6px 0; font-weight: bold;"><a href="mailto:${params.clientEmail}" style="color: #CCFF00;">${params.clientEmail}</a></td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Phone / WhatsApp:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.clientPhone || 'Not provided'}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Purchased Service:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.serviceTitle} (${params.serviceType.toUpperCase()})</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Amount Paid:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">£${params.amountPaid}.00 GBP</td></tr>
+        </table>
+        ${exercisesHtml}
+      </div>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="${window.location.origin}/#admin" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">
+          ASSIGN COACH IN ADMIN CRM
+        </a>
+      </div>
+    </div>
+  `;
+
+  await sendViaBackendApi({
+    toEmail: adminEmail,
+    toName: 'BxStrength Admin Team',
+    subject: `🚨 [ACTION REQUIRED] Assign Coach for ${params.clientName} (${params.bookingId})`,
+    htmlContent: htmlBody,
+    senderName: 'BxStrength Journey Bot'
+  });
+
+  return { success: true, message: `Admin coach assignment notification sent to ${adminEmail}` };
+};
+
+export interface ScheduleConfirmationEmailParams {
+  bookingId: string;
+  clientName: string;
+  clientEmail: string;
+  serviceTitle: string;
+  coachName: string;
+  coachTitle: string;
+  scheduledDate: string;
+  scheduledTime: string;
+  joinUrl: string;
+}
+
+export const sendBrevoScheduleConfirmationEmail = async (params: ScheduleConfirmationEmailParams): Promise<{ success: boolean; message: string }> => {
+  const { senderEmail } = getBrevoConfig();
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+      <div style="text-align: center; border-bottom: 2px solid #CCFF00; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="color: #CCFF00; margin: 0; font-size: 22px; text-transform: uppercase; font-weight: 900;">✓ OFFICIAL TRAINING SCHEDULE CONFIRMED</h1>
+        <p style="color: #a1a1aa; font-size: 12px; margin-top: 6px;">Booking Ref: <strong style="color: #ffffff;">${params.bookingId}</strong></p>
+      </div>
+
+      <p style="font-size: 15px; color: #e4e4e7;">Dear <strong>${params.clientName}</strong>,</p>
+      <p style="font-size: 14px; color: #a1a1aa; line-height: 1.6;">
+        Great news! Your dedicated UK performance coach has been assigned and your live 1-on-1 coaching session schedule is officially confirmed.
+      </p>
+
+      <div style="background-color: #18181b; border: 1px solid #27272a; padding: 20px; border-radius: 8px; margin: 24px 0;">
+        <h3 style="color: #CCFF00; margin-top: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">CONFIRMED SESSION &amp; COACH DETAILS</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #e4e4e7;">
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Assigned Coach:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.coachName} (${params.coachTitle})</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Training Program:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.serviceTitle}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Confirmed Date:</td><td style="padding: 6px 0; font-weight: bold; color: #ffffff;">${params.scheduledDate}</td></tr>
+          <tr><td style="padding: 6px 0; color: #a1a1aa;">Confirmed Time:</td><td style="padding: 6px 0; font-weight: bold; color: #CCFF00;">${params.scheduledTime}</td></tr>
+        </table>
+      </div>
+
+      <div style="background-color: #121214; border-left: 4px solid #CCFF00; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+        <h4 style="color: #ffffff; margin: 0 0 8px 0; font-size: 13px; uppercase font-weight: bold;">PRE-SESSION CHECKLIST:</h4>
+        <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #a1a1aa; line-height: 1.6;">
+          <li>Ensure you have a safe 2m x 2m clear space at home or in your gym.</li>
+          <li>Wear athletic attire and hydration bottle.</li>
+          <li>Click the secure join link 5 minutes prior to start time.</li>
+        </ul>
+      </div>
+
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="${params.joinUrl}" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">
+          JOIN LIVE SESSION ROOM
+        </a>
+      </div>
+
+      <div style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 11px; color: #71717a; text-align: center;">
+        BxStrength Performance Coaching | Support Desk: ${senderEmail}
+      </div>
+    </div>
+  `;
+
+  await sendViaBackendApi({
+    toEmail: params.clientEmail,
+    toName: params.clientName,
+    subject: `✓ [CONFIRMED] Your Training Schedule with ${params.coachName} (${params.scheduledDate})`,
+    htmlContent: htmlBody,
+    senderName: 'BxStrength Coaching Desk'
+  });
+
+  return { success: true, message: `Training schedule confirmation email dispatched to ${params.clientEmail}` };
 };

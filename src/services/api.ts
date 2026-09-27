@@ -89,26 +89,7 @@ const SEED_BOOKINGS: Booking[] = [];
 const SEED_SUBSCRIPTIONS: Subscription[] = [];
 const SEED_ENQUIRIES: Enquiry[] = [];
 const SEED_AUDIT_LOGS: AuditLog[] = [];
-const SEED_ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: 'ann-1',
-    title: 'New Olympic Boxing & Heavy Bag Studio Upgrade',
-    message: 'We have installed brand new high-grade Title Boxing heavy bags and speed bags at our London & India training hubs. Free sparring sessions open every Saturday at 10 AM.',
-    createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
-    targetRole: 'all',
-    priority: 'high',
-    authorName: 'Shaban Faridi (Head Coach)'
-  },
-  {
-    id: 'ann-2',
-    title: 'Client Strategy Session Slot Availability',
-    message: '1-on-1 performance consultation slots with Head Coach Shaban Faridi for next week are now live. Book early to lock in your strategy review.',
-    createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-    targetRole: 'client',
-    priority: 'medium',
-    authorName: 'System Admin'
-  }
-];
+const SEED_ANNOUNCEMENTS: Announcement[] = [];
 
 const SEED_REVIEWS: Testimonial[] = [];
 
@@ -233,6 +214,14 @@ export const VelocityAPI = {
             lastLoginAt: new Date().toISOString()
           };
 
+          const users = getItem<User[]>(STORAGE_KEYS.USERS, SEED_USERS);
+          const existingIdx = users.findIndex(u => u.email.toLowerCase() === serverUser.email.toLowerCase());
+          if (existingIdx !== -1) {
+            users[existingIdx] = serverUser;
+          } else {
+            users.push(serverUser);
+          }
+          setItem(STORAGE_KEYS.USERS, users);
           setItem(STORAGE_KEYS.CURRENT_USER, serverUser);
           setItem(STORAGE_KEYS.TOKEN, result.token);
           this.addAuditLog(serverUser.id, serverUser.name, serverUser.role, 'USER_LOGIN_NEONDB', `Logged into NeonDB session`);
@@ -316,13 +305,11 @@ export const VelocityAPI = {
         this.addAuditLog(serverUser.id, serverUser.name, serverUser.role, 'USER_REGISTER_NEONDB', `Registered & saved into NeonDB PostgreSQL (${serverUser.email})`);
         return { user: serverUser, token: result.token };
       } else {
-        const errRes = await res.json();
-        if (errRes.error) {
-          throw new Error(errRes.error);
-        }
+        const errRes = await res.json().catch(() => ({}));
+        throw new Error(errRes.error || 'Registration failed on backend server.');
       }
     } catch (err: any) {
-      if (err.message && err.message.includes('already exists')) {
+      if (err.message) {
         throw err;
       }
     }
@@ -502,6 +489,23 @@ export const VelocityAPI = {
   getUsers(): User[] {
     initStore();
     return getItem<User[]>(STORAGE_KEYS.USERS, SEED_USERS);
+  },
+
+  async fetchUsers(): Promise<User[]> {
+    initStore();
+    try {
+      const res = await fetch(getApiUrl('/api/users'));
+      if (res.ok) {
+        const serverUsers: User[] = await res.json();
+        if (Array.isArray(serverUsers) && serverUsers.length > 0) {
+          setItem(STORAGE_KEYS.USERS, serverUsers);
+          return serverUsers;
+        }
+      }
+    } catch (err: any) {
+      console.error('Fetch NeonDB Users Exception:', err.message);
+    }
+    return this.getUsers();
   },
 
   async createUser(userData: Partial<User> & { name: string; email: string; role: UserRole }): Promise<User> {
@@ -1068,7 +1072,13 @@ export const VelocityAPI = {
   // --- ANNOUNCEMENTS ---
   getAnnouncements(): Announcement[] {
     initStore();
-    return getItem<Announcement[]>(STORAGE_KEYS.ANNOUNCEMENTS, SEED_ANNOUNCEMENTS);
+    const list = getItem<Announcement[]>(STORAGE_KEYS.ANNOUNCEMENTS, []);
+    // Ensure no legacy dummy announcements remain
+    const cleanList = (list || []).filter(a => a.id !== 'ann-1' && a.id !== 'ann-2');
+    if (cleanList.length !== (list || []).length) {
+      setItem(STORAGE_KEYS.ANNOUNCEMENTS, cleanList);
+    }
+    return cleanList;
   },
 
   createAnnouncement(title: string, message: string, targetRole: 'all' | 'client' | 'coach' | 'staff' = 'all', priority: 'low' | 'medium' | 'high' = 'medium'): Announcement {
@@ -1085,6 +1095,13 @@ export const VelocityAPI = {
     };
     announcements.unshift(newAnn);
     setItem(STORAGE_KEYS.ANNOUNCEMENTS, announcements);
+
+    // Sync to backend DB if available
+    fetch(getApiUrl('/api/announcements'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newAnn)
+    }).catch(() => {});
 
     if (current) {
       this.addAuditLog(current.id, current.name, current.role, 'CREATE_ANNOUNCEMENT', `Broadcast announcement: "${title}"`);
@@ -1111,6 +1128,10 @@ export const VelocityAPI = {
     const target = ann.find((a) => a.id === id);
     ann = ann.filter((a) => a.id !== id);
     setItem(STORAGE_KEYS.ANNOUNCEMENTS, ann);
+
+    // Sync deletion to backend DB
+    fetch(getApiUrl(`/api/announcements/${id}`), { method: 'DELETE' }).catch(() => {});
+
     const current = this.getCurrentUser();
     if (current && target) {
       this.addAuditLog(current.id, current.name, current.role, 'DELETE_ANNOUNCEMENT', `Deleted announcement "${target.title}"`);

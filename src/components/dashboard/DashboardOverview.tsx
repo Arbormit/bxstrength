@@ -23,6 +23,24 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   enquiries = [],
   onNavigateTab
 }) => {
+  const [activeJourney, setActiveJourney] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (!user?.email) return;
+    const getApiUrl = (path: string) => {
+      const baseUrl = (import.meta as any).env?.VITE_API_URL || '';
+      return `${baseUrl}${path}`;
+    };
+    fetch(getApiUrl(`/api/journey/latest-by-email/${encodeURIComponent(user.email)}`))
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.record) {
+          setActiveJourney(data.record);
+        }
+      })
+      .catch(() => {});
+  }, [user?.email]);
+
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
@@ -78,6 +96,70 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* ACTIVE TRAINING JOURNEY BANNER (STEP 4 / STEP 5 PERSISTENT DASHBOARD STATE) */}
+      {activeJourney && activeJourney.journeyState === 'SCHEDULING_PENDING' && (
+        <div className="bg-[#121214] border border-amber-500/40 p-5 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+              <Calendar className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded">
+                  STEP 4: WE'LL CONTACT YOU TO SCHEDULE
+                </span>
+                <span className="text-xs font-mono font-bold text-zinc-400">REF: {activeJourney.id}</span>
+              </div>
+              <h3 className="text-sm font-black text-white uppercase mt-1">Coach Alignment &amp; Schedule Assignment Pending</h3>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Your payment for <strong className="text-white">{activeJourney.serviceTitle}</strong> (£{activeJourney.amountGbp} GBP) is confirmed. Our Head Coaching team will contact you to confirm your schedule.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigateTab('bookings')}
+            className="bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase px-4 py-2.5 rounded-lg shrink-0 transition-all cursor-pointer"
+          >
+            Check Schedule Status
+          </button>
+        </div>
+      )}
+
+      {activeJourney && activeJourney.journeyState === 'BOOKING_CONFIRMED' && (
+        <div className="bg-[#121214] border border-[#CCFF00]/40 p-5 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-[#CCFF00]/10 border border-[#CCFF00]/30 flex items-center justify-center text-[#CCFF00] shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-[#CCFF00] text-black font-extrabold px-2 py-0.5 rounded">
+                  STEP 5: TRAINING SCHEDULE CONFIRMED
+                </span>
+                <span className="text-xs font-mono font-bold text-zinc-400">REF: {activeJourney.id}</span>
+              </div>
+              <h3 className="text-sm font-black text-white uppercase mt-1">
+                {activeJourney.serviceTitle} — {activeJourney.coachName || 'Coach Jordan Ellis'}
+              </h3>
+              <p className="text-xs text-zinc-300 mt-0.5">
+                Confirmed Session: <strong className="text-white">{activeJourney.scheduledDate}</strong> at <strong className="text-[#CCFF00]">{activeJourney.scheduledTime}</strong>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href={activeJourney.joinUrl || `https://bxstrength.co.uk/join/${activeJourney.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs uppercase px-4 py-2.5 rounded-lg transition-all shadow-md flex items-center gap-1.5"
+            >
+              <span>Join Live Room</span>
+              <ChevronRight className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -255,20 +337,30 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </h3>
 
             <div className="space-y-3">
-              {announcements.slice(0, 2).map((ann) => (
-                <div key={ann.id} className="bg-gray-900/80 border border-gray-800 p-3.5">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[#E52165] bg-pink-950/60 px-1.5 py-0.5 border border-pink-800/40">
-                      {ann.priority} priority
-                    </span>
-                    <span className="text-[10px] text-gray-500">
-                      {new Date(ann.createdAt).toLocaleDateString()}
-                    </span>
+              {announcements.length > 0 ? (
+                announcements.slice(0, 3).map((ann) => (
+                  <div key={ann.id} className="bg-gray-900/80 border border-gray-800 p-3.5 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-[#CCFF00] bg-zinc-950 px-2 py-0.5 border border-zinc-800 rounded">
+                        {ann.priority} priority
+                      </span>
+                      <span className="text-[10px] text-gray-500">
+                        {new Date(ann.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-bold text-white mb-1">{ann.title}</h4>
+                    <p className="text-[11px] text-gray-400 leading-snug">{ann.message}</p>
                   </div>
-                  <h4 className="text-xs font-bold text-white mb-1">{ann.title}</h4>
-                  <p className="text-[11px] text-gray-400 leading-snug">{ann.message}</p>
+                ))
+              ) : (
+                <div className="text-center py-6 px-4 bg-zinc-900/40 border border-zinc-800/80 rounded-xl space-y-1.5">
+                  <ShieldAlert className="w-5 h-5 text-zinc-500 mx-auto" />
+                  <p className="text-xs font-bold text-zinc-300 uppercase tracking-wider">No Active Club Announcements</p>
+                  <p className="text-[11px] text-zinc-500 max-w-xs mx-auto">
+                    There are no broadcast notices at this time. Check back soon for official updates, events, and coaching news.
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
