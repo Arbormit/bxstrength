@@ -471,28 +471,30 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenBooking 
               BUSINESS INFORMATION
             </h2>
             <p className="text-zinc-400 text-xs sm:text-sm">
-              BXStrength is a trading brand operated by 7Seas Exim, a registered sole proprietorship based in New Delhi, India.
+              BXStrength is an international digital performance &amp; fitness coaching platform engineered by Head Coach Shaban Faridi.
             </p>
           </div>
 
           <div className="bg-[#121215] border border-zinc-800 p-6 sm:p-8 rounded-3xl max-w-3xl mx-auto space-y-6 shadow-2xl">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs sm:text-sm">
               <div className="space-y-1">
-                <span className="text-zinc-500 font-bold uppercase block text-[11px]">Business / Legal Entity</span>
-                <span className="text-white font-black text-base">7Seas Exim</span>
+                <span className="text-zinc-500 font-bold uppercase block text-[11px]">Official Brand Identity</span>
+                <span className="text-white font-black text-base">BXStrength</span>
               </div>
               <div className="space-y-1">
-                <span className="text-zinc-500 font-bold uppercase block text-[11px]">Business Constitution</span>
-                <span className="text-white font-bold">Sole Proprietorship</span>
-              </div>
-              <div className="space-y-1">
-                <span className="text-zinc-500 font-bold uppercase block text-[11px]">GSTIN Registration</span>
-                <span className="text-[#CCFF00] font-mono font-black text-sm">07KPUPS3306Q1ZQ</span>
+                <span className="text-zinc-500 font-bold uppercase block text-[11px]">Primary Operating Regions</span>
+                <span className="text-[#CCFF00] font-bold">United Kingdom &amp; India</span>
               </div>
               <div className="space-y-1">
                 <span className="text-zinc-500 font-bold uppercase block text-[11px]">Customer Support Email</span>
-                <a href="mailto:bxstrengthuk@gmail.com" className="text-white font-bold hover:text-[#CCFF00] transition-colors">
-                  bxstrengthuk@gmail.com
+                <a href="mailto:support@bxstrength.com" className="text-white font-bold hover:text-[#CCFF00] transition-colors">
+                  support@bxstrength.com
+                </a>
+              </div>
+              <div className="space-y-1">
+                <span className="text-zinc-500 font-bold uppercase block text-[11px]">Customer Support Phone</span>
+                <a href="tel:+918423594482" className="text-white font-black font-mono hover:text-[#CCFF00] transition-colors">
+                  +91-8423594482
                 </a>
               </div>
             </div>
@@ -501,18 +503,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenBooking 
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-[#CCFF00] shrink-0 mt-0.5" />
                 <div>
-                  <span className="text-zinc-400 font-bold uppercase block text-[11px]">GST-Registered Address</span>
+                  <span className="text-zinc-400 font-bold uppercase block text-[11px]">Headquarters Address</span>
                   <span className="text-white font-medium">185/A, Street No. 3, Zakir Nagar, Okhla, New Delhi - 110025, India</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-[#CCFF00] shrink-0" />
-                <div>
-                  <span className="text-zinc-400 font-bold uppercase block text-[11px]">Customer Support Phone</span>
-                  <a href="tel:+918423594482" className="text-white font-black font-mono hover:text-[#CCFF00] transition-colors">
-                    +91-8423594482
-                  </a>
                 </div>
               </div>
             </div>

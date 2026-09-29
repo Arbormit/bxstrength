@@ -1,4 +1,4 @@
-export type ViewPage = 'home' | 'about' | 'services' | 'pricing' | 'schedule' | 'trainers' | 'blog' | 'contact' | 'dashboard' | 'admin' | 'terms' | 'privacy';
+export type ViewPage = 'home' | 'about' | 'services' | 'pricing' | 'schedule' | 'trainers' | 'blog' | 'contact' | 'dashboard' | 'admin' | 'terms' | 'privacy' | 'support_dashboard';
 
 export type MarketCountry = 'GB' | 'IN'; // GB = United Kingdom (£ GBP), IN = India (₹ INR)
 export type CurrencyCode = 'GBP' | 'INR';
@@ -12,7 +12,7 @@ export interface MarketConfig {
   flagEmoji: string;
 }
 
-export type UserRole = 'admin' | 'coach' | 'client' | 'user';
+export type UserRole = 'admin' | 'coach' | 'customer_support' | 'cs_agent' | 'client' | 'user';
 
 export type CoachPosition = 'Head Coach' | 'Super Senior Coach' | 'Senior Coach' | 'Junior Coach' | 'Lead Specialist';
 
@@ -407,23 +407,66 @@ export interface CoachVerification {
   submittedAt: string;
 }
 
-export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
-export type TicketCategory = 'Training' | 'Nutrition' | 'Billing' | 'Schedule' | 'General';
+export type TicketPriority = 'low' | 'normal' | 'medium' | 'high' | 'urgent';
+export type TicketStatus = 'new' | 'assigned' | 'in_progress' | 'waiting_customer' | 'resolved' | 'closed' | 'open';
+export type TicketCategory = 'Training' | 'Nutrition' | 'Billing' | 'Schedule' | 'General' | 'Booking' | 'Payment' | 'Technical' | 'Chatbot' | 'Callback' | 'Custom Coaching';
+export type TicketSource = 'Website Contact Form' | 'Chatbot' | 'Booking' | 'Payment' | 'WhatsApp' | 'Callback Request' | 'Service Enquiry' | 'General';
+
+export interface InternalNote {
+  id: string;
+  authorName: string;
+  authorRole: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface TicketMessage {
+  id: string;
+  senderName: string;
+  senderRole: 'customer' | 'agent' | 'system';
+  channel: 'email' | 'chat' | 'whatsapp' | 'internal_note' | 'callback';
+  text: string;
+  createdAt: string;
+}
+
+export interface EscalationRecord {
+  id: string;
+  escalatedBy: string;
+  escalatedTo: string;
+  reason: string;
+  priorityAtEscalation: string;
+  createdAt: string;
+}
 
 export interface SupportTicket {
   id: string;
   userId: string;
   userName: string;
   userEmail: string;
+  userPhone?: string;
+  userCountry?: string;
   subject: string;
   category: TicketCategory;
   priority: TicketPriority;
   description: string;
   status: TicketStatus;
+  source?: TicketSource;
+  serviceOrProduct?: string;
+  assignedAgent?: string;
+  assignedAgentRole?: 'cs_agent' | 'company_agent' | 'admin';
+  relatedBookingId?: string;
+  relatedTransactionId?: string;
   adminResponse?: string;
   createdAt: string;
   updatedAt: string;
+  lastActivity?: string;
+  internalNotes?: InternalNote[];
+  conversationHistory?: TicketMessage[];
+  escalationHistory?: EscalationRecord[];
+  chatContext?: {
+    botConversationSnippet?: string;
+    escalatedAt?: string;
+  };
 }
 
 

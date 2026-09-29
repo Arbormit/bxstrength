@@ -17,23 +17,18 @@ export const PrivacyView: React.FC = () => {
       content: (
         <div className="space-y-3">
           <p>
-            BXStrength is a trading brand operated by <strong>7Seas Exim</strong>, a sole proprietorship registered in India.
+            BXStrength is a premier international digital performance &amp; fitness coaching platform serving athletes across the United Kingdom and India.
           </p>
           <div className="bg-[#18181c] border border-zinc-800 p-4 rounded-xl space-y-2 text-xs">
-            <p className="flex items-center gap-2 text-zinc-300">
-              <Building className="w-4 h-4 text-[#CCFF00]" />
-              <span>GSTIN Registration:</span>
-              <strong className="text-[#CCFF00] font-mono">07KPUPS3306Q1ZQ</strong>
-            </p>
             <p className="flex items-start gap-2 text-zinc-300">
               <MapPin className="w-4 h-4 text-[#CCFF00] shrink-0 mt-0.5" />
-              <span>Registered Address:</span>
+              <span>Headquarters Address:</span>
               <strong className="text-white">185/A, Street No. 3, Zakir Nagar, Okhla, New Delhi - 110025, India</strong>
             </p>
             <p className="flex items-center gap-2 text-zinc-300">
               <Mail className="w-4 h-4 text-[#CCFF00]" />
               <span>Privacy &amp; Support Email:</span>
-              <a href="mailto:bxstrengthuk@gmail.com" className="text-white font-bold underline">bxstrengthuk@gmail.com</a>
+              <a href="mailto:support@bxstrength.com" className="text-white font-bold underline">support@bxstrength.com</a>
             </p>
             <p className="flex items-center gap-2 text-zinc-300">
               <Phone className="w-4 h-4 text-[#CCFF00]" />
@@ -46,9 +41,9 @@ export const PrivacyView: React.FC = () => {
               <strong className="text-white">Grievance Officer / Customer Resolution Team</strong>
             </p>
             <p className="flex items-center gap-2 text-zinc-300">
-              <Phone className="w-4 h-4 text-[#CCFF00]" />
-              <span>Grievance Phone:</span>
-              <a href="tel:+919973643647" className="text-white font-mono font-bold">+91-9973643647</a>
+              <Mail className="w-4 h-4 text-[#CCFF00]" />
+              <span>Grievance Email:</span>
+              <a href="mailto:grievance@bxstrength.com" className="text-[#CCFF00] font-bold underline">grievance@bxstrength.com</a>
             </p>
           </div>
         </div>
@@ -250,7 +245,7 @@ export const PrivacyView: React.FC = () => {
       icon: Mail,
       content: (
         <p>
-          Marketing consent is separate from acceptance of the Terms. Where required, BXStrength will ask customers to actively opt in to promotional messages. You can unsubscribe from marketing at any time using the method provided in the communication or by contacting <a href="mailto:bxstrengthuk@gmail.com" className="text-[#CCFF00] font-bold underline">bxstrengthuk@gmail.com</a>. Operational messages about a booking, payment, safety matter or service are not treated as optional marketing.
+          Marketing consent is separate from acceptance of the Terms. Where required, BXStrength will ask customers to actively opt in to promotional messages. You can unsubscribe from marketing at any time using the method provided in the communication or by contacting <a href="mailto:support@bxstrength.com" className="text-[#CCFF00] font-bold underline">support@bxstrength.com</a>. Operational messages about a booking, payment, safety matter or service are not treated as optional marketing.
         </p>
       )
     },
@@ -322,7 +317,7 @@ export const PrivacyView: React.FC = () => {
       icon: Mail,
       content: (
         <p>
-          To make a privacy request, contact <a href="mailto:bxstrengthuk@gmail.com" className="text-[#CCFF00] font-bold underline">bxstrengthuk@gmail.com</a> and clearly describe the request. BXStrength may take reasonable steps to verify identity before responding, particularly where disclosure, deletion or account changes could affect security or another person’s rights.
+          To make a privacy request, contact <a href="mailto:support@bxstrength.com" className="text-[#CCFF00] font-bold underline">support@bxstrength.com</a> and clearly describe the request. BXStrength may take reasonable steps to verify identity before responding, particularly where disclosure, deletion or account changes could affect security or another person’s rights.
         </p>
       )
     },
@@ -362,7 +357,7 @@ export const PrivacyView: React.FC = () => {
             <p className="flex items-center gap-2 text-zinc-300">
               <Mail className="w-4 h-4 text-[#CCFF00]" />
               <span>Privacy / Support Email:</span>
-              <a href="mailto:bxstrengthuk@gmail.com" className="text-white font-bold underline">bxstrengthuk@gmail.com</a>
+              <a href="mailto:support@bxstrength.com" className="text-white font-bold underline">support@bxstrength.com</a>
             </p>
             <p className="flex items-center gap-2 text-zinc-300">
               <Phone className="w-4 h-4 text-[#CCFF00]" />
@@ -376,8 +371,8 @@ export const PrivacyView: React.FC = () => {
             </p>
             <p className="flex items-center gap-2 text-zinc-300">
               <Phone className="w-4 h-4 text-[#CCFF00]" />
-              <span>Grievance Phone:</span>
-              <a href="tel:+919973643647" className="text-white font-mono font-bold">+91-9973643647</a>
+              <span>Grievance Email:</span>
+              <a href="mailto:Grievance@bxstrength.com" className="text-white font-mono font-bold">Grievance@bxstrength.com</a>
             </p>
           </div>
         </div>
@@ -497,10 +492,10 @@ export const PrivacyView: React.FC = () => {
       {/* 4. FOOTER BUSINESS NOTICE */}
       <footer className="bg-[#121214] py-10 border-t border-zinc-800 text-center text-xs text-zinc-400 space-y-2">
         <p className="font-bold text-white">
-          7Seas Exim trading as BXStrength • Effective Date: 23 September 2026
+          BXStrength Performance Coaching • Effective Date: 23 September 2026
         </p>
         <p>
-          Privacy Email: <a href="mailto:bxstrengthuk@gmail.com" className="text-[#CCFF00] underline">bxstrengthuk@gmail.com</a> | Phone: +91-8423594482 | Grievance: +91-9973643647
+          Privacy &amp; Support Email: <a href="mailto:support@bxstrength.com" className="text-[#CCFF00] underline">support@bxstrength.com</a> | Phone: <a href="tel:+918423594482" className="text-white font-mono hover:text-[#CCFF00]">+91-8423594482</a> | Grievance Email: <a href="mailto:grievance@bxstrength.com" className="text-[#CCFF00] font-bold underline">grievance@bxstrength.com</a>
         </p>
       </footer>
 

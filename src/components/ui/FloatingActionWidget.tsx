@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronUp, Mail, Bot, X } from 'lucide-react';
+import { ChevronUp, Phone, Bot, X } from 'lucide-react';
 
 interface FloatingActionWidgetProps {
   onToggleChatbot?: () => void;
@@ -38,8 +38,8 @@ export const FloatingActionWidget: React.FC<FloatingActionWidgetProps> = ({
     window.open(`https://wa.me/${phone}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
-  const openEmail = () => {
-    window.location.href = 'mailto:support@bxstrength.com?subject=Inquiry%20from%20BxStrength%20Platform';
+  const openPhoneCall = () => {
+    window.location.href = 'tel:+918423594482';
   };
 
   return (
@@ -82,16 +82,16 @@ export const FloatingActionWidget: React.FC<FloatingActionWidgetProps> = ({
         </span>
       </button>
 
-      {/* 3. EMAIL FLOATING BUTTON WITH GLASSMORPHISM */}
+      {/* 3. TOLL-FREE CALLING FLOATING BUTTON WITH GLASSMORPHISM */}
       <button
-        onClick={openEmail}
-        aria-label="Send Email Inquiry"
-        title="Send Email Inquiry"
-        className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#8C532B]/85 hover:bg-[#8C532B] backdrop-blur-md text-white shadow-lg shadow-amber-950/40 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 group border border-amber-500/40 cursor-pointer"
+        onClick={openPhoneCall}
+        aria-label="Toll-Free Call Support"
+        title="Toll-Free Call Support"
+        className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#18181b]/90 hover:bg-black backdrop-blur-md text-white shadow-lg shadow-zinc-950/50 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 group border border-zinc-700 hover:border-[#CCFF00] cursor-pointer"
       >
-        <Mail className="w-5 h-5" />
+        <Phone className="w-5 h-5 text-[#CCFF00]" />
         <span className="absolute right-14 bg-black/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded shadow-md border border-white/20 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none hidden sm:block">
-          Email Us
+          Toll-Free Calling
         </span>
       </button>
 

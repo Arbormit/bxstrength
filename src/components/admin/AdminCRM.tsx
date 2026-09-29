@@ -11,6 +11,7 @@ import { EnquiriesManager } from './EnquiriesManager';
 import { AnnouncementsManager } from './AnnouncementsManager';
 import { AuditLogsAndSettings } from './AuditLogsAndSettings';
 import { TicketManagement } from './TicketManagement';
+import { SupportDashboardView } from '../support/SupportDashboardView';
 import { CoachesManager } from './CoachesManager';
 import {
   LayoutDashboard, Users, Calendar, Dumbbell, Utensils,
@@ -347,7 +348,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
             )}
 
             {activeTab === 'tickets' && (
-              <TicketManagement onShowToast={showToast} />
+              <SupportDashboardView onShowToast={showToast} onNavigateHome={onNavigateHome} />
             )}
 
             {activeTab === 'announcements' && (

@@ -45,14 +45,14 @@ export const TransformationJourney: React.FC<TransformationJourneyProps> = ({
               onClick={() => setSelectedMedia({
                 id: 'v1',
                 type: 'video',
-                url: 'https://res.cloudinary.com/yuyxn5b0/video/upload/v1789385001/WhatsApp_Video_2026-08-29_at_4.58.45_AM.mp4',
+                url: 'https://res.cloudinary.com/yuyxn5b0/video/upload/v1790697693/WhatsApp_Video_2026-09-29_at_8.54.24_PM.mp4',
                 title: 'Boxing Mittwork & Reflex Combinations',
                 category: 'BOXING CONDITIONING'
               })}
               className="relative h-[380px] sm:h-[460px] rounded-3xl overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-[#CCFF00] cursor-pointer group transition-all duration-300 shadow-xl"
             >
               <video
-                src="https://res.cloudinary.com/yuyxn5b0/video/upload/v1789385001/WhatsApp_Video_2026-08-29_at_4.58.45_AM.mp4"
+                src="https://res.cloudinary.com/yuyxn5b0/video/upload/v1790697693/WhatsApp_Video_2026-09-29_at_8.54.24_PM.mp4"
                 muted
                 loop
                 playsInline
@@ -67,15 +67,6 @@ export const TransformationJourney: React.FC<TransformationJourneyProps> = ({
                   <Play className="w-3.5 h-3.5 fill-current" />
                   <span>PLAY</span>
                 </div>
-              </div>
-
-              <div className="absolute bottom-4 left-4 right-4 text-left">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#CCFF00] bg-black/60 px-2.5 py-0.5 rounded-full border border-zinc-700/60 backdrop-blur-sm">
-                  BOXING INSTRUCTION
-                </span>
-                <h3 className="text-sm font-black uppercase text-white mt-1.5 leading-tight">
-                  Pro Mittwork & Footwork Drills
-                </h3>
               </div>
             </div>
 
@@ -116,9 +107,6 @@ export const TransformationJourney: React.FC<TransformationJourneyProps> = ({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 bg-black/60 px-2.5 py-0.5 rounded-full border border-zinc-700/60">
-                  FOUNDER & HEAD COACH
-                </span>
                 <h4 className="text-xs font-black uppercase text-white mt-1">Shaban Faridi (Physiotherapist & Coach)</h4>
               </div>
             </div>

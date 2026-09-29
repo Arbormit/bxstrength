@@ -16,7 +16,7 @@ export const TermsView: React.FC = () => {
       icon: Building,
       content: (
         <p>
-          BXStrength is a trading brand operated by <strong>7Seas Exim</strong>, a sole proprietorship registered in India, with its GST-registered business address at <strong>185/A, Street No. 3, Zakir Nagar, Okhla, New Delhi - 110025, India</strong>, GSTIN <strong>07KPUPS3306Q1ZQ</strong>. In these Terms, “BXStrength”, “we”, “us” and “our” refer to the BXStrength business operated by 7Seas Exim.
+          BXStrength is a global digital performance &amp; fitness coaching platform headquartered at <strong>185/A, Street No. 3, Zakir Nagar, Okhla, New Delhi - 110025, India</strong>. In these Terms, “BXStrength”, “we”, “us” and “our” refer to the BXStrength organization.
         </p>
       )
     },
@@ -286,7 +286,7 @@ export const TermsView: React.FC = () => {
       content: (
         <div className="space-y-3">
           <p>
-            Refund requests should be sent to <a href="mailto:bxstrengthuk@gmail.com" className="text-[#CCFF00] font-bold underline">bxstrengthuk@gmail.com</a> with sufficient information for BXStrength to identify the purchase, such as the customer email, booking reference or transaction reference and the reason for the request. We may request reasonable supporting information where necessary to review the request.
+            Refund requests should be sent to <a href="mailto:support@bxstrength.com" className="text-[#CCFF00] font-bold underline">support@bxstrength.com</a> with sufficient information for BXStrength to identify the purchase, such as the customer email, booking reference or transaction reference and the reason for the request. We may request reasonable supporting information where necessary to review the request.
           </p>
           <p className="text-xs text-zinc-400">
             Where applicable law requires BXStrength to provide a full or specified refund, BXStrength will refund the amount legally due. Where BXStrength approves a discretionary or goodwill refund outside a mandatory statutory entitlement, any non-recoverable third-party payment-processing charges retained by a payment gateway, bank or other provider may be taken into account only where permitted by applicable law and where the relevant condition was disclosed to the customer.
@@ -450,7 +450,7 @@ export const TermsView: React.FC = () => {
             <p className="flex items-center gap-2 text-zinc-300">
               <Mail className="w-4 h-4 text-[#CCFF00]" />
               <span>Customer Support Email:</span>
-              <a href="mailto:bxstrengthuk@gmail.com" className="text-white font-bold underline">bxstrengthuk@gmail.com</a>
+              <a href="mailto:support@bxstrength.com" className="text-white font-bold underline">support@bxstrength.com</a>
             </p>
             <p className="flex items-center gap-2 text-zinc-300">
               <Phone className="w-4 h-4 text-[#CCFF00]" />
@@ -464,8 +464,8 @@ export const TermsView: React.FC = () => {
             </p>
             <p className="flex items-center gap-2 text-zinc-300">
               <Phone className="w-4 h-4 text-[#CCFF00]" />
-              <span>Grievance Phone:</span>
-              <a href="tel:+919973643647" className="text-white font-mono font-bold">+91-9973643647</a>
+              <span>Grievance Email:</span>
+              <a href="mailto:Grievance@bxstrength.com" className="text-white font-mono font-bold">Grievance@bxstrength.com</a>
             </p>
           </div>
           <p className="text-xs text-zinc-400">
@@ -505,28 +505,20 @@ export const TermsView: React.FC = () => {
         <div className="bg-gradient-to-br from-[#141418] via-[#121215] to-[#0d0d10] border border-zinc-800 p-6 rounded-2xl space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <span className="text-zinc-500 font-bold uppercase block text-[10px]">Trading Brand</span>
+              <span className="text-zinc-500 font-bold uppercase block text-[10px]">Official Brand Name</span>
               <span className="text-white font-black text-sm">BXStrength</span>
             </div>
             <div>
-              <span className="text-zinc-500 font-bold uppercase block text-[10px]">Business / Legal Entity</span>
-              <span className="text-white font-black text-sm">7Seas Exim</span>
-            </div>
-            <div>
-              <span className="text-zinc-500 font-bold uppercase block text-[10px]">Business Constitution</span>
-              <span className="text-zinc-200 font-bold">Sole Proprietorship</span>
-            </div>
-            <div>
-              <span className="text-zinc-500 font-bold uppercase block text-[10px]">GSTIN Registration</span>
-              <span className="text-[#CCFF00] font-mono font-black text-sm">07KPUPS3306Q1ZQ</span>
+              <span className="text-zinc-500 font-bold uppercase block text-[10px]">Primary Regions</span>
+              <span className="text-[#CCFF00] font-bold">United Kingdom &amp; India</span>
             </div>
             <div className="sm:col-span-2">
-              <span className="text-zinc-500 font-bold uppercase block text-[10px]">GST-Registered Address</span>
+              <span className="text-zinc-500 font-bold uppercase block text-[10px]">Headquarters Address</span>
               <span className="text-white font-medium">185/A, Street No. 3, Zakir Nagar, Okhla, New Delhi - 110025, India</span>
             </div>
             <div>
               <span className="text-zinc-500 font-bold uppercase block text-[10px]">Customer Support Email</span>
-              <a href="mailto:bxstrengthuk@gmail.com" className="text-[#CCFF00] font-bold underline">bxstrengthuk@gmail.com</a>
+              <a href="mailto:support@bxstrength.com" className="text-[#CCFF00] font-bold underline">support@bxstrength.com</a>
             </div>
             <div>
               <span className="text-zinc-500 font-bold uppercase block text-[10px]">Customer Support Phone</span>
@@ -640,10 +632,10 @@ export const TermsView: React.FC = () => {
       {/* 4. FOOTER BUSINESS NOTICE */}
       <footer className="bg-[#121214] py-10 border-t border-zinc-800 text-center text-xs text-zinc-400 space-y-2">
         <p className="font-bold text-white">
-          7Seas Exim trading as BXStrength • Effective Date: 23 September 2026
+          BXStrength Performance Coaching • Effective Date: 23 September 2026
         </p>
         <p>
-          Support Email: <a href="mailto:bxstrengthuk@gmail.com" className="text-[#CCFF00] underline">bxstrengthuk@gmail.com</a> | Phone: +91-8423594482 | Grievance: +91-9973643647
+          Support Email: <a href="mailto:support@bxstrength.com" className="text-[#CCFF00] underline">support@bxstrength.com</a> | Phone: <a href="tel:+918423594482" className="text-white font-mono hover:text-[#CCFF00]">+91-8423594482</a> | Grievance Email: <a href="mailto:grievance@bxstrength.com" className="text-[#CCFF00] font-bold underline">grievance@bxstrength.com</a>
         </p>
       </footer>
 

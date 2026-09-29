@@ -60,6 +60,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
 
   // Human Support Escalation Form State
   const [showEscalationForm, setShowEscalationForm] = useState<boolean>(false);
+  const [targetAgent, setTargetAgent] = useState<'CS Team' | 'Company Agent'>('CS Team');
   const [contactName, setContactName] = useState<string>('');
   const [contactEmail, setContactEmail] = useState<string>('');
   const [contactPhone, setContactPhone] = useState<string>('');
@@ -145,13 +146,31 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
 
     const ticketRef = 'BX-TKT-' + Math.floor(100000 + Math.random() * 900000);
 
-    // Save lead in VelocityAPI
+    // Save lead in VelocityAPI Enquiry store
     VelocityAPI.createEnquiry({
       name: contactName,
       email: contactEmail,
       phone: contactPhone,
-      subject: `[CHATBOT HUMAN SUPPORT REQUEST] ${ticketRef}`,
-      message: `[CHATBOT ESCALATED ISSUE]\nRef: ${ticketRef}\nMessage: ${contactMsg || 'User requested human coach callback.'}`
+      subject: `[${targetAgent.toUpperCase()} CHATBOT ESCALATION] ${ticketRef}`,
+      message: `[CHATBOT ROUTED TO ${targetAgent}]\nRef: ${ticketRef}\nAgent: ${targetAgent}\nMessage: ${contactMsg || 'User requested callback.'}`
+    });
+
+    // Save formal Ticket in Customer Support System
+    const chatSnippet = messages.map(m => `${m.sender.toUpperCase()}: ${m.text}`).slice(-4).join('\n');
+    VelocityAPI.createTicket({
+      userName: contactName,
+      userEmail: contactEmail,
+      userPhone: contactPhone,
+      subject: `[Chatbot Escalation] Request for ${targetAgent}`,
+      category: 'Chatbot',
+      priority: 'high',
+      description: contactMsg || `Customer requested escalation to ${targetAgent} via website AI assistant.`,
+      source: 'Chatbot',
+      assignedAgent: targetAgent,
+      chatContext: {
+        botConversationSnippet: chatSnippet,
+        escalatedAt: new Date().toISOString()
+      }
     });
 
     // Send real email alert to Admin
@@ -159,10 +178,10 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
       ticketId: ticketRef,
       userName: contactName,
       userEmail: contactEmail,
-      subject: `Chatbot Inquiry from ${contactName}`,
-      category: 'Chatbot Support',
+      subject: `[${targetAgent}] Chatbot Inquiry from ${contactName}`,
+      category: targetAgent === 'CS Team' ? 'CS Support Team' : 'Executive Coaching Agent',
       priority: 'high',
-      description: contactMsg || 'User requested human support callback.'
+      description: `[Routed to ${targetAgent}]\n${contactMsg || 'User requested support callback.'}`
     }).catch(() => {});
 
     setFormSubmitted(true);
@@ -172,7 +191,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
       {
         id: `msg-${Date.now()}`,
         sender: 'bot',
-        text: `✅ Thank you, ${contactName.split(' ')[0]}! Your inquiry (Ref: ${ticketRef}) has been submitted to Head Coach Shaban Faridi & Support Team. We will contact you at ${contactEmail} / WhatsApp shortly!`,
+        text: `✅ Thank you, ${contactName.split(' ')[0]}! Your inquiry (Ref: ${ticketRef}) has been routed directly to our ${targetAgent}. We will contact you at ${contactEmail} / WhatsApp shortly!`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]);
@@ -300,9 +319,40 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
                 onSubmit={handleEscalationSubmit}
                 className="bg-[#18181b] border border-zinc-700 p-4 rounded-xl space-y-3 text-xs animate-in fade-in"
               >
-                <div className="flex items-center gap-1.5 text-[#CCFF00] font-black uppercase text-[11px]">
-                  <Mail className="w-4 h-4" />
-                  <span>Connect with Human Coach &amp; Support</span>
+                <div className="flex items-center justify-between text-[#CCFF00] font-black uppercase text-[11px]">
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="w-4 h-4" />
+                    Connect with Support Agent
+                  </span>
+                </div>
+
+                {/* CS Team vs Company Agent Selection */}
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-300 uppercase mb-1">Select Support Agent *</label>
+                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#121214] border border-zinc-700 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setTargetAgent('CS Team')}
+                      className={`py-1.5 px-2 rounded-md font-bold text-[10px] uppercase transition-all cursor-pointer ${
+                        targetAgent === 'CS Team'
+                          ? 'bg-[#CCFF00] text-black shadow-sm font-black'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      CS Team
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTargetAgent('Company Agent')}
+                      className={`py-1.5 px-2 rounded-md font-bold text-[10px] uppercase transition-all cursor-pointer ${
+                        targetAgent === 'Company Agent'
+                          ? 'bg-[#CCFF00] text-black shadow-sm font-black'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      Company Agent
+                    </button>
+                  </div>
                 </div>
 
                 <div>

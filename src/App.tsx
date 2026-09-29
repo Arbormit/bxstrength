@@ -24,6 +24,7 @@ import { PrivacyView } from './components/PrivacyView';
 import { SearchModal } from './components/SearchModal';
 import { ClientDashboard } from './components/dashboard/ClientDashboard';
 import { AdminCRM } from './components/admin/AdminCRM';
+import { SupportDashboardView } from './components/support/SupportDashboardView';
 import { LoginModal } from './components/auth/LoginModal';
 import { RegisterModal } from './components/auth/RegisterModal';
 import { ForgotPasswordModal } from './components/auth/ForgotPasswordModal';
@@ -64,10 +65,45 @@ function AppContent() {
   useEffect(() => {
     const hash = window.location.hash;
     const search = window.location.search;
+    const path = window.location.pathname;
+
     if (hash.includes('reset-password') || search.includes('reset-password')) {
       setForgotPassModalOpen(true);
     }
-  }, []);
+
+    const isSupportRoute = path.includes('support') || hash.includes('support') || search.includes('support');
+
+    if (isSupportRoute) {
+      if (!isAuthenticated || !user) {
+        // Unauthenticated guest -> Protect route! Redirect to home & open login modal
+        setCurrentPage('home');
+        setLoginModalOpen(true);
+        showToast('Authentication Required: Please sign in to access the Customer Support Workspace.');
+        return;
+      }
+
+      const roleClean = (user.role || '').toLowerCase();
+      const isSupportStaff = ['customer_support', 'cs_agent', 'support', 'admin', 'coach'].includes(roleClean);
+
+      if (!isSupportStaff) {
+        // Regular client/user -> Redirect to client dashboard
+        setCurrentPage('dashboard');
+        showToast('Access Restricted: Customer Support Workspace is for authorized staff only.');
+        return;
+      }
+
+      setCurrentPage('support_dashboard');
+      return;
+    }
+
+    // Auto-direct Support Employees to their dashboard upon page load if authenticated
+    if (isAuthenticated && user) {
+      const userRoleClean = (user.role || '').toLowerCase();
+      if (['customer_support', 'cs_agent', 'support'].includes(userRoleClean) && currentPage === 'home') {
+        setCurrentPage('support_dashboard');
+      }
+    }
+  }, [isAuthenticated, user]);
 
   const navigateAndScroll = (page: ViewPage, elementId?: string) => {
     setCurrentPage(page);
@@ -93,7 +129,11 @@ function AppContent() {
   };
 
   const handleAuthSuccessNavigate = (role: UserRole) => {
-    if (role === 'admin' || role === 'coach') {
+    const roleClean = (role || '').toLowerCase();
+    if (roleClean === 'customer_support' || roleClean === 'cs_agent' || roleClean === 'support') {
+      setCurrentPage('support_dashboard');
+      showToast('Welcome to BxStrength Customer Support Workspace');
+    } else if (roleClean === 'admin' || roleClean === 'coach') {
       setCurrentPage('admin');
       showToast(`Welcome to BxStrength Admin CRM (${role.toUpperCase()} Session)`);
     } else {
@@ -321,6 +361,36 @@ function AppContent() {
         {currentPage === 'terms' && <TermsView />}
 
         {currentPage === 'privacy' && <PrivacyView />}
+
+        {currentPage === 'support_dashboard' && (
+          isAuthenticated && user && ['customer_support', 'cs_agent', 'support', 'admin', 'coach'].includes((user.role || '').toLowerCase()) ? (
+            <SupportDashboardView
+              onShowToast={showToast}
+              onNavigateHome={() => setCurrentPage('home')}
+            />
+          ) : (
+            <div className="bg-[#0a0a0c] min-h-screen flex items-center justify-center p-6 text-center text-white">
+              <div className="bg-[#18181b] border border-zinc-800 p-8 rounded-2xl max-w-md space-y-4 shadow-2xl">
+                <Lock className="w-12 h-12 text-[#CCFF00] mx-auto" />
+                <h2 className="text-lg font-black uppercase">AUTHENTICATION REQUIRED</h2>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  You must be logged in as an authorized Customer Support Staff member or System Admin to view this workspace.
+                </p>
+                <div className="flex justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      setCurrentPage('home');
+                      setLoginModalOpen(true);
+                    }}
+                    className="bg-[#CCFF00] text-black text-xs font-black uppercase px-6 py-3 rounded-xl cursor-pointer shadow-lg"
+                  >
+                    SIGN IN TO SUPPORT ACCOUNT
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        )}
       </main>
 
       {/* Global Footer */}

@@ -111,14 +111,9 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="hidden md:block bg-[#121214] text-zinc-400 text-xs py-1.5 px-6 border-b border-zinc-800/80">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-6">
-            <a href="tel:8423594482" className="flex items-center gap-1.5 hover:text-white transition-colors text-zinc-300">
-              <Phone className="w-3.5 h-3.5 text-zinc-400" /> 8423594482
-            </a>
-            <span>📍 185/A, Streetno. 3, Zakir nagar, Okhla, New Delhi - 110025</span>
-            {/* <span className="text-zinc-700">|</span>
-            <span className="text-emerald-400 font-medium flex items-center gap-1.5 text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Live Coach Support Active
+            {/* <span className="text-[#CCFF00] font-black uppercase text-[11px] tracking-widest flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#CCFF00] animate-pulse" />
+              UK &amp; INDIA DIGITAL PERFORMANCE &amp; BOXING PLATFORM
             </span> */}
           </div>
 

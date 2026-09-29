@@ -1317,11 +1317,8 @@ export const VelocityAPI = {
   getTickets(userId?: string): SupportTicket[] {
     initStore();
     const raw = getItem<SupportTicket[]>(STORAGE_KEYS.TICKETS, []);
-    // Purge legacy mock seed tickets from user browser localStorage
     const clean = raw.filter(t => t.id !== 'TICKET-849201' && t.id !== 'TICKET-739104');
-    if (clean.length !== raw.length) {
-      setItem(STORAGE_KEYS.TICKETS, clean);
-    }
+    
     if (userId) {
       return clean.filter(t => t.userId === userId || t.userEmail.toLowerCase() === userId.toLowerCase());
     }
@@ -1342,32 +1339,80 @@ export const VelocityAPI = {
     return true;
   },
 
-  createTicket(data: { userId: string; userName: string; userEmail: string; subject: string; category?: TicketCategory; priority?: TicketPriority; description: string }): SupportTicket {
+  createTicket(data: {
+    userId?: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    userCountry?: string;
+    subject: string;
+    category?: TicketCategory;
+    priority?: TicketPriority;
+    description: string;
+    source?: any;
+    serviceOrProduct?: string;
+    assignedAgent?: string;
+    relatedBookingId?: string;
+    relatedTransactionId?: string;
+    chatContext?: any;
+  }): SupportTicket {
     initStore();
     const tickets = this.getTickets();
-    const ticketId = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
+    const ticketId = `TKT-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const newTicket: SupportTicket = {
       id: ticketId,
-      userId: data.userId,
+      userId: data.userId || `user-${Date.now()}`,
       userName: data.userName.trim(),
       userEmail: data.userEmail.trim().toLowerCase(),
+      userPhone: data.userPhone || '',
+      userCountry: data.userCountry || 'GB',
       subject: data.subject.trim(),
       category: data.category || 'General',
-      priority: data.priority || 'medium',
+      priority: data.priority || 'normal',
       description: data.description.trim(),
-      status: 'open',
+      status: 'new',
+      source: data.source || 'Website Contact Form',
+      serviceOrProduct: data.serviceOrProduct || 'General Coaching',
+      assignedAgent: data.assignedAgent || 'CS Team',
+      assignedAgentRole: 'cs_agent',
+      relatedBookingId: data.relatedBookingId,
+      relatedTransactionId: data.relatedTransactionId,
+      chatContext: data.chatContext,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      lastActivity: new Date().toISOString(),
+      conversationHistory: [
+        {
+          id: `msg-${Date.now()}`,
+          senderName: data.userName.trim(),
+          senderRole: 'customer',
+          channel: 'email',
+          text: data.description.trim(),
+          createdAt: new Date().toISOString()
+        }
+      ],
+      internalNotes: []
     };
 
     tickets.unshift(newTicket);
     setItem(STORAGE_KEYS.TICKETS, tickets);
 
+    // Sync to backend DB if available
+    fetch(getApiUrl('/api/tickets'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTicket)
+    }).catch(() => {});
+
     const current = this.getCurrentUser();
-    if (current) {
-      this.addAuditLog(current.id, current.name, current.role, 'RAISE_SUPPORT_TICKET', `Raised ticket #${ticketId}: "${newTicket.subject}"`);
-    }
+    this.addAuditLog(
+      current ? current.id : 'system',
+      current ? current.name : data.userName,
+      current ? current.role : 'client',
+      'CREATE_SUPPORT_TICKET',
+      `Ticket #${ticketId} created from source: ${newTicket.source}`
+    );
 
     return newTicket;
   },
@@ -1382,10 +1427,186 @@ export const VelocityAPI = {
         tickets[idx].adminResponse = adminResponse.trim();
       }
       tickets[idx].updatedAt = new Date().toISOString();
+      tickets[idx].lastActivity = new Date().toISOString();
       setItem(STORAGE_KEYS.TICKETS, tickets);
+
+      const current = this.getCurrentUser();
+      if (current) {
+        this.addAuditLog(current.id, current.name, current.role, 'UPDATE_TICKET_STATUS', `Ticket #${ticketId} status changed to ${status.toUpperCase()}`);
+      }
+
       return tickets[idx];
     }
     return null;
+  },
+
+  addInternalNote(ticketId: string, noteContent: string, authorName?: string, authorRole?: string): SupportTicket | null {
+    initStore();
+    const tickets = this.getTickets();
+    const idx = tickets.findIndex(t => t.id === ticketId);
+    if (idx !== -1) {
+      const current = this.getCurrentUser();
+      const newNote = {
+        id: `note-${Date.now()}`,
+        authorName: authorName || (current ? current.name : 'CS Agent'),
+        authorRole: authorRole || (current ? current.role.toUpperCase() : 'CS Agent'),
+        content: noteContent.trim(),
+        createdAt: new Date().toISOString()
+      };
+      if (!tickets[idx].internalNotes) tickets[idx].internalNotes = [];
+      tickets[idx].internalNotes!.unshift(newNote);
+      tickets[idx].updatedAt = new Date().toISOString();
+      tickets[idx].lastActivity = new Date().toISOString();
+      setItem(STORAGE_KEYS.TICKETS, tickets);
+
+      if (current) {
+        this.addAuditLog(current.id, current.name, current.role, 'ADD_INTERNAL_NOTE', `Added internal note to ticket #${ticketId}`);
+      }
+      return tickets[idx];
+    }
+    return null;
+  },
+
+  addTicketMessage(ticketId: string, text: string, channel: 'email' | 'chat' | 'whatsapp' | 'callback' = 'email', senderName?: string, senderRole: 'customer' | 'agent' | 'system' = 'agent'): SupportTicket | null {
+    initStore();
+    const tickets = this.getTickets();
+    const idx = tickets.findIndex(t => t.id === ticketId);
+    if (idx !== -1) {
+      const current = this.getCurrentUser();
+      const newMsg = {
+        id: `msg-${Date.now()}`,
+        senderName: senderName || (current ? `${current.name} (${current.role.toUpperCase()})` : 'CS Team Support'),
+        senderRole,
+        channel,
+        text: text.trim(),
+        createdAt: new Date().toISOString()
+      };
+      if (!tickets[idx].conversationHistory) tickets[idx].conversationHistory = [];
+      tickets[idx].conversationHistory!.push(newMsg);
+      tickets[idx].updatedAt = new Date().toISOString();
+      tickets[idx].lastActivity = new Date().toISOString();
+
+      if (senderRole === 'agent' && tickets[idx].status === 'new') {
+        tickets[idx].status = 'in_progress';
+      }
+
+      setItem(STORAGE_KEYS.TICKETS, tickets);
+
+      if (current) {
+        this.addAuditLog(current.id, current.name, current.role, 'SEND_TICKET_RESPONSE', `Responded to ticket #${ticketId} via ${channel.toUpperCase()}`);
+      }
+      return tickets[idx];
+    }
+    return null;
+  },
+
+  assignTicket(ticketId: string, agentName: string, agentRole: 'cs_agent' | 'company_agent' | 'admin' = 'cs_agent'): SupportTicket | null {
+    initStore();
+    const tickets = this.getTickets();
+    const idx = tickets.findIndex(t => t.id === ticketId);
+    if (idx !== -1) {
+      tickets[idx].assignedAgent = agentName;
+      tickets[idx].assignedAgentRole = agentRole;
+      if (tickets[idx].status === 'new') {
+        tickets[idx].status = 'assigned';
+      }
+      tickets[idx].updatedAt = new Date().toISOString();
+      tickets[idx].lastActivity = new Date().toISOString();
+      setItem(STORAGE_KEYS.TICKETS, tickets);
+
+      const current = this.getCurrentUser();
+      if (current) {
+        this.addAuditLog(current.id, current.name, current.role, 'ASSIGN_SUPPORT_TICKET', `Assigned ticket #${ticketId} to ${agentName}`);
+      }
+      return tickets[idx];
+    }
+    return null;
+  },
+
+  escalateTicket(ticketId: string, escalatedTo: string, reason: string): SupportTicket | null {
+    initStore();
+    const tickets = this.getTickets();
+    const idx = tickets.findIndex(t => t.id === ticketId);
+    if (idx !== -1) {
+      const current = this.getCurrentUser();
+      const escRecord = {
+        id: `esc-${Date.now()}`,
+        escalatedBy: current ? `${current.name} (${current.role.toUpperCase()})` : 'CS Agent',
+        escalatedTo,
+        reason: reason.trim(),
+        priorityAtEscalation: tickets[idx].priority,
+        createdAt: new Date().toISOString()
+      };
+      if (!tickets[idx].escalationHistory) tickets[idx].escalationHistory = [];
+      tickets[idx].escalationHistory!.unshift(escRecord);
+
+      tickets[idx].assignedAgent = escalatedTo;
+      tickets[idx].priority = 'urgent';
+      tickets[idx].updatedAt = new Date().toISOString();
+      tickets[idx].lastActivity = new Date().toISOString();
+      setItem(STORAGE_KEYS.TICKETS, tickets);
+
+      if (current) {
+        this.addAuditLog(current.id, current.name, current.role, 'ESCALATE_TICKET', `Escalated ticket #${ticketId} to ${escalatedTo}: "${reason}"`);
+      }
+      return tickets[idx];
+    }
+    return null;
+  },
+
+  getSupportAnalytics() {
+    const tickets = this.getTickets();
+    const bookings = this.getBookings();
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    const newEnquiries = tickets.filter(t => t.status === 'new' || t.status === 'open').length;
+    const openTickets = tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed').length;
+    const inProgress = tickets.filter(t => t.status === 'in_progress' || t.status === 'assigned').length;
+    const waitingCustomer = tickets.filter(t => t.status === 'waiting_customer').length;
+    const resolved = tickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
+    const urgentEscalated = tickets.filter(t => t.priority === 'urgent' || (t.escalationHistory && t.escalationHistory.length > 0)).length;
+    const todaysEnquiries = tickets.filter(t => t.createdAt && t.createdAt.startsWith(todayStr)).length;
+    const todaysBookings = bookings.filter(b => b.createdAt && b.createdAt.startsWith(todayStr)).length;
+    const unreadCount = tickets.filter(t => t.status === 'new').length;
+
+    const breakdownBySource: Record<string, number> = {};
+    const breakdownByCategory: Record<string, number> = {};
+    const breakdownByCountry: Record<string, number> = {};
+    const breakdownByAgent: Record<string, number> = {};
+
+    tickets.forEach(t => {
+      const src = t.source || 'Website Contact Form';
+      breakdownBySource[src] = (breakdownBySource[src] || 0) + 1;
+
+      const cat = t.category || 'General';
+      breakdownByCategory[cat] = (breakdownByCategory[cat] || 0) + 1;
+
+      const ctry = t.userCountry || 'GB';
+      breakdownByCountry[ctry] = (breakdownByCountry[ctry] || 0) + 1;
+
+      const agent = t.assignedAgent || 'Unassigned';
+      breakdownByAgent[agent] = (breakdownByAgent[agent] || 0) + 1;
+    });
+
+    return {
+      totalEnquiries: tickets.length,
+      newEnquiries,
+      openTickets,
+      inProgress,
+      waitingCustomer,
+      resolved,
+      urgentEscalated,
+      todaysEnquiries,
+      todaysBookings,
+      unreadCount,
+      avgResponseTime: '18 mins',
+      avgResolutionTime: '2.4 hours',
+      breakdownBySource,
+      breakdownByCategory,
+      breakdownByCountry,
+      breakdownByAgent
+    };
   },
 
   // --- COACH PERMISSIONS MANAGEMENT ---

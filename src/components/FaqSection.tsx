@@ -82,13 +82,15 @@ export const FaqSection: React.FC<{ onOpenConsultation: () => void; onOpenAssess
     <section className="w-full bg-[#121214] py-20 text-white border-b border-zinc-800">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <span className="text-[11px] font-black tracking-widest text-zinc-400 uppercase bg-zinc-800 border border-zinc-700 px-3.5 py-1.5 rounded-full inline-block mb-3">
+          <span className="text-[11px] font-black tracking-widest text-[#CCFF00] uppercase bg-zinc-800/90 border border-zinc-700/80 px-3.5 py-1.5 rounded-full inline-block mb-3 shadow-sm">
             FREQUENTLY ASKED QUESTIONS
           </span>
           <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
-            CLEAR ANSWERS. NO BS.
+            CLEAR ANSWERS TO YOUR COACHING QUESTIONS
           </h2>
-          <p className="text-zinc-400 text-sm mt-3">Everything you need to know about starting your coaching journey with BxStrength.</p>
+          <p className="text-zinc-400 text-xs sm:text-sm mt-3 max-w-2xl mx-auto">
+            Get clear, honest answers to all your training, program, and membership questions before starting your journey with BxStrength.
+          </p>
         </div>
 
         <div className="space-y-4">

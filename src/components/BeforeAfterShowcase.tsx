@@ -34,7 +34,7 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({
       image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790509640/WhatsApp_Image_2026-09-27_at_4.45.24_PM.jpg',
       clientName: 'Fahad Chris',
       startingWeight: '96 kg',
-      currentWeight: '78 kg',
+      currentWeight: '76 kg',
       weightChange: '-20 kg Fat Loss',
       exerciseName: 'Boxing Power, Footwork & Compound Lifting',
       duration: '16 Weeks 1-on-1 Personal Coaching',
@@ -63,19 +63,19 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({
       exerciseName: 'Progressive Resistance & Heavy Bag Power',
       duration: '16 Weeks Athletic Protocol',
       badge: '14KG FAT LOSS',
-      description: 'Added 14kg of pure lean athletic muscle while improving joint mobility and posture alignment.'
+      description: 'Added lean athletic muscle while improving joint mobility, shoulder stability, and posture alignment.'
     },
     {
       id: 4,
       image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790532727/WhatsApp_Image_2026-09-27_at_4.41.50_PM.jpg',
       clientName: 'Alex Nicole',
-      startingWeight: '89 kg',
-      currentWeight: '75 kg',
+      startingWeight: '88 kg',
+      currentWeight: '74 kg',
       weightChange: '-14 kg Fat Loss',
-      exerciseName: 'Progressive Resistance & Heavy Bag Power',
-      duration: '16 Weeks Athletic Protocol',
-      badge: '14KG FAT LOSS',
-      description: 'Added 14kg of pure lean athletic muscle while improving joint mobility and posture alignment.'
+      exerciseName: 'Hypertrophy Conditioning & Functional Strength',
+      duration: '14 Weeks Dedicated Coaching',
+      badge: 'STRENGTH & CONDITIONING',
+      description: 'Built core endurance and lean physique with weekly custom 1-on-1 fight camp sessions.'
     }
   ];
 
