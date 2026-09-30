@@ -94,8 +94,6 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
     try {
       setLoading(true);
       setPassError(null);
-      // Simulate password change
-      await new Promise((res) => setTimeout(res, 600));
       setCurrentPass('');
       setNewPass('');
       setConfirmPass('');

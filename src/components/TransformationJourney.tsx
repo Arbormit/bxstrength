@@ -95,19 +95,19 @@ export const TransformationJourney: React.FC<TransformationJourneyProps> = ({
                 id: 'img1',
                 type: 'image',
                 url: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1790173781/WhatsApp_Image_2026-09-23_at_7.50.17_PM.jpg?auto=format&fit=crop&q=80&w=800',
-                title: 'Head Coach Shaban Faridi',
+                title: 'Head Coach & Team',
                 category: 'HEAD COACH'
               })}
               className="relative h-[220px] rounded-3xl overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-[#CCFF00] cursor-pointer group transition-all duration-300 shadow-xl"
             >
               <img
                 src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1790173781/WhatsApp_Image_2026-09-23_at_7.50.17_PM.jpg?auto=format&fit=crop&q=80&w=800"
-                alt="Head Coach Shaban Faridi"
+                alt="Head Coach & Team"
                 className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
-                <h4 className="text-xs font-black uppercase text-white mt-1">Shaban Faridi (Physiotherapist & Coach)</h4>
+                <h4 className="text-xs font-black uppercase text-white mt-1">Head Coach & Team (Physiotherapy & Coaching)</h4>
               </div>
             </div>
 

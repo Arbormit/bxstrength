@@ -96,13 +96,6 @@ function AppContent() {
       return;
     }
 
-    // Auto-direct Support Employees to their dashboard upon page load if authenticated
-    if (isAuthenticated && user) {
-      const userRoleClean = (user.role || '').toLowerCase();
-      if (['customer_support', 'cs_agent', 'support'].includes(userRoleClean) && currentPage === 'home') {
-        setCurrentPage('support_dashboard');
-      }
-    }
   }, [isAuthenticated, user]);
 
   const navigateAndScroll = (page: ViewPage, elementId?: string) => {
@@ -169,6 +162,33 @@ function AppContent() {
 
   // If viewing Dashboard or Admin CRM full-screen portal views
   if (currentPage === 'dashboard' && user) {
+    const userRoleClean = (user.role || '').toLowerCase();
+    if (['customer_support', 'cs_agent', 'support'].includes(userRoleClean)) {
+      return (
+        <SupportDashboardView
+          onShowToast={showToast}
+          onNavigateHome={() => setCurrentPage('home')}
+          onLogout={() => {
+            logout();
+            setCurrentPage('home');
+            showToast('Signed out of Customer Support Workspace');
+          }}
+        />
+      );
+    }
+    if (userRoleClean === 'admin' || userRoleClean === 'coach') {
+      return (
+        <AdminCRM
+          user={user}
+          onLogout={() => {
+            logout();
+            setCurrentPage('home');
+            showToast('Signed out of CRM session');
+          }}
+          onNavigateHome={() => setCurrentPage('home')}
+        />
+      );
+    }
     return (
       <ClientDashboard
         user={user}
@@ -367,6 +387,11 @@ function AppContent() {
             <SupportDashboardView
               onShowToast={showToast}
               onNavigateHome={() => setCurrentPage('home')}
+              onLogout={() => {
+                logout();
+                setCurrentPage('home');
+                showToast('Signed out of Customer Support Workspace');
+              }}
             />
           ) : (
             <div className="bg-[#0a0a0c] min-h-screen flex items-center justify-center p-6 text-center text-white">

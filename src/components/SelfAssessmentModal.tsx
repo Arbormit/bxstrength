@@ -135,7 +135,7 @@ export const SelfAssessmentModal: React.FC<SelfAssessmentModalProps> = ({
         trainingInterest: formData.trainingInterest,
         hasInjury: formData.hasInjury
       })
-    }).catch(err => console.warn('Server assessment sync notice:', err.message));
+    }).catch(err => console.error('Failed to sync assessment with server:', err.message));
 
     setIsCompleted(true);
   };

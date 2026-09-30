@@ -9,7 +9,7 @@ export const CLASSES_DATA: FitnessClass[] = [
     description: 'Heavy bag drills, footwork, speed combinations and intense cardiovascular conditioning.',
     durationMinutes: 50,
     intensity: 'Advanced',
-    trainerName: 'Shaban Faridi',
+    trainerName: 'Head Coach Shaban Faridi',
     caloriesBurned: '700-900 kcal',
     scheduleDays: ['Monday', 'Wednesday', 'Friday']
   },
@@ -121,15 +121,15 @@ export interface BxTrainer extends Trainer {
 
 export const TRAINERS_DATA: BxTrainer[] = [
   {
-    id: 'shaban-faridi',
-    name: 'Shaban Faridi',
+    id: 'head-coach',
+    name: 'Head Coach & Team',
     role: 'Head Coach | Boxing Instructor | Physiotherapy Professional',
-    coachPosition: 'HEAD COACH & FOUNDER',
+    coachPosition: 'HEAD COACH & FOUNDER TEAM',
     headline: 'HEAD COACH | BOXING INSTRUCTOR | PHYSIOTHERAPY PROFESSIONAL',
     image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789568682/ChatGPT_Image_Sep_16_2026_07_51_52_PM.png?auto=format&fit=crop&q=80&w=800',
     imagePosition: 'object-[center_top]',
-    bio: 'Head Coach with over 10 years of industry experience combining boxing instruction, strength & conditioning, and physiotherapy-based rehabilitation. Trained at IG Stadium to master boxing technique and athlete development. Brings 6+ years of entrepreneurial experience as a gym owner/operator, delivering personalized transformations to over 1,000 clients worldwide.',
-    secondaryBio: 'His methodology bridges the gap between traditional strength training and the chaotic demands of high-performance conditioning. Whether peaking for elite competition or building a foundation for sustainable power, Head Coach Shaban applies a data-driven, precision-focused approach to every session.',
+    bio: 'Head Coach and expert team with over 10 years of industry experience combining boxing instruction, strength & conditioning, and physiotherapy-based rehabilitation. Trained at IG Stadium to master boxing technique and athlete development. Brings 6+ years of entrepreneurial experience as a gym owner/operator, delivering personalized transformations to over 1,000 clients worldwide.',
+    secondaryBio: 'Our methodology bridges the gap between traditional strength training and the chaotic demands of high-performance conditioning. Whether peaking for elite competition or building a foundation for sustainable power, our Head Coach & Team applies a data-driven, precision-focused approach to every session.',
     specialties: ['Boxing Instruction', 'Physiotherapy & Rehab', 'Strength & Conditioning', 'Chronic Back Pain Rehab', 'Post-Knee Surgery Recovery', 'Athletic Performance'],
     experienceYears: 10,
     clientsServed: 1000,
@@ -279,19 +279,19 @@ export const TRAINERS_DATA: BxTrainer[] = [
 ];
 
 export const SCHEDULE_DATA: ScheduleSlot[] = [
-  { id: '1', day: 'Monday', time: '07:00 AM - 08:00 AM', className: 'Boxing Power & Technique', trainer: 'Shaban Faridi', room: 'Ring Arena B', spotsLeft: 4 },
+  { id: '1', day: 'Monday', time: '07:00 AM - 08:00 AM', className: 'Boxing Power & Technique', trainer: 'Head Coach Shaban Faridi', room: 'Ring Arena B', spotsLeft: 4 },
   { id: '2', day: 'Monday', time: '10:00 AM - 11:30 AM', className: 'Strength & Hypertrophy', trainer: 'Sadeem', room: 'Strength Zone 2', spotsLeft: 2 },
   { id: '3', day: 'Monday', time: '05:00 PM - 06:00 PM', className: 'Tactical Metabolic Blast', trainer: 'Moheeb Khan', room: 'Main Turf', spotsLeft: 8 },
-  { id: '4', day: 'Tuesday', time: '08:00 AM - 09:15 AM', className: 'Boxing Power & Technique', trainer: 'Shaban Faridi', room: 'Ring Arena B', spotsLeft: 5 },
+  { id: '4', day: 'Tuesday', time: '08:00 AM - 09:15 AM', className: 'Boxing Power & Technique', trainer: 'Head Coach Shaban Faridi', room: 'Ring Arena B', spotsLeft: 5 },
   { id: '5', day: 'Tuesday', time: '04:00 PM - 05:00 PM', className: 'Strength & Hypertrophy', trainer: 'Sadeem', room: 'Strength Zone 1', spotsLeft: 3 },
   { id: '6', day: 'Wednesday', time: '07:00 AM - 08:00 AM', className: 'Tactical Metabolic Blast', trainer: 'Moheeb Khan', room: 'Main Turf', spotsLeft: 6 },
-  { id: '7', day: 'Wednesday', time: '06:00 PM - 07:00 PM', className: 'Boxing Power & Technique', trainer: 'Shaban Faridi', room: 'Ring Arena B', spotsLeft: 1 },
+  { id: '7', day: 'Wednesday', time: '06:00 PM - 07:00 PM', className: 'Boxing Power & Technique', trainer: 'Head Coach Shaban Faridi', room: 'Ring Arena B', spotsLeft: 1 },
   { id: '8', day: 'Thursday', time: '09:00 AM - 10:00 AM', className: 'Strength & Hypertrophy', trainer: 'Sadeem', room: 'Strength Zone 2', spotsLeft: 10 },
   { id: '9', day: 'Thursday', time: '05:30 PM - 06:45 PM', className: 'Tactical Metabolic Blast', trainer: 'Moheeb Khan', room: 'Main Turf', spotsLeft: 4 },
-  { id: '10', day: 'Friday', time: '07:00 AM - 08:00 AM', className: 'Boxing Power & Technique', trainer: 'Shaban Faridi', room: 'Ring Arena B', spotsLeft: 3 },
+  { id: '10', day: 'Friday', time: '07:00 AM - 08:00 AM', className: 'Boxing Power & Technique', trainer: 'Head Coach Shaban Faridi', room: 'Ring Arena B', spotsLeft: 3 },
   { id: '11', day: 'Friday', time: '05:00 PM - 06:00 PM', className: 'Strength & Hypertrophy', trainer: 'Sadeem', room: 'Strength Zone 1', spotsLeft: 2 },
   { id: '12', day: 'Saturday', time: '09:00 AM - 10:30 AM', className: 'Tactical Metabolic Blast', trainer: 'Moheeb Khan', room: 'Main Turf', spotsLeft: 7 },
-  { id: '13', day: 'Saturday', time: '11:00 AM - 12:00 PM', className: 'Boxing Power & Technique', trainer: 'Shaban Faridi', room: 'Ring Arena B', spotsLeft: 5 },
+  { id: '13', day: 'Saturday', time: '11:00 AM - 12:00 PM', className: 'Boxing Power & Technique', trainer: 'Head Coach Shaban Faridi', room: 'Ring Arena B', spotsLeft: 5 },
   { id: '14', day: 'Sunday', time: '10:00 AM - 11:30 AM', className: 'Strength & Hypertrophy', trainer: 'Sadeem', room: 'Strength Zone 2', spotsLeft: 12 }
 ];
 
@@ -304,7 +304,7 @@ export const BLOG_POSTS_DATA: BlogPost[] = [
     excerpt: 'Proper hydration starts 24 hours before your fight session. Discover how electrolytes boost muscular power and stamina.',
     content: 'Full guide on electrolyte balance, intra-workout mineral intake, and recovery post-boxing session...',
     category: 'Nutrition',
-    author: 'Shaban Faridi',
+    author: 'Head Coach & Team',
     date: 'JULY 18, 2026',
     image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=800',
     readTime: '5 min read'

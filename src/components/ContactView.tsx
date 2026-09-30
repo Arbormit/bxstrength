@@ -39,13 +39,13 @@ export const ContactView: React.FC = () => {
         console.error('Local storage enquiry save error:', err);
       }
 
-      // Dispatch Brevo Email Notification to Admin
+      // Send notification email to admin
       sendContactEnquiryEmail({
         name: name.trim(),
         email: email.trim(),
         subject: enqSubject,
         message: message.trim()
-      }).catch((err) => console.warn('Brevo contact email dispatch note:', err));
+      }).catch((err) => console.error('Failed to send contact notification email:', err));
 
       fetch(getApiUrl('/api/enquiries'), {
         method: 'POST',
@@ -56,7 +56,7 @@ export const ContactView: React.FC = () => {
           subject: enqSubject,
           message: message.trim()
         })
-      }).catch((err) => console.warn('Server API sync notice:', err.message));
+      }).catch((err) => console.error('Enquiry server sync error:', err.message));
 
       setSubmitted(true);
       setName('');

@@ -471,7 +471,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenBooking 
               BUSINESS INFORMATION
             </h2>
             <p className="text-zinc-400 text-xs sm:text-sm">
-              BXStrength is an international digital performance &amp; fitness coaching platform engineered by Head Coach Shaban Faridi.
+              BXStrength is an international digital performance &amp; fitness coaching platform engineered by our Head Coach &amp; Team.
             </p>
           </div>
 

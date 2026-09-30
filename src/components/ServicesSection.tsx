@@ -316,6 +316,23 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
       complimentary: 'Warm-up + cool-down included in every session.',
       icon: Heart
     },
+    {
+      title: 'Testing',
+      category: 'Testing Service',
+      servicePlan: 'Testing',
+      duration: '45 Mins',
+      price: 1,
+      sessionType: 'Testing Session',
+      goalPrimaryOutcome: 'Testing for performance, mindset &  focus.',
+      whatYouGet: ['1:1 Mindset & resilience coaching', 'Stress management strategies', 'Mental clarity & goal setting'],
+      keyDifference: 'Specialist 45-min mental performance coaching.',
+      idealFor: 'Ideal for mental focus, stress management & goal resilience.',
+      totalSessions: '1 Session',
+      discount: '',
+      validity: 'Single session booking',
+      complimentary: 'Warm-up + cool-down included in every session.',
+      icon: Heart
+    },
 
     // --- VALUE COMPARISON SERVICE CARDS ---
     // {

@@ -39,7 +39,7 @@ export const BeforeAfterShowcase: React.FC<BeforeAfterShowcaseProps> = ({
       exerciseName: 'Boxing Power, Footwork & Compound Lifting',
       duration: '16 Weeks 1-on-1 Personal Coaching',
       badge: 'FEATURED TRANSFORMATION',
-      description: 'Achieved 20kg body fat loss while increasing bench press & metabolic endurance under Head Coach Shaban Faridi.'
+      description: 'Achieved 20kg body fat loss while increasing bench press & metabolic endurance under our Head Coach & Team.'
     },
     {
       id: 2,

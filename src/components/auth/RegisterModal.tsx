@@ -40,7 +40,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
   useEffect(() => {
     if (isOpen && GOOGLE_CLIENT_ID) {
-      loadGoogleGsiScript().catch((err) => console.warn('Google GSI load note:', err));
+      loadGoogleGsiScript().catch((err) => console.error('Failed to load Google Identity Services:', err));
     }
   }, [isOpen]);
 
@@ -227,7 +227,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                     autoCapitalize="words"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Shaban Faridi"
+                    placeholder="e.g. Alex Smith"
                     className="w-full min-h-[44px] bg-[#18181b] border border-zinc-800 focus:border-zinc-500 text-white pl-10 pr-3.5 py-2 text-sm sm:text-xs font-bold rounded-lg outline-none"
                   />
                 </div>

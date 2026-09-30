@@ -1677,7 +1677,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
           </div>
 
           <div style="border-top: 1px solid #27272a; margin-top: 24px; padding-top: 16px; font-size: 12px; color: #71717a; line-height: 1.5;">
-            <p style="margin: 2px 0;">Engineered by <strong>Head Coach Shaban Faridi</strong></p>
+            <p style="margin: 2px 0;">Engineered by <strong>Head Coach &amp; Team</strong></p>
             <p style="margin: 2px 0;">BxStrength HQ | Support: <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: underline;">${senderEmail}</a> | Phone: +91 8423594482</p>
           </div>
         </div>

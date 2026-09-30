@@ -355,7 +355,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
       }
     } catch (e: any) {
       setIsProcessing(false);
-      // Fallback sandbox state
+      // Fallback offline transaction state
       setTransactionId(`BX${Math.floor(10000000 + Math.random() * 90000000)}`);
       setPaymentDateStr(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }));
       setJourneyStep(3);

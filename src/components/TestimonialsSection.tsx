@@ -72,7 +72,7 @@ export const TestimonialsSection: React.FC = () => {
         setReviews(localReviews);
       }
     } catch (err) {
-      console.warn('Failed to fetch backend reviews:', err);
+      console.error('Failed to fetch reviews:', err);
       const localReviews = VelocityAPI.getReviews().filter(isRealReview);
       setReviews(localReviews);
     } finally {
@@ -191,10 +191,10 @@ export const TestimonialsSection: React.FC = () => {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          console.warn('Backend review notice:', errorData.error);
+          console.error('Server review save error:', errorData.error);
         }
       } catch (netErr) {
-        console.warn('Backend network notice (saved locally):', netErr);
+        console.error('Network error saving review:', netErr);
       }
 
       await fetchReviews();

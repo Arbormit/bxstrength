@@ -43,30 +43,28 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
 
   const loadDashboardData = () => {
     setIsLoading(true);
-    setTimeout(() => {
-      const statsData = VelocityAPI.getBodyStats(user.id);
-      setBodyStats(statsData);
+    const statsData = VelocityAPI.getBodyStats(user.id);
+    setBodyStats(statsData);
 
-      const bookingsData = VelocityAPI.getBookings(user.id);
-      setBookings(bookingsData);
+    const bookingsData = VelocityAPI.getBookings(user.id);
+    setBookings(bookingsData);
 
-      const progData = VelocityAPI.getPrograms(user.id);
-      setPrograms(progData);
+    const progData = VelocityAPI.getPrograms(user.id);
+    setPrograms(progData);
 
-      const nutData = VelocityAPI.getNutritionPlans(user.id);
-      setNutritionPlans(nutData);
+    const nutData = VelocityAPI.getNutritionPlans(user.id);
+    setNutritionPlans(nutData);
 
-      const annData = VelocityAPI.getAnnouncements();
-      setAnnouncements(annData);
+    const annData = VelocityAPI.getAnnouncements();
+    setAnnouncements(annData);
 
-      const subData = VelocityAPI.getSubscriptions();
-      setSubscriptions(subData);
+    const subData = VelocityAPI.getSubscriptions();
+    setSubscriptions(subData);
 
-      const enqData = VelocityAPI.getEnquiries(user.email);
-      setEnquiries(enqData);
+    const enqData = VelocityAPI.getEnquiries(user.email);
+    setEnquiries(enqData);
 
-      setIsLoading(false);
-    }, 400);
+    setIsLoading(false);
   };
 
   useEffect(() => {

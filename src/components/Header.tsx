@@ -94,6 +94,29 @@ export const Header: React.FC<HeaderProps> = ({
 
   const isCoachOrAdmin = user && (user.role === 'admin' || user.role === 'coach');
 
+  const getTargetDashboardPage = (): ViewPage => {
+    if (!user) return 'dashboard';
+    const roleClean = (user.role || '').toLowerCase();
+    if (['customer_support', 'cs_agent', 'support'].includes(roleClean)) {
+      return 'support_dashboard';
+    }
+    if (roleClean === 'admin' || roleClean === 'coach') {
+      return 'admin';
+    }
+    return 'dashboard';
+  };
+
+  const getRoleBadgeLabel = (): string => {
+    if (!user) return 'PORTAL';
+    const roleClean = (user.role || '').toLowerCase();
+    if (['customer_support', 'cs_agent', 'support'].includes(roleClean)) {
+      return 'CUSTOMER SUPPORT PORTAL';
+    }
+    if (roleClean === 'admin') return 'ADMIN PORTAL';
+    if (roleClean === 'coach') return 'COACH PORTAL';
+    return 'CLIENT PORTAL';
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-[#0a0a0a] transition-all duration-300">
       {/* Precision UK Executive Scroll Hairline */}
@@ -182,9 +205,9 @@ export const Header: React.FC<HeaderProps> = ({
 
             {isAuthenticated && user ? (
               <button
-                onClick={() => handleNav(isCoachOrAdmin ? 'admin' : 'dashboard')}
+                onClick={() => handleNav(getTargetDashboardPage())}
                 className="bg-[#18181b] hover:bg-zinc-800 text-white rounded-lg transition-all ml-1 border border-zinc-700/80 px-3 py-1.5 flex items-center gap-2.5 cursor-pointer shadow-sm group"
-                title={`Logged in as ${user.name} - Open ${isCoachOrAdmin ? 'Admin CRM' : 'Client Dashboard'}`}
+                title={`Logged in as ${user.name} - Open ${getRoleBadgeLabel()}`}
               >
                 <img
                   src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`}
@@ -196,7 +219,7 @@ export const Header: React.FC<HeaderProps> = ({
                     {user.name}
                   </span>
                   <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">
-                    {user.role} Portal
+                    {getRoleBadgeLabel()}
                   </span>
                 </div>
               </button>
@@ -225,8 +248,8 @@ export const Header: React.FC<HeaderProps> = ({
 
             {isAuthenticated ? (
               <button
-                onClick={() => handleNav(isCoachOrAdmin ? 'admin' : 'dashboard')}
-                className="bg-[#18181b] text-white p-1.5 rounded-lg border border-zinc-700 flex items-center gap-1.5"
+                onClick={() => handleNav(getTargetDashboardPage())}
+                className="bg-[#18181b] text-white p-1.5 rounded-lg border border-zinc-700 flex items-center gap-1.5 cursor-pointer"
                 title="Open Dashboard"
               >
                 <img
@@ -314,7 +337,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    handleNav(isCoachOrAdmin ? 'admin' : 'dashboard');
+                    handleNav(getTargetDashboardPage());
                   }}
                   className="w-full bg-[#18181b] border border-zinc-700 text-white p-3 rounded-lg flex items-center justify-between cursor-pointer mb-1"
                 >
@@ -326,7 +349,7 @@ export const Header: React.FC<HeaderProps> = ({
                     />
                     <div className="text-left">
                       <span className="text-xs font-black uppercase text-white block">{user.name}</span>
-                      <span className="text-[10px] text-zinc-400 font-bold uppercase">{user.role} Portal</span>
+                      <span className="text-[10px] text-zinc-400 font-bold uppercase">{getRoleBadgeLabel()}</span>
                     </div>
                   </div>
                   <span className="text-xs font-bold text-emerald-400 uppercase">OPEN →</span>

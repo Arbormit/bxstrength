@@ -95,13 +95,13 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
       let triggerForm = false;
 
       if (q.includes('program') || q.includes('class') || q.includes('offer') || q.includes('train')) {
-        botAnswer = "We offer 1-on-1 Virtual Personal Training covering Boxing Technique, Heavy Strength & Hypertrophy, Mobility & Joint Rehab, and Functional Movement. Programs are 100% tailor-made by Head Coach Shaban Faridi & team.";
+        botAnswer = "We offer 1-on-1 Virtual Personal Training covering Boxing Technique, Heavy Strength & Hypertrophy, Mobility & Joint Rehab, and Functional Movement. Programs are 100% tailor-made by our Head Coach & team.";
       } else if (q.includes('book') || q.includes('session') || q.includes('consult') || q.includes('free') || q.includes('15')) {
         botAnswer = "You can book a complimentary 15-minute 1-on-1 Strategy Session directly on our platform! Would you like me to open the booking calendar for you?";
       } else if (q.includes('price') || q.includes('cost') || q.includes('package') || q.includes('fee') || q.includes('rate')) {
         botAnswer = "Our 1-on-1 virtual coaching starts at $20 per session, with premium packages at $40, $60, and $80 depending on the level of dedicated 24/7 support and customized nutrition plans.";
       } else if (q.includes('human') || q.includes('coach') || q.includes('support') || q.includes('agent') || q.includes('talk') || q.includes('contact') || q.includes('phone') || q.includes('number')) {
-        botAnswer = "I will connect you directly with Head Coach Shaban Faridi & our support team. Please fill in your details below so we can contact you directly via WhatsApp or Email!";
+        botAnswer = "I will connect you directly with our Head Coach & support team. Please fill in your details below so we can contact you directly via WhatsApp or Email!";
         triggerForm = true;
         setShowEscalationForm(true);
       } else {
@@ -241,7 +241,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
                   BxStrength AI Assistant
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </h3>
-                <p className="text-[10px] text-zinc-400 font-semibold">Head Coach Shaban &amp; Support Team Active</p>
+                <p className="text-[10px] text-zinc-400 font-semibold">Head Coach &amp; Support Team Active</p>
               </div>
             </div>
             <button
@@ -398,7 +398,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
                     rows={2}
                     value={contactMsg}
                     onChange={(e) => setContactMsg(e.target.value)}
-                    placeholder="How can Coach Shaban help you?"
+                    placeholder="How can our Head Coach & team help you?"
                     className="w-full bg-[#121214] border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#CCFF00]"
                   />
                 </div>

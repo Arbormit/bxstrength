@@ -348,7 +348,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
             )}
 
             {activeTab === 'tickets' && (
-              <SupportDashboardView onShowToast={showToast} onNavigateHome={onNavigateHome} />
+              <TicketManagement onShowToast={showToast} />
             )}
 
             {activeTab === 'announcements' && (

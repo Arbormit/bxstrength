@@ -46,7 +46,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Dedicated Confirm Modals State
+  // Delete confirmation modal state
   const [deletingLead, setDeletingLead] = useState<{ id: string; name: string } | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState<boolean>(false);
 
@@ -72,7 +72,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         email: u.email,
         phone: u.phone || '+44 20 7946 0921',
         goal: u.fitnessGoals || 'Strength & Recomp',
-        assignedCoach: idx % 2 === 0 ? 'Shaban Faridi' : 'Sadeem',
+        assignedCoach: idx % 2 === 0 ? 'Head Coach & Team' : 'Sadeem',
         stage: idx === 0 ? 'Active Client' : 'Coach Assigned',
         source: 'Self Assessment Diagnostic',
         createdAt: u.createdAt || new Date().toISOString()
@@ -102,7 +102,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
   // Journey Bookings (Step 4 Paid Clients Awaiting Coach Alignment)
   const [pendingJourneyBookings, setPendingJourneyBookings] = useState<any[]>([]);
   const [assigningBooking, setAssigningBooking] = useState<any | null>(null);
-  const [assignCoachName, setAssignCoachName] = useState<string>('Shaban Faridi');
+  const [assignCoachName, setAssignCoachName] = useState<string>('Head Coach & Team');
   const [assignScheduledDate, setAssignScheduledDate] = useState<string>('Mon, 27 Jan 2026');
   const [assignScheduledTime, setAssignScheduledTime] = useState<string>('7:00 PM (GMT)');
   const [isAssigning, setIsAssigning] = useState<boolean>(false);
@@ -115,7 +115,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         setPendingJourneyBookings(data.bookings);
       }
     } catch (e) {
-      // fallback sandbox mock if server offline
+      // Fallback to local data
     }
   };
 
@@ -135,7 +135,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         body: JSON.stringify({
           bookingId: assigningBooking.id,
           coachName: assignCoachName,
-          coachTitle: assignCoachName.includes('Shaban') ? 'Head Performance Coach' : 'Strength & Conditioning Specialist',
+          coachTitle: assignCoachName.includes('Head Coach') ? 'Head Performance Coach' : 'Strength & Conditioning Specialist',
           scheduledDate: assignScheduledDate,
           scheduledTime: assignScheduledTime,
           joinUrl: `https://bxstrength.co.uk/join/${assigningBooking.id}`
@@ -171,7 +171,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
   const [emailInput, setEmailInput] = useState('');
   const [phoneInput, setPhoneInput] = useState('');
   const [goalInput, setGoalInput] = useState('Body Reconstitution & Strength');
-  const [coachInput, setCoachInput] = useState('Shaban Faridi');
+  const [coachInput, setCoachInput] = useState('Head Coach & Team');
   const [stageInput, setStageInput] = useState<LeadPipelineStage>('Lead');
   const [sourceInput, setSourceInput] = useState('Manual Admin Entry');
 
@@ -423,7 +423,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                   onChange={(e) => setAssignCoachName(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-white font-bold"
                 >
-                  <option value="Shaban Faridi">Shaban Faridi (Head Performance Coach)</option>
+                  <option value="Head Coach & Team">Head Coach & Team (Head Performance Coach)</option>
                   <option value="Jordan Ellis">Jordan Ellis (Strength &amp; Conditioning Specialist)</option>
                   <option value="Marcus Vance">Marcus Vance (Boxing &amp; Combat Coach)</option>
                   <option value="Elena Rostova">Elena Rostova (Mobility &amp; Recovery Lead)</option>
@@ -484,7 +484,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                 className="bg-[#18181b] border border-zinc-800 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600"
               >
                 <option value="All">All UK Coaches</option>
-                <option value="Shaban Faridi">Shaban Faridi</option>
+                <option value="Head Coach & Team">Head Coach & Team</option>
                 <option value="Sadeem">Sadeem</option>
                 <option value="Moheeb Khan">Moheeb Khan</option>
               </select>
@@ -896,7 +896,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                     onChange={(e) => setCoachInput(e.target.value)}
                     className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-zinc-600"
                   >
-                    <option value="Shaban Faridi">Shaban Faridi (Head Coach)</option>
+                    <option value="Head Coach & Team">Head Coach & Team</option>
                     <option value="Sadeem">Sadeem (Senior Strength Lead)</option>
                     <option value="Moheeb Khan">Moheeb Khan (Tactical Lead)</option>
                   </select>

@@ -67,7 +67,7 @@ export const promptGoogleAccountSelect = (): Promise<GoogleUserProfile | null> =
           scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
           callback: async (response: any) => {
             if (response.error || !response.access_token) {
-              console.warn('Google OAuth response notice:', response);
+              console.error('Google OAuth error response:', response);
               resolve(null);
               return;
             }

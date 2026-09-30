@@ -35,7 +35,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   useEffect(() => {
     if (isOpen && GOOGLE_CLIENT_ID) {
-      loadGoogleGsiScript().catch((err) => console.warn('Google GSI load note:', err));
+      loadGoogleGsiScript().catch((err) => console.error('Failed to load Google Identity Services:', err));
     }
   }, [isOpen]);
 

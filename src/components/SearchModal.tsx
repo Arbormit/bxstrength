@@ -38,7 +38,7 @@ export const HEALTH_SYMPTOM_DATABASE: HealthSymptomTopic[] = [
     title: 'Knee Joint Rehabilitation & Patellar Biomechanics',
     category: 'Joint & Structural Health',
     summary: 'Custom low-impact loading, quad vmo strengthening, and patellar tracking correction for squatting and stair pain.',
-    recommendedCoach: 'Shaban Faridi',
+    recommendedCoach: 'Head Coach & Team',
     relatedTopics: [
       'VMO Activation Drills',
       'Joint Mobility & Cartilage Decompression',
@@ -52,7 +52,7 @@ export const HEALTH_SYMPTOM_DATABASE: HealthSymptomTopic[] = [
     title: 'Lower Back Rehabilitation & L4-L5 Spinal Decompression',
     category: 'Postural & Spinal Health',
     summary: 'Core bracing, glute activation, and pelvic alignment to eliminate chronic lower back tightness during sitting or lifting.',
-    recommendedCoach: 'Shaban Faridi',
+    recommendedCoach: 'Head Coach & Team',
     relatedTopics: [
       'Intra-Abdominal Pressure (IAP) Bracing',
       'Posterior Chain Alignment',
@@ -94,7 +94,7 @@ export const HEALTH_SYMPTOM_DATABASE: HealthSymptomTopic[] = [
     title: 'Rotator Cuff & Shoulder Overhead Mobility Rehab',
     category: 'Upper Body Biomechanics',
     summary: 'Scapular rhythm restoration, rotator cuff strengthening, and thoracic mobility to restore pain-free pressing.',
-    recommendedCoach: 'Shaban Faridi',
+    recommendedCoach: 'Head Coach & Team',
     relatedTopics: [
       'Scapular Upward Rotation Drills',
       'Subscapularis & Infraspinatus Firing',
@@ -124,7 +124,7 @@ export const POPULAR_SEARCH_SUGGESTIONS = [
   'Periods Cycle & PCOS', 
   'Fat Loss (130kg to 80kg)', 
   'Shoulder Rehab',
-  'Shaban Faridi'
+  'Head Coach & Team'
 ];
 
 export const SearchModal: React.FC<SearchModalProps> = ({
@@ -211,7 +211,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     'Periods Cycle & PCOS', 
     'Fat Loss (130kg to 80kg)', 
     'Shoulder Rehab',
-    'Shaban Faridi'
+    'Head Coach & Team'
   ];
 
   // Handle escape key closing

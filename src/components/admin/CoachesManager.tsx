@@ -408,7 +408,7 @@ export const CoachesManager: React.FC<CoachesManagerProps> = ({ user, onShowToas
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Shaban Faridi"
+                    placeholder="e.g. Alex Smith"
                     className="w-full bg-[#18181b] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#CCFF00]"
                   />
                 </div>

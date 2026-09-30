@@ -153,7 +153,7 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
           <div className="space-y-16 lg:space-y-24">
           {trainers.map((trainer: BxTrainer) => {
             const headlines: Record<string, string> = {
-              'Shaban Faridi': 'HEAD COACH | BOXING INSTRUCTOR | PHYSIOTHERAPY PROFESSIONAL',
+              'Head Coach & Team': 'HEAD COACH | BOXING INSTRUCTOR | PHYSIOTHERAPY PROFESSIONAL',
               'Sadeem': 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
               'Moheeb Khan': 'FITNESS TRAINER | STRENGTH & CONDITIONING COACH | VIRTUAL FITNESS COACH',
             };

@@ -422,7 +422,7 @@ export const VelocityAPI = {
         }
       }
     } catch (err: any) {
-      console.warn('Backend Google SSO sync notice:', err);
+      console.error('Backend Google SSO sync failed:', err);
     }
 
     // Fallback to local storage if backend is unreachable
@@ -496,10 +496,41 @@ export const VelocityAPI = {
     try {
       const res = await fetch(getApiUrl('/api/users'));
       if (res.ok) {
-        const serverUsers: User[] = await res.json();
-        if (Array.isArray(serverUsers) && serverUsers.length > 0) {
-          setItem(STORAGE_KEYS.USERS, serverUsers);
-          return serverUsers;
+        const rawUsers = await res.json();
+        if (Array.isArray(rawUsers) && rawUsers.length > 0) {
+          const formattedUsers: User[] = rawUsers.map((u: any) => ({
+            id: String(u.id || `user-${Date.now()}`),
+            name: String(u.name || u.email || 'User'),
+            email: String(u.email || ''),
+            role: String(u.role || 'client').toLowerCase() as UserRole,
+            coachPosition: u.coach_position || u.coachPosition,
+            phone: u.phone || '',
+            age: u.age || 25,
+            heightCm: Number(u.height_cm || u.heightCm || 175),
+            gender: u.gender || 'Other',
+            subscriptionTier: u.subscription_tier || u.subscriptionTier || 'Normal User',
+            avatarUrl: u.avatar_url || u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.email || 'User')}`,
+            fitnessGoals: u.fitness_goals || u.fitnessGoals || '',
+            isVerified: u.is_verified !== undefined ? Boolean(u.is_verified) : true,
+            status: u.status || 'active',
+            createdAt: u.created_at || u.createdAt || new Date().toISOString()
+          }));
+
+          setItem(STORAGE_KEYS.USERS, formattedUsers);
+
+          // If current logged in user's role was updated on NeonDB, sync active session
+          const currentUserRaw = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+          if (currentUserRaw) {
+            try {
+              const currentUser = JSON.parse(currentUserRaw) as User;
+              const updatedMe = formattedUsers.find(u => u.email.toLowerCase() === currentUser.email.toLowerCase() || u.id === currentUser.id);
+              if (updatedMe && updatedMe.role !== currentUser.role) {
+                setItem(STORAGE_KEYS.CURRENT_USER, updatedMe);
+              }
+            } catch {}
+          }
+
+          return formattedUsers;
         }
       }
     } catch (err: any) {
@@ -1440,6 +1471,29 @@ export const VelocityAPI = {
     return null;
   },
 
+  updateTicketMeta(ticketId: string, updates: { priority?: TicketPriority; category?: TicketCategory; assignedAgent?: string }): SupportTicket | null {
+    initStore();
+    const tickets = this.getTickets();
+    const idx = tickets.findIndex(t => t.id === ticketId);
+    if (idx !== -1) {
+      if (updates.priority) tickets[idx].priority = updates.priority;
+      if (updates.category) tickets[idx].category = updates.category;
+      if (updates.assignedAgent) tickets[idx].assignedAgent = updates.assignedAgent;
+
+      tickets[idx].updatedAt = new Date().toISOString();
+      tickets[idx].lastActivity = new Date().toISOString();
+      setItem(STORAGE_KEYS.TICKETS, tickets);
+
+      const current = this.getCurrentUser();
+      if (current) {
+        this.addAuditLog(current.id, current.name, current.role, 'UPDATE_TICKET_META', `Updated meta for ticket #${ticketId}`);
+      }
+
+      return tickets[idx];
+    }
+    return null;
+  },
+
   addInternalNote(ticketId: string, noteContent: string, authorName?: string, authorRole?: string): SupportTicket | null {
     initStore();
     const tickets = this.getTickets();
@@ -1680,7 +1734,7 @@ export const VelocityAPI = {
         return { success: true, data: json.data };
       }
     } catch (err: any) {
-      console.warn('Backend add trainer notice, saving to local store:', err.message);
+      console.error('Server add trainer error:', err.message);
     }
 
     // Fallback sync to local storage
@@ -1711,7 +1765,7 @@ export const VelocityAPI = {
         return { success: true, data: json.data };
       }
     } catch (err: any) {
-      console.warn('Backend update trainer notice, syncing local store:', err.message);
+      console.error('Server update trainer error:', err.message);
     }
 
     const currentLocal: BxTrainer[] = JSON.parse(localStorage.getItem('bxstrength_trainers_local_store') || '[]');
@@ -1733,7 +1787,7 @@ export const VelocityAPI = {
         }
       });
     } catch (err: any) {
-      console.warn('Backend delete trainer notice, removing from local store:', err.message);
+      console.error('Server delete trainer error:', err.message);
     }
 
     const currentLocal: BxTrainer[] = JSON.parse(localStorage.getItem('bxstrength_trainers_local_store') || '[]');

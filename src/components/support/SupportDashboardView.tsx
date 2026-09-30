@@ -3,21 +3,26 @@ import { SupportTicket, TicketStatus, TicketPriority, TicketCategory, TicketSour
 import { VelocityAPI, getApiUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { ConfirmModal } from '../ui/ConfirmModal';
+import { ProfileManagement } from '../dashboard/ProfileManagement';
 import { 
   LifeBuoy, CheckCircle2, Clock, AlertCircle, MessageSquare, Search, Filter, ShieldAlert, 
   Send, Trash2, UserCheck, ArrowUpRight, Phone, Mail, Globe, Tag, ChevronRight, RefreshCw, 
   BarChart2, Lock, AlertTriangle, Plus, FileText, Check, ShieldCheck, X, Zap, CornerUpRight,
-  User as UserIcon
+  User as UserIcon, Settings, LogOut, Home
 } from 'lucide-react';
 
 interface SupportDashboardViewProps {
   onShowToast?: (msg: string) => void;
   onNavigateHome?: () => void;
+  onLogout?: () => void;
+  initialTab?: 'inbox' | 'analytics' | 'audit_logs' | 'account_settings';
 }
 
 export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({ 
   onShowToast = () => {},
-  onNavigateHome
+  onNavigateHome,
+  onLogout,
+  initialTab = 'inbox'
 }) => {
   const { user } = useAuth();
 
@@ -26,7 +31,7 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
     user?.role === 'admin' ? 'admin' : (user?.role === 'coach' ? 'company_agent' : 'cs_agent')
   );
 
-  const [activeTab, setActiveTab] = useState<'inbox' | 'analytics' | 'audit_logs'>('inbox');
+  const [activeTab, setActiveTab] = useState<'inbox' | 'analytics' | 'audit_logs' | 'account_settings'>(initialTab);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -280,6 +285,57 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
   return (
     <div className="bg-[#0a0a0c] min-h-screen text-white font-sans border-b border-zinc-800">
 
+      {/* TOP WORKSPACE HEADER & LOGOUT BAR */}
+      <div className="bg-[#121214] border-b border-zinc-800 py-3.5 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {user && (
+              <img
+                src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`}
+                alt={user.name}
+                className="w-10 h-10 rounded-full object-cover border-2 border-[#CCFF00]"
+              />
+            )}
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-sm font-black uppercase text-white tracking-wide">
+                  {user?.name || 'CUSTOMER SUPPORT AGENT'}
+                </h1>
+                <span className="bg-[#CCFF00]/10 text-[#CCFF00] border border-[#CCFF00]/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
+                  CS WORKSPACE
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400 font-medium">
+                Logged in as <span className="text-zinc-200 font-bold">{user?.email}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+            {onNavigateHome && (
+              <button
+                onClick={onNavigateHome}
+                className="bg-[#18181b] hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 px-3.5 py-2 rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Home className="w-3.5 h-3.5 text-zinc-400" />
+                <span>WEBSITE HOME</span>
+              </button>
+            )}
+
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-sm active:scale-95"
+                title="Sign Out of Customer Support Session"
+              >
+                <LogOut className="w-4 h-4 text-red-400" />
+                <span>LOGOUT SESSION</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* WORKSPACE CONTENT AREA */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
@@ -352,6 +408,15 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
             >
               <Lock className="w-4 h-4" />
               <span>AUDIT LOGS &amp; SECURITY</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('account_settings')}
+              className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'account_settings' ? 'bg-[#CCFF00] text-black shadow-lg' : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
+              }`}
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>MY ACCOUNT &amp; PASSWORD SETTINGS</span>
             </button>
           </div>
 
@@ -893,6 +958,44 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
           </div>
         )}
 
+        {/* TAB 4: MY ACCOUNT & PASSWORD SETTINGS */}
+        {activeTab === 'account_settings' && user && (
+          <div className="bg-[#121214] border border-zinc-800 p-6 rounded-2xl space-y-4">
+            <div className="border-b border-zinc-800 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-black uppercase text-white flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-[#CCFF00]" /> ACCOUNT &amp; PASSWORD SETTINGS
+                </h2>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Manage your customer support employee profile, avatar image, phone number, security credentials, and password.
+                </p>
+              </div>
+              <div className="bg-[#18181b] px-3.5 py-2 rounded-xl border border-zinc-800 text-xs font-bold text-zinc-300 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>ROLE: <strong className="text-white uppercase">CUSTOMER SUPPORT EMPLOYEE</strong></span>
+              </div>
+            </div>
+
+            <ProfileManagement user={user} onShowToast={onShowToast} />
+
+            {onLogout && (
+              <div className="pt-4 border-t border-zinc-800 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-black uppercase text-red-400">SESSION LOGOUT CONTROL</h3>
+                  <p className="text-[11px] text-zinc-400">End active Customer Support session securely on this device.</p>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase px-5 py-2.5 rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-95"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>LOGOUT NOW</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* ESCALATION MODAL */}
@@ -918,7 +1021,7 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
                 >
                   <option value="Company Agent">Senior Company Agent</option>
                   <option value="Admin">Executive Admin Team</option>
-                  <option value="Head Coach Shaban Faridi">Head Coach Shaban Faridi</option>
+                  <option value="Head Coach & Team">Head Coach & Team</option>
                 </select>
               </div>
 

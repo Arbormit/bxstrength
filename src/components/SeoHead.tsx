@@ -16,13 +16,13 @@ export const SeoHead: React.FC<SeoHeadProps> = ({ currentPage }) => {
       case 'about':
         title = 'About BxStrength — Premier UK Certified Boxing & Performance Masters';
         description = 'Learn about BxStrength, our UK certified master trainers, clinical physiotherapy standards, and 1,000+ global athlete transformations.';
-        keywords = 'About BxStrength, Shaban Faridi, UK fitness coaches, boxing master, physiotherapy professional';
+        keywords = 'About BxStrength, Head Coach & Team, UK fitness coaches, boxing master, physiotherapy professional';
         canonical = 'https://bxstrength.com/#about';
         break;
       case 'trainers':
         title = 'Meet BxStrength Head Coaches — Boxing, Strength & Physiotherapy Masters';
-        description = 'Meet Head Coach Shaban Faridi (Diploma in Physiotherapy, IG Stadium Boxing) and senior specialists Sadeem & Moheeb Khan. View verified UK credentials.';
-        keywords = 'BxStrength coaches, Shaban Faridi, Sadeem, Moheeb Khan, boxing coach, strength specialist';
+        description = 'Meet our Head Coach & Team (Diploma in Physiotherapy, IG Stadium Boxing) and senior specialists Sadeem & Moheeb Khan. View verified UK credentials.';
+        keywords = 'BxStrength coaches, Head Coach & Team, Sadeem, Moheeb Khan, boxing coach, strength specialist';
         canonical = 'https://bxstrength.com/#trainers';
         break;
       case 'services':

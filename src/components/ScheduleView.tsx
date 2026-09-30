@@ -38,13 +38,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const [classesList, setClassesList] = useState<ClassSchedule[]>([]);
   const [existingBookings, setExistingBookings] = useState<Booking[]>([]);
 
-  // Dedicated Popup Toast & Confirm Modal States
+  // Notification toast and confirmation modal state
   const [deletingTarget, setDeletingTarget] = useState<{ id: string; title: string } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const coachesProfiles: CoachScheduleProfile[] = [
     {
-      id: 'shaban-faridi',
+      id: 'head-coach',
       name: 'Head Coach Shaban Faridi',
       role: 'Master Boxing & Physiotherapy Specialist',
       category: 'Boxing Technique & Physical Rehab',
