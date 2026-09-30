@@ -6,7 +6,7 @@
   <!-- Homepage & Core Fitness Hub -->
   <url>
     <loc>https://bxstrength.com/</loc>
-    <lastmod>2026-08-16</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en-gb" href="https://bxstrength.com/" />
@@ -21,7 +21,7 @@
   <!-- Coaches & Trainers Showcase Section -->
   <url>
     <loc>https://bxstrength.com/#trainers</loc>
-    <lastmod>2026-08-16</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
     <image:image>
@@ -33,7 +33,7 @@
   <!-- Services & Programs Section -->
   <url>
     <loc>https://bxstrength.com/#services</loc>
-    <lastmod>2026-08-16</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -41,7 +41,7 @@
   <!-- About View -->
   <url>
     <loc>https://bxstrength.com/#about</loc>
-    <lastmod>2026-08-16</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -49,7 +49,7 @@
   <!-- Pricing & Memberships -->
   <url>
     <loc>https://bxstrength.com/#pricing</loc>
-    <lastmod>2026-08-16</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -57,7 +57,7 @@
   <!-- Contact & Consultations -->
   <url>
     <loc>https://bxstrength.com/#contact</loc>
-    <lastmod>2026-08-16</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
