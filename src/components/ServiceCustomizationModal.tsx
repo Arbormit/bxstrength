@@ -116,6 +116,39 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
     }
   }, [isOpen, service]);
 
+  // Auto-restore customer journey state on mount / login
+  useEffect(() => {
+    if (!isOpen) return;
+    const restoreUserJourneyState = async () => {
+      try {
+        const currentUser = VelocityAPI.getCurrentUser();
+        const userEmail = currentUser?.email || user?.email || authEmail || initialCustomerEmail;
+        if (!userEmail) return;
+
+        const res = await fetch(getApiUrl(`/api/journey/latest-by-email/${encodeURIComponent(userEmail)}`));
+        const data = await res.json();
+
+        if (res.ok && data.record) {
+          const r = data.record;
+          if (r.id) setBookingId(r.id);
+          if (r.journeyState === 'BOOKING_CONFIRMED') {
+            if (r.coachName) setConfirmedCoachName(r.coachName);
+            if (r.coachTitle) setConfirmedCoachTitle(r.coachTitle);
+            if (r.coachAvatar) setConfirmedCoachAvatar(r.coachAvatar);
+            if (r.scheduledDate) setConfirmedScheduledDate(r.scheduledDate);
+            if (r.scheduledTime) setConfirmedScheduledTime(r.scheduledTime);
+            if (r.joinUrl) setConfirmedJoinUrl(r.joinUrl);
+            setJourneyStep(5); // Show Step 5 ONLY when admin confirmed
+          } else if (r.journeyState === 'SCHEDULING_PENDING') {
+            setJourneyStep(4); // Show Step 4 if coach assignment pending
+          }
+        }
+      } catch (e) {}
+    };
+
+    restoreUserJourneyState();
+  }, [isOpen, user?.email, authEmail, initialCustomerEmail]);
+
   if (!isOpen || !service) return null;
 
   // Authoritative Base & Dynamic GBP Pricing Calculations
@@ -362,37 +395,6 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
     }
   };
 
-  // Auto-restore customer journey state on mount / login
-  useEffect(() => {
-    const restoreUserJourneyState = async () => {
-      try {
-        const currentUser = VelocityAPI.getCurrentUser();
-        const userEmail = currentUser?.email || user?.email || authEmail || initialCustomerEmail;
-        if (!userEmail) return;
-
-        const res = await fetch(getApiUrl(`/api/journey/latest-by-email/${encodeURIComponent(userEmail)}`));
-        const data = await res.json();
-
-        if (res.ok && data.record) {
-          const r = data.record;
-          if (r.id) setBookingId(r.id);
-          if (r.journeyState === 'BOOKING_CONFIRMED') {
-            if (r.coachName) setConfirmedCoachName(r.coachName);
-            if (r.coachTitle) setConfirmedCoachTitle(r.coachTitle);
-            if (r.coachAvatar) setConfirmedCoachAvatar(r.coachAvatar);
-            if (r.scheduledDate) setConfirmedScheduledDate(r.scheduledDate);
-            if (r.scheduledTime) setConfirmedScheduledTime(r.scheduledTime);
-            if (r.joinUrl) setConfirmedJoinUrl(r.joinUrl);
-            setJourneyStep(5); // Show Step 5 ONLY when admin confirmed
-          } else if (r.journeyState === 'SCHEDULING_PENDING') {
-            setJourneyStep(4); // Show Step 4 if coach assignment pending
-          }
-        }
-      } catch (e) {}
-    };
-
-    restoreUserJourneyState();
-  }, [user?.email, authEmail, initialCustomerEmail]);
 
   // --- REFRESH BOOKING STATUS FOR SCREEN 4 -> SCREEN 5 UNLOCK ---
   const handleCheckBookingStatus = async () => {

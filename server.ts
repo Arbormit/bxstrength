@@ -231,6 +231,10 @@ const AUTHORITATIVE_PRICING_CATALOG: Record<string, MarketPrice> = {
   'standard': { gbpBasePrice: 79, inrBasePrice: 5999, name: 'Fitness Pro' },
   'vip': { gbpBasePrice: 129, inrBasePrice: 9999, name: 'VIP Unlimited' },
   'testing': { gbpBasePrice: 0.5, inrBasePrice: 0.5, name: 'Testing' },
+  'test': { gbpBasePrice: 0.5, inrBasePrice: 0.5, name: 'Testing' },
+  '0-5': { gbpBasePrice: 0.5, inrBasePrice: 0.5, name: 'Testing' },
+  '0-50': { gbpBasePrice: 0.5, inrBasePrice: 0.5, name: 'Testing' },
+  '50p': { gbpBasePrice: 0.5, inrBasePrice: 0.5, name: 'Testing' },
   'default': { gbpBasePrice: 80, inrBasePrice: 7999, name: 'BxStrength Coaching' }
 };
 
