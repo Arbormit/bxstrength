@@ -157,10 +157,10 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
     ? (parseFloat(rawPrice.replace(/[^0-9.]/g, '')) || 0)
     : Number(rawPrice);
 
-  const extraFeePerExercise = 5; // £5 GBP per additional custom exercise
-  const additionalTrainingsCount = Math.max(0, selectedExercises.length - 3);
-  const extraTrainingsCost = serviceType === 'custom' ? additionalTrainingsCount * extraFeePerExercise : 0;
-  const totalPriceGbp = basePrice + extraTrainingsCost;
+  const extraFeePerExercise = 0; // £0 GBP per additional custom exercise (Included in custom package)
+  const additionalTrainingsCount = 0;
+  const extraTrainingsCost = 0;
+  const totalPriceGbp = basePrice;
 
   const toggleExercise = (name: string) => {
     if (selectedExercises.includes(name)) {
