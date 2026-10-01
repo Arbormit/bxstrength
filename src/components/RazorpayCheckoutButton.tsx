@@ -49,7 +49,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
       amount: amount,
       currency: effectiveCurrency,
       country: activeMarketCountry,
-      name: 'BxStrength Performance',
+      name: 'BxStrength',
       description: `${planName} (${(serviceType || 'Standard').toUpperCase()})`,
       userEmail: userEmail,
       userName: userName,

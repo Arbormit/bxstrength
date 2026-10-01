@@ -227,7 +227,7 @@ const AUTHORITATIVE_PRICING_CATALOG: Record<string, MarketPrice> = {
   'personal-training': { gbpBasePrice: 50, inrBasePrice: 3999, name: 'Personal Training' },
   'boxing-training': { gbpBasePrice: 48, inrBasePrice: 4499, name: 'Boxing Training' },
   'fitness-training': { gbpBasePrice: 30, inrBasePrice: 2499, name: 'Fitness Training' },
-  'testing': { gbpBasePrice: 0.5, inrBasePrice: 0.5, name: 'Testing' },
+  'testing': { gbpBasePrice: 1, inrBasePrice: 1, name: 'Testing' },
 };
 
 function determineMarketCountry(_country?: string, _phone?: string): 'GB' {

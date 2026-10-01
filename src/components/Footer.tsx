@@ -78,7 +78,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <ul className="space-y-2 text-xs">
               <li>
                 <button onClick={() => handleNav('home')} className="hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer">
-                  <ArrowRight className="w-3 h-3 text-zinc-500" /> Home Overview
+                  <ArrowRight className="w-3 h-3 text-zinc-500" /> Home
                 </button>
               </li>
               <li>
@@ -86,11 +86,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   <ArrowRight className="w-3 h-3 text-zinc-500" /> About BxStrength
                 </button>
               </li>
-              <li>
+              {/* <li>
                 <button onClick={() => handleNav('trainers')} className="hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer">
                   <ArrowRight className="w-3 h-3 text-zinc-500" /> Coaching Roster
                 </button>
-              </li>
+              </li> */}
               <li>
                 <button onClick={() => handleNav('schedule')} className="hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer">
                   <ArrowRight className="w-3 h-3 text-zinc-500" /> Class Timetable
@@ -103,7 +103,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               </li>
               <li>
                 <button onClick={() => handleNav('contact')} className="hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer">
-                  <ArrowRight className="w-3 h-3 text-zinc-500" /> Contact Headquarters
+                  <ArrowRight className="w-3 h-3 text-zinc-500" /> Contact Us
                 </button>
               </li>
             </ul>

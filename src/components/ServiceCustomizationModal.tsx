@@ -92,7 +92,7 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
   const [isRefreshingStatus, setIsRefreshingStatus] = useState<boolean>(false);
 
   // Screen 5 Confirmed Details State (Set by Admin or API)
-  const [confirmedCoachName, setConfirmedCoachName] = useState<string>('Jordan Ellis');
+  const [confirmedCoachName, setConfirmedCoachName] = useState<string>('Trainer Sadeem');
   const [confirmedCoachTitle, setConfirmedCoachTitle] = useState<string>('Strength & Conditioning Specialist');
   const [confirmedCoachAvatar, setConfirmedCoachAvatar] = useState<string>('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400');
   const [confirmedScheduledDate, setConfirmedScheduledDate] = useState<string>('Mon, 27 Jan 2026');
@@ -172,7 +172,6 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
     }
   };
 
-  // --- STEP 1 -> STEP 2: Initiate Journey Session & Validate Disclosures ---
   const handleInitiateJourney = async () => {
     if (!disclosure18Plus || !disclosureHealth || !disclosureSafeSpace) {
       setAuthError('Please confirm all required health & age disclosures to proceed.');
@@ -227,7 +226,6 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
     }
   };
 
-  // --- STEP 2 -> STEP 3: Create Checkout Order & Execute Gateway Payment ---
   const handlePaySecurely = async () => {
     if (!termsConsentAccepted) {
       setAuthError('Mandatory requirement: You must check the terms & conditions consent box.');
@@ -304,7 +302,6 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
     }
   };
 
-  // --- CRYPTOGRAPHIC PAYMENT SIGNATURE VERIFICATION (SERVER-SIDE) ---
   const handleVerifyPaymentServerSide = async (result: {
     razorpay_order_id?: string;
     razorpay_payment_id?: string;
@@ -370,7 +367,6 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
           paymentMethod: 'Secure Card Gateway (GBP £)'
         }).catch(() => {});
 
-        // Dispatch Urgent Coach Assignment Alert to Admin Team (Step 4 Notification)
         sendBrevoCoachAssignmentAlertToAdmin({
           bookingId: data.bookingId || bookingId,
           clientName: activeUser.name,
