@@ -231,7 +231,7 @@ const AUTHORITATIVE_PRICING_CATALOG: Record<string, MarketPrice> = {
 };
 
 function determineMarketCountry(_country?: string, _phone?: string): 'GB' {
-  return 'GB'; // Strictly UK Market
+  return 'GB';
 }
 
 function calculateAuthoritativePriceForMarket(
@@ -268,11 +268,10 @@ function calculateAuthoritativePriceForMarket(
   };
 }
 
-// 5. SERVER-CONTROLLED PAYMENT ENGINE WITH AUTOMATIC FAILOVER
-// Primary Gateway: Razorpay | Secondary Gateway: Stripe (Automatic Failover)
+// server ke hisaab se controlled payment system
 app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/create-intent'], async (req, res) => {
   try {
-    const { planName = 'BxStrength Protocol', serviceType = 'individual', customExercises = [], userEmail, userName, phone, country: reqCountry, idempotencyKey } = req.body;
+    const { planName = 'BxStrength', serviceType = 'individual', customExercises = [], userEmail, userName, phone, country: reqCountry, idempotencyKey } = req.body;
 
     const country = determineMarketCountry(reqCountry, phone);
     const { amount, currency, amountInSubUnits } = calculateAuthoritativePriceForMarket(planName, country, serviceType, customExercises);
@@ -280,7 +279,6 @@ app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/crea
     const transactionId = `tx_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
     const effectiveIdempotencyKey = idempotencyKey || `idemp_${userEmail || 'guest'}_${Date.now()}`;
 
-    // 1. Idempotency Check: Prevent duplicate charge orders
     const existingTx = paymentTransactionsStore.find(t => t.idempotencyKey === effectiveIdempotencyKey && t.status !== 'failed');
     if (existingTx) {
       return res.status(200).json({
@@ -324,7 +322,7 @@ app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/crea
       } catch (e: any) { }
     }
 
-    // --- STEP A: TRY PRIMARY GATEWAY (RAZORPAY) ---
+    //PRIMARY GATEWAY (RAZORPAY)
     let primaryError: string | null = null;
     try {
       const razorpay = getRazorpayInstance();
@@ -367,7 +365,7 @@ app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/crea
       console.warn(`⚠️ [PAYMENT FAILOVER] Primary gateway (Razorpay) failed: ${primaryError}. Transitioning to secondary gateway (Cashfree PG)...`);
     }
 
-    // --- STEP B: AUTOMATIC SECONDARY GATEWAY FAILOVER (CASHFREE PG) ---
+    //SECONDARY GATEWAY FAILOVER (CASHFREE PG)
     try {
       txRecord.gateway = 'cashfree';
       const { appId: cfAppId, secretKey: cfSecretKey, isProd: cfIsProd } = getCashfreeConfig();
@@ -425,7 +423,6 @@ app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/crea
         }
       }
 
-      // Cashfree Fallback Checkout URL if production keys are pending
       const fallbackCashfreeUrl = `https://payments.cashfree.com/order/#plan=${encodeURIComponent(planName)}&amount=${amount}&tx=${transactionId}`;
       txRecord.status = 'order_created';
       txRecord.gatewayOrderId = transactionId;
@@ -464,7 +461,7 @@ app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/crea
   }
 });
 
-// STEP 2: Cryptographic Signature Verification & Status Reconciliation (POST /api/verify-payment)
+// Cryptographic Signature 
 app.post(['/api/verify-payment', '/api/verify-razorpay-payment', '/api/payments/verify'], async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, transactionId } = req.body;
@@ -543,7 +540,6 @@ app.post(['/api/verify-payment', '/api/verify-razorpay-payment', '/api/payments/
   }
 });
 
-// --- UK CUSTOMER 5-STEP JOURNEY & BOOKING STATE MACHINE ---
 export type UkJourneyState =
   | 'SERVICE_SELECTED'
   | 'CHECKOUT_CREATED'
@@ -556,9 +552,9 @@ export type UkJourneyState =
   | 'BOOKING_CANCELLED';
 
 export interface UkBookingJourneyRecord {
-  id: string; // Booking ID e.g. BXSC47291
+  id: string; 
   sessionId: string;
-  transactionId?: string; // e.g. BX10028473
+  transactionId?: string;
   userEmail: string;
   userName: string;
   userPhone?: string;
@@ -572,17 +568,14 @@ export interface UkBookingJourneyRecord {
   paymentStatus: 'Paid' | 'Failed' | 'Pending';
   journeyState: UkJourneyState;
 
-  // Health & Onboarding Disclosures (Screen 1)
   is18PlusConfirmed: boolean;
   isVirtualCoachingConfirmed: boolean;
   isHealthDisclosureConfirmed: boolean;
   isSafeSpaceConfirmed: boolean;
 
-  // Terms Consent (Screen 2)
   termsConsentAccepted: boolean;
   termsConsentTimestamp?: string;
 
-  // Confirmed Session Details (Screen 5 - populated by Admin)
   coachName?: string;
   coachTitle?: string;
   coachAvatar?: string;
@@ -596,8 +589,6 @@ export interface UkBookingJourneyRecord {
 }
 
 const ukJourneyStore: UkBookingJourneyRecord[] = [];
-
-// 1. INITIATE SERVICE SELECTION (Screen 1 -> SERVICE_SELECTED)
 app.post('/api/journey/initiate', async (req, res) => {
   try {
     const {
@@ -654,7 +645,6 @@ app.post('/api/journey/initiate', async (req, res) => {
   }
 });
 
-// 2. CREATE CHECKOUT INTENT & VALIDATE CONSENT (Screen 2 -> CHECKOUT_CREATED -> PAYMENT_PENDING)
 app.post('/api/journey/create-checkout-intent', async (req, res) => {
   try {
     const { sessionId, termsConsent, idempotencyKey } = req.body;
@@ -671,12 +661,10 @@ app.post('/api/journey/create-checkout-intent', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Journey session not found' });
     }
 
-    // Record Terms Consent
     record.termsConsentAccepted = true;
     record.termsConsentTimestamp = new Date().toISOString();
     record.journeyState = 'CHECKOUT_CREATED';
 
-    // Calculate authoritative price
     const { amount, amountInSubUnits } = calculateAuthoritativePriceForMarket(
       record.serviceTitle,
       'GB',
@@ -750,7 +738,6 @@ app.post('/api/journey/create-checkout-intent', async (req, res) => {
       });
     }
 
-    // Direct Sandbox order fallback if offline/mock
     return res.status(200).json({
       success: true,
       gateway: 'sandbox',
@@ -767,7 +754,6 @@ app.post('/api/journey/create-checkout-intent', async (req, res) => {
   }
 });
 
-// 3. VERIFY PAYMENT CRYPTOGRAPHIC SIGNATURE & TRANSITION TO SCHEDULING_PENDING (Screen 3 -> PAYMENT_SUCCESS -> SCHEDULING_PENDING)
 app.post('/api/journey/verify-payment', async (req, res) => {
   try {
     const { sessionId, bookingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
@@ -795,13 +781,11 @@ app.post('/api/journey/verify-payment', async (req, res) => {
       }
     }
 
-    // Mark Payment Verified & Transition to SCHEDULING_PENDING
     record.paymentStatus = 'Paid';
     record.journeyState = 'SCHEDULING_PENDING';
     record.paymentDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     record.updatedAt = new Date().toISOString();
 
-    // Send automated email receipt via Brevo to customer
     sendServerEmail({
       toEmail: record.userEmail,
       toName: record.userName,
@@ -825,7 +809,6 @@ app.post('/api/journey/verify-payment', async (req, res) => {
       `
     }).catch(() => { });
 
-    // Send urgent notification to Admin team regarding pending coach assignment
     const adminEmail = process.env.VITE_ADMIN_EMAIL || process.env.BREVO_SENDER_EMAIL || 'khanshadan96@gmail.com';
     sendServerEmail({
       toEmail: adminEmail,
@@ -866,7 +849,6 @@ app.post('/api/journey/verify-payment', async (req, res) => {
   }
 });
 
-// 4. FETCH VERIFIED JOURNEY / BOOKING STATUS (Screen 4 / Screen 5 State Check)
 app.get('/api/journey/booking/:id', (req, res) => {
   const { id } = req.params;
   const record = ukJourneyStore.find(r => r.id === id || r.sessionId === id);
@@ -876,7 +858,6 @@ app.get('/api/journey/booking/:id', (req, res) => {
   return res.status(200).json({ success: true, record });
 });
 
-// FETCH LATEST JOURNEY BY USER EMAIL (For persistent logout/login dashboard state)
 app.get('/api/journey/latest-by-email/:email', async (req, res) => {
   try {
     const { email } = req.params;
@@ -896,7 +877,7 @@ app.get('/api/journey/latest-by-email/:email', async (req, res) => {
       return res.status(200).json({ success: true, record: userRecords[0] });
     }
 
-    // 2. Query NeonDB PostgreSQL
+    //Query NeonDB
     if (dbPool) {
       try {
         const dbRes = await dbPool.query(
@@ -949,7 +930,6 @@ app.get('/api/journey/latest-by-email/:email', async (req, res) => {
   }
 });
 
-// 5. ADMIN CONFIRM BOOKING & ASSIGN COACH (Screen 4 -> Screen 5: BOOKING_CONFIRMED)
 app.post('/api/admin/journey/confirm-booking', async (req, res) => {
   try {
     const {
@@ -991,7 +971,6 @@ app.post('/api/admin/journey/confirm-booking', async (req, res) => {
       } catch (e: any) { }
     }
 
-    // Send professional training schedule confirmation email to customer
     sendServerEmail({
       toEmail: record.userEmail,
       toName: record.userName,
@@ -1050,12 +1029,10 @@ app.post('/api/admin/journey/confirm-booking', async (req, res) => {
   }
 });
 
-// 6. ADMIN GET ALL JOURNEY BOOKINGS
 app.get('/api/admin/journey/bookings', (req, res) => {
   return res.status(200).json({ success: true, bookings: ukJourneyStore });
 });
 
-// STEP 3: Webhook Handlers with Replay Protection & Signature Validation
 app.post('/api/webhooks/razorpay', async (req, res) => {
   try {
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || '';
@@ -1160,7 +1137,6 @@ const enquiryLimiter = rateLimit({
 
 app.use('/api/', globalApiLimiter);
 
-// 4. SEO & PUBLIC STATIC ASSETS SERVING
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/robots.txt', (req, res) => {
@@ -1172,7 +1148,6 @@ app.get('/sitemap.xml', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
 });
 
-// 4. INPUT SANITIZATION
 function sanitizeInput(str: string): string {
   if (typeof str !== 'string') return '';
   if (str.startsWith('data:image/')) return str;
@@ -1195,7 +1170,6 @@ interface SendEmailOptions {
 }
 
 function buildFullHtmlEmail(subject: string, rawContent: string): string {
-  // 1. Unescape all HTML entities (including escaped slashes from sanitizer)
   let content = rawContent
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -1205,12 +1179,10 @@ function buildFullHtmlEmail(subject: string, rawContent: string): string {
     .replace(/&#x2f;/gi, '/')
     .replace(/&amp;/g, '&');
 
-  // If content is already a complete HTML document, return as is
   if (content.toLowerCase().includes('<!doctype html') || content.toLowerCase().includes('<html')) {
     return content;
   }
 
-  // 2. Wrap in responsive, bulletproof HTML email template
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1341,7 +1313,6 @@ async function sendServerEmail(options: SendEmailOptions): Promise<{ success: bo
   }
 }
 
-// Database Connection Setup for NeonDB / PostgreSQL
 let dbUrl = process.env.DATABASE_URL || '';
 if (dbUrl) {
   dbUrl = dbUrl
@@ -1520,7 +1491,6 @@ if (dbPool) {
   console.log('ℹ️ [DATABASE_URL] Running in BxStrength local sync fallback mode.');
 }
 
-// Middleware: Authenticate JWT Token
 const authenticateToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -1540,7 +1510,6 @@ const authenticateToken = (req: any, res: any, next: any) => {
   });
 };
 
-// Middleware: Role Authorization
 const authorizeRoles = (...allowedRoles: string[]) => {
   return (req: any, res: any, next: any) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {
@@ -1550,7 +1519,6 @@ const authorizeRoles = (...allowedRoles: string[]) => {
   };
 };
 
-// --- HEALTH & SYSTEM SECURITY STATUS ---
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -1566,7 +1534,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// --- AUTHENTICATION ROUTES ---
 app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const rawName = req.body.name;
@@ -1595,8 +1562,6 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Please enter a valid mobile phone number (7 to 15 digits).' });
     }
 
-    // Public Registration Security: Default role is strictly 'client'.
-    // Admin & Coach roles can ONLY be granted/revoked by an Admin.
     const userRole = 'client';
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(rawPassword, salt);

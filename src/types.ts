@@ -1,6 +1,6 @@
 export type ViewPage = 'home' | 'about' | 'services' | 'pricing' | 'schedule' | 'trainers' | 'blog' | 'contact' | 'dashboard' | 'admin' | 'terms' | 'privacy' | 'support_dashboard';
 
-export type MarketCountry = 'GB' | 'IN'; // GB = United Kingdom (£ GBP), IN = India (₹ INR)
+export type MarketCountry = 'GB' | 'IN'; 
 export type CurrencyCode = 'GBP' | 'INR';
 export type CurrencySymbol = '£' | '₹';
 
