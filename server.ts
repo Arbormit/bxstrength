@@ -1602,11 +1602,9 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       };
     }
 
-    // Trigger Professional Welcome Email to User & Admin Notification via Unified Email Service
     const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
     const adminEmail = process.env.VITE_ADMIN_EMAIL || 'support@bxstrength.com';
 
-    // 1. Send Professional Welcome Email to New User
     sendServerEmail({
       toEmail: email,
       toName: name,
@@ -1646,7 +1644,6 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       `
     }).catch((err) => console.error('[WELCOME EMAIL EXCEPTION]', err.message));
 
-    // 2. Send Admin Alert Email
     sendServerEmail({
       toEmail: adminEmail,
       toName: 'BxStrength Admin',
@@ -1731,7 +1728,6 @@ app.get('/api/auth/me', authenticateToken, (req: any, res) => {
   res.json({ user: req.user });
 });
 
-// --- FORGOT PASSWORD ENDPOINT ---
 app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   try {
     const { email } = req.body;
@@ -1827,7 +1823,6 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   }
 });
 
-// --- RESET PASSWORD ENDPOINT ---
 app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
   try {
     const { email, newPassword, token } = req.body;
@@ -1840,7 +1835,6 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
 
     let cleanEmail = email ? sanitizeInput(email).toLowerCase() : '';
 
-    // Verify JWT token with 5-minute strict check
     if (token) {
       try {
         const decoded: any = jwt.verify(token, JWT_SECRET);
@@ -1883,7 +1877,6 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
       }
     }
 
-    // Send confirmation notification email via Brevo API v3
     sendServerEmail({
       toEmail: cleanEmail,
       toName: cleanEmail.split('@')[0],
@@ -1931,7 +1924,6 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
   }
 });
 
-// In-Memory Enquiries Data Store (Synchronized with NeonDB/Local Storage)
 interface ServerEnquiry {
   id: string;
   name: string;
@@ -1946,7 +1938,6 @@ interface ServerEnquiry {
 
 const enquiriesStore: ServerEnquiry[] = [];
 
-// --- SELF ASSESSMENT LEAD CAPTURE ROUTE ---
 app.post('/api/assessments', enquiryLimiter, async (req, res) => {
   try {
     const { primaryGoal, mainObstacle, experienceLevel, weeklyCommitment, name, email, phone } = req.body;
@@ -1996,7 +1987,6 @@ app.post('/api/assessments', enquiryLimiter, async (req, res) => {
   }
 });
 
-// --- FREE CONSULTATION BOOKINGS ---
 app.post('/api/consultations', enquiryLimiter, async (req, res) => {
   try {
     const { name, email, phone, goal, duration, coachPreference, preferredDate, preferredTime } = req.body;
@@ -2063,11 +2053,9 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
       } catch (e: any) { }
     }
 
-    // Trigger Email Notifications to Client & Admin via Unified Email Service
     const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
     const adminEmail = process.env.VITE_ADMIN_EMAIL || 'support@bxstrength.com';
 
-    // 1. Send Client Email
     sendServerEmail({
       toEmail: leadEmail,
       toName: leadName,
@@ -2091,7 +2079,6 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
       `
     }).catch((err) => console.error('[CONSULTATION CLIENT EMAIL ERROR]', err.message));
 
-    // 2. Send Admin Alert Email
     sendServerEmail({
       toEmail: adminEmail,
       toName: 'BxStrength Admin',
@@ -2121,7 +2108,6 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
   }
 });
 
-// Check Email Service Status & API Configuration Health
 app.get('/api/email/status', async (req, res) => {
   try {
     const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
@@ -2173,7 +2159,6 @@ app.get('/api/email/status', async (req, res) => {
   }
 });
 
-// Verification / Test Email Endpoint
 app.post('/api/email/test', async (req, res) => {
   try {
     const { targetEmail } = req.body;
@@ -2213,7 +2198,6 @@ app.post('/api/email/test', async (req, res) => {
   }
 });
 
-// Generic Mail Proxy Endpoint for Frontend Services
 app.post('/api/send-email', async (req, res) => {
   try {
     const { toEmail, toName, subject, htmlContent, senderName } = req.body;
@@ -2254,7 +2238,6 @@ app.get('/api/consultations', async (req, res) => {
   }
 });
 
-// --- CRM USER MANAGEMENT ---
 app.get('/api/users', async (req, res) => {
   try {
     if (dbPool) {
@@ -2398,7 +2381,6 @@ app.delete('/api/users/:id', authenticateToken, authorizeRoles('admin'), async (
   }
 });
 
-// --- CONTACT FORM ENQUIRIES ENDPOINTS ---
 app.get('/api/enquiries', async (req, res) => {
   try {
     if (dbPool) {
@@ -2479,7 +2461,6 @@ app.delete('/api/enquiries/:id', authenticateToken, authorizeRoles('admin'), asy
   }
 });
 
-// --- CLIENT REVIEWS ENDPOINTS ---
 interface ServerReview {
   id: string;
   name: string;
@@ -2543,7 +2524,6 @@ app.get('/api/reviews', async (req, res) => {
 
     const listToUse = cleanRows.length > 0 ? cleanRows : SEED_REVIEWS;
 
-    // Deduplicate by identical name + comment content
     const uniqueMap = new Map<string, ServerReview>();
     listToUse.forEach(r => {
       const contentKey = `${r.name.toLowerCase().trim()}:::${r.comment.trim()}`;
@@ -2569,7 +2549,6 @@ app.post('/api/reviews', async (req, res) => {
     if (processedAvatar && typeof processedAvatar === 'string' && processedAvatar.startsWith('data:image')) {
       processedAvatar = processedAvatar.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&');
 
-      // Strict Server-side 500KB Image Size Limit check
       const base64Data = processedAvatar.split(',')[1] || '';
       const approximateBytes = Math.round((base64Data.length * 3) / 4);
       if (approximateBytes > 500 * 1024) {
@@ -2627,7 +2606,6 @@ app.post('/api/reviews', async (req, res) => {
   }
 });
 
-// --- REAL-TIME COACH CARDS & NEONDB TRAINERS ENDPOINTS ---
 interface ServerTrainer {
   id: string;
   name: string;
@@ -2953,7 +2931,6 @@ app.delete('/api/trainers/:id', authenticateToken, authorizeRoles('admin', 'coac
   }
 });
 
-// --- SUPPORT TICKETS REAL-TIME ENGINE & BREVO INTEGRATION ---
 interface ServerTicket {
   id: string;
   userId: string;
@@ -2986,7 +2963,6 @@ const mapRowToTicket = (row: any): ServerTicket => ({
 
 const ticketsStore: ServerTicket[] = [];
 
-// --- ANNOUNCEMENTS DB API ROUTES ---
 app.get('/api/announcements', async (req, res) => {
   try {
     if (dbPool) {
@@ -3105,7 +3081,6 @@ app.post('/api/tickets', enquiryLimiter, async (req, res) => {
       updatedAt: new Date().toISOString()
     };
 
-    // 1. First store into NeonDB Database
     if (dbPool) {
       try {
         await dbPool.query(
@@ -3118,10 +3093,8 @@ app.post('/api/tickets', enquiryLimiter, async (req, res) => {
       }
     }
 
-    // 2. Also keep in memory store
     ticketsStore.unshift(newTicket);
 
-    // Trigger Real Email Dispatch to Admin via Unified Email Service
     const adminEmail = process.env.VITE_ADMIN_EMAIL || 'khanshadan96@gmail.com';
     sendServerEmail({
       toEmail: adminEmail,
@@ -3174,8 +3147,6 @@ app.patch('/api/tickets/:id', authenticateToken, authorizeRoles('admin', 'coach'
         // Fallback silently
       }
     }
-
-    // 2. Update status in memory store
     const idx = ticketsStore.findIndex(t => t.id === id);
     if (idx !== -1) {
       if (status) ticketsStore[idx].status = status;
@@ -3229,10 +3200,8 @@ app.delete('/api/tickets/:id', authenticateToken, authorizeRoles('admin'), async
   }
 });
 
-// Serve static production build assets if present
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// SPA Wildcard Route Fallback
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api')) {
     return next();
@@ -3245,7 +3214,6 @@ app.get('*', (req, res, next) => {
   });
 });
 
-// Global Exception Handler Middleware
 app.use((err: any, req: any, res: any, next: any) => {
   console.error('🔥 Global API Error Trapped:', err.stack || err.message || err);
   res.status(500).json({ error: 'An unexpected internal error occurred. Please try again later.' });
