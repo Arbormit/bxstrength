@@ -212,7 +212,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         {/* Bottom copyright */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-400">
           <p className="text-center sm:text-left">
-            © 2026 BxStrength. All rights reserved. | Design &amp; Developed by : <a href="https://www.arbormit.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors underline font-semibold">Arbormit</a>
+            © 2026 BxStrength. All rights reserved.
           </p>
 
           <div className="flex items-center gap-4 text-xs">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Dumbbell, Flame, HeartPulse, Activity, Zap, CheckCircle2, AlertCircle, 
-  Target, ShieldCheck, RefreshCw, Home, Video, Trophy, Users, Award, Heart, 
+import {
+  Dumbbell, Flame, HeartPulse, Activity, Zap, CheckCircle2, AlertCircle,
+  Target, ShieldCheck, RefreshCw, Home, Video, Trophy, Users, Award, Heart,
   ChevronDown, ChevronRight, Tag, Clock, Gift, Calendar, Check, Filter, ArrowRight, ArrowUpDown,
   Sparkles, Info, DollarSign, Layers, Percent, UserCheck, HelpCircle, SlidersHorizontal
 } from 'lucide-react';
@@ -446,7 +446,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
   return (
     <section id="services-section" className="w-full bg-[#09090b] text-white py-20 border-b border-zinc-800 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Section Header */}
         <div className="text-center max-w-4xl mx-auto mb-12">
           <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
@@ -461,11 +461,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8 text-xs font-bold">
           <div
             onClick={() => setFilterCategory(filterCategory === 'individual' ? 'all' : 'individual')}
-            className={`p-5 rounded-2xl flex items-center gap-4 shadow-xl cursor-pointer transition-all duration-300 border ${
-              filterCategory === 'individual'
+            className={`p-5 rounded-2xl flex items-center gap-4 shadow-xl cursor-pointer transition-all duration-300 border ${filterCategory === 'individual'
                 ? 'bg-amber-950/80 border-amber-400 ring-2 ring-amber-500/50 scale-[1.01]'
                 : 'bg-zinc-900/90 border-amber-500/30 hover:border-amber-400/70 hover:bg-zinc-800/80'
-            }`}
+              }`}
           >
             <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
               <Flame className="w-6 h-6" />
@@ -481,11 +480,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
 
           <div
             onClick={() => setFilterCategory(filterCategory === 'custom' ? 'all' : 'custom')}
-            className={`p-5 rounded-2xl flex items-center gap-4 shadow-xl cursor-pointer transition-all duration-300 border ${
-              filterCategory === 'custom'
+            className={`p-5 rounded-2xl flex items-center gap-4 shadow-xl cursor-pointer transition-all duration-300 border ${filterCategory === 'custom'
                 ? 'bg-sky-950/80 border-sky-400 ring-2 ring-sky-500/50 scale-[1.01]'
                 : 'bg-zinc-900/90 border-sky-500/30 hover:border-sky-400/70 hover:bg-zinc-800/80'
-            }`}
+              }`}
           >
             <div className="w-11 h-11 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center shrink-0 border border-sky-500/20">
               <Zap className="w-6 h-6" />
@@ -502,7 +500,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
 
         {/* --- COMPACT RESPONSIVE SERVICE FILTER & SORT BAR --- */}
         <div className="bg-[#121215]/95 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 mb-10 shadow-2xl backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          
+
           {/* Dropdown Select List Filter (2 Main Options + All) */}
           <div className="w-full sm:w-auto flex-1 max-w-md">
             <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest block mb-1.5 flex items-center gap-1.5">
@@ -713,8 +711,8 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onOpenBooking,
               className="bg-zinc-900 hover:bg-zinc-800 text-[#CCFF00] border border-zinc-700 font-black text-xs uppercase tracking-widest px-8 py-4 rounded-2xl transition-all cursor-pointer shadow-xl inline-flex items-center gap-3 active:scale-[0.98]"
             >
               <span>
-                {showAllServices 
-                  ? 'SHOW LESS PROGRAMS' 
+                {showAllServices
+                  ? 'SHOW LESS PROGRAMS'
                   : `VIEW ALL ${sortedServices.length} TRAINING PROGRAMS (SORTED HIGH TO LOW)`}
               </span>
               <ChevronDown className={`w-4 h-4 text-[#CCFF00] transition-transform duration-300 ${showAllServices ? 'rotate-180' : ''}`} />
