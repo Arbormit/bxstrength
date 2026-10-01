@@ -241,17 +241,17 @@ function calculateAuthoritativePriceForMarket(
   customExercises?: string[]
 ): { amount: number; currency: 'GBP'; amountInSubUnits: number } {
   const normKey = (planName || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
-  let matched = AUTHORITATIVE_PRICING_CATALOG['default'];
+  let matched = AUTHORITATIVE_PRICING_CATALOG['testing'];
 
   for (const [key, val] of Object.entries(AUTHORITATIVE_PRICING_CATALOG)) {
-    if (normKey.includes(key)) {
+    if (key !== 'default' && normKey.includes(key)) {
       matched = val;
       break;
     }
   }
 
   const currency: 'GBP' = 'GBP';
-  let basePrice = matched.gbpBasePrice;
+  let basePrice = matched ? matched.gbpBasePrice : 0.5;
 
   if (serviceType === 'custom' && Array.isArray(customExercises)) {
     const extraCount = Math.max(0, customExercises.length - 3);

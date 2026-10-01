@@ -91,7 +91,7 @@ export const createRazorpayOrder = async (
       country: activeCountry,
       phone: phone || notes?.userPhone,
       receipt,
-      planName: notes?.planName || 'BxStrength Protocol',
+      planName: notes?.planName || 'Testing',
       serviceType: notes?.serviceType || 'individual',
       customExercises: notes?.customExercises ? String(notes.customExercises).split(', ') : [],
       userEmail: notes?.userEmail,
