@@ -227,8 +227,7 @@ const AUTHORITATIVE_PRICING_CATALOG: Record<string, MarketPrice> = {
   'personal-training': { gbpBasePrice: 50, inrBasePrice: 3999, name: 'Personal Training' },
   'boxing-training': { gbpBasePrice: 48, inrBasePrice: 4499, name: 'Boxing Training' },
   'fitness-training': { gbpBasePrice: 30, inrBasePrice: 2499, name: 'Fitness Training' },
-  'basic': { gbpBasePrice: 39, inrBasePrice: 2999, name: 'Basic Pass' },
-  'testing': { gbpBasePrice: 0.1, inrBasePrice: 0.1, name: 'Testing' },
+  'testing': { gbpBasePrice: 0.5, inrBasePrice: 0.5, name: 'Testing' },
 };
 
 function determineMarketCountry(_country?: string, _phone?: string): 'GB' {
@@ -322,7 +321,7 @@ app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/crea
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
           [transactionId, effectiveIdempotencyKey, userEmail || '', userName || '', planName, serviceType, JSON.stringify(customExercises), amount, currency, 'razorpay', 'initiated']
         );
-      } catch (e: any) {}
+      } catch (e: any) { }
     }
 
     // --- STEP A: TRY PRIMARY GATEWAY (RAZORPAY) ---
@@ -350,7 +349,7 @@ app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/crea
       txRecord.updatedAt = new Date().toISOString();
 
       if (dbPool) {
-        dbPool.query(`UPDATE payment_transactions SET gateway_order_id = $1, status = 'order_created', updated_at = NOW() WHERE id = $2`, [order.id, transactionId]).catch(() => {});
+        dbPool.query(`UPDATE payment_transactions SET gateway_order_id = $1, status = 'order_created', updated_at = NOW() WHERE id = $2`, [order.id, transactionId]).catch(() => { });
       }
 
       return res.status(200).json({
@@ -410,7 +409,7 @@ app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/crea
           txRecord.updatedAt = new Date().toISOString();
 
           if (dbPool) {
-            dbPool.query(`UPDATE payment_transactions SET gateway = 'cashfree', gateway_order_id = $1, status = 'order_created', updated_at = NOW() WHERE id = $2`, [cfData.order_id || transactionId, transactionId]).catch(() => {});
+            dbPool.query(`UPDATE payment_transactions SET gateway = 'cashfree', gateway_order_id = $1, status = 'order_created', updated_at = NOW() WHERE id = $2`, [cfData.order_id || transactionId, transactionId]).catch(() => { });
           }
 
           return res.status(200).json({
@@ -433,7 +432,7 @@ app.post(['/api/create-order', '/api/create-razorpay-order', '/api/payments/crea
       txRecord.updatedAt = new Date().toISOString();
 
       if (dbPool) {
-        dbPool.query(`UPDATE payment_transactions SET gateway = 'cashfree', gateway_order_id = $1, status = 'order_created', updated_at = NOW() WHERE id = $2`, [transactionId, transactionId]).catch(() => {});
+        dbPool.query(`UPDATE payment_transactions SET gateway = 'cashfree', gateway_order_id = $1, status = 'order_created', updated_at = NOW() WHERE id = $2`, [transactionId, transactionId]).catch(() => { });
       }
 
       return res.status(200).json({
@@ -514,7 +513,7 @@ app.post(['/api/verify-payment', '/api/verify-razorpay-payment', '/api/payments/
         dbPool.query(
           `UPDATE payment_transactions SET gateway_payment_id = $1, status = 'reconciled', updated_at = NOW() WHERE gateway_order_id = $2 OR id = $3`,
           [razorpay_payment_id, razorpay_order_id, transactionId || '']
-        ).catch(() => {});
+        ).catch(() => { });
       }
 
       return res.status(200).json({
@@ -572,17 +571,17 @@ export interface UkBookingJourneyRecord {
   paymentDate?: string;
   paymentStatus: 'Paid' | 'Failed' | 'Pending';
   journeyState: UkJourneyState;
-  
+
   // Health & Onboarding Disclosures (Screen 1)
   is18PlusConfirmed: boolean;
   isVirtualCoachingConfirmed: boolean;
   isHealthDisclosureConfirmed: boolean;
   isSafeSpaceConfirmed: boolean;
-  
+
   // Terms Consent (Screen 2)
   termsConsentAccepted: boolean;
   termsConsentTimestamp?: string;
-  
+
   // Confirmed Session Details (Screen 5 - populated by Admin)
   coachName?: string;
   coachTitle?: string;
@@ -824,7 +823,7 @@ app.post('/api/journey/verify-payment', async (req, res) => {
           </div>
         </div>
       `
-    }).catch(() => {});
+    }).catch(() => { });
 
     // Send urgent notification to Admin team regarding pending coach assignment
     const adminEmail = process.env.VITE_ADMIN_EMAIL || process.env.BREVO_SENDER_EMAIL || 'khanshadan96@gmail.com';
@@ -849,7 +848,7 @@ app.post('/api/journey/verify-payment', async (req, res) => {
           <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">Please open the Admin CRM dashboard to assign a dedicated UK coach and confirm their training schedule.</p>
         </div>
       `
-    }).catch(() => {});
+    }).catch(() => { });
 
     return res.status(200).json({
       success: true,
@@ -941,7 +940,7 @@ app.get('/api/journey/latest-by-email/:email', async (req, res) => {
           ukJourneyStore.unshift(record);
           return res.status(200).json({ success: true, record });
         }
-      } catch (e: any) {}
+      } catch (e: any) { }
     }
 
     return res.status(404).json({ success: false, error: 'No active journey found for user' });
@@ -989,7 +988,7 @@ app.post('/api/admin/journey/confirm-booking', async (req, res) => {
            WHERE id = $9 OR session_id = $9`,
           [coachName, coachTitle, coachAvatar, scheduledDate, scheduledTime, timeZone, duration, joinUrl, bookingId]
         );
-      } catch (e: any) {}
+      } catch (e: any) { }
     }
 
     // Send professional training schedule confirmation email to customer
@@ -1039,7 +1038,7 @@ app.post('/api/admin/journey/confirm-booking', async (req, res) => {
           </div>
         </div>
       `
-    }).catch(() => {});
+    }).catch(() => { });
 
     return res.status(200).json({
       success: true,
@@ -1098,7 +1097,7 @@ app.post('/api/webhooks/razorpay', async (req, res) => {
         dbPool.query(
           `UPDATE payment_transactions SET gateway_payment_id = $1, status = 'reconciled', updated_at = NOW() WHERE gateway_order_id = $2`,
           [paymentId, orderId]
-        ).catch(() => {});
+        ).catch(() => { });
       }
     }
 
@@ -1134,7 +1133,7 @@ app.post(['/api/webhooks/cashfree', '/api/payments/cashfree-webhook'], async (re
         dbPool.query(
           `UPDATE payment_transactions SET gateway_payment_id = $1, status = 'reconciled', updated_at = NOW() WHERE gateway_order_id = $2 OR id = $2`,
           [String(paymentId), orderId]
-        ).catch(() => {});
+        ).catch(() => { });
       }
     }
 
@@ -1310,7 +1309,7 @@ async function sendServerEmail(options: SendEmailOptions): Promise<{ success: bo
     const responseText = await res.text();
     if (res.ok) {
       let data: any = {};
-      try { data = JSON.parse(responseText); } catch {}
+      try { data = JSON.parse(responseText); } catch { }
       console.log(`✅ [EMAIL SENT - BREVO API v3] Delivered to ${options.toEmail} | MessageId: ${data.messageId || 'OK'}`);
       return { success: true, provider: 'Brevo API (v3)', messageId: data.messageId };
     } else {
@@ -1318,7 +1317,7 @@ async function sendServerEmail(options: SendEmailOptions): Promise<{ success: bo
       try {
         const errData = JSON.parse(responseText);
         errorMessage = errData.message || errorMessage;
-      } catch {}
+      } catch { }
 
       console.error(`❌ [EMAIL BREVO ERROR ${res.status}] Failed sending to ${options.toEmail}: ${responseText}`);
 
@@ -1352,16 +1351,16 @@ if (dbUrl) {
 
 const dbPool = process.env.DATABASE_URL
   ? new Pool({
-      connectionString: dbUrl,
-      ssl: { rejectUnauthorized: false },
-      max: 25,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000
-    })
+    connectionString: dbUrl,
+    ssl: { rejectUnauthorized: false },
+    max: 25,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000
+  })
   : null;
 
 if (dbPool) {
-  dbPool.on('error', () => {});
+  dbPool.on('error', () => { });
 
   dbPool.query('SELECT NOW()', async (err, res) => {
     if (!err) {
@@ -1700,7 +1699,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
           <p style="font-size: 11px; color: #71717a;">Stored in NeonDB PostgreSQL database.</p>
         </div>
       `
-    }).catch(() => {});
+    }).catch(() => { });
 
     const token = jwt.sign({ id: registeredUser.id, email: registeredUser.email, role: registeredUser.role, name: registeredUser.name }, JWT_SECRET, { expiresIn: '7d' });
     return res.status(201).json({ user: registeredUser, token });
@@ -1776,7 +1775,7 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
     }
 
     const cleanEmail = sanitizeInput(email).toLowerCase();
-    
+
     // Generate secure password reset token strictly valid for 5 MINUTES
     const resetToken = jwt.sign({ email: cleanEmail, purpose: 'password_reset' }, JWT_SECRET, { expiresIn: '5m' });
 
@@ -1887,8 +1886,8 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
         }
       } catch (tokenErr: any) {
         if (tokenErr.name === 'TokenExpiredError') {
-          return res.status(400).json({ 
-            error: 'The 5-minute password reset link has expired. Please request a new reset email.' 
+          return res.status(400).json({
+            error: 'The 5-minute password reset link has expired. Please request a new reset email.'
           });
         }
         return res.status(400).json({ error: 'Invalid or corrupted reset token. Please request a new link.' });
@@ -1909,7 +1908,7 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
     if (dbPool) {
       try {
         const dbResult = await dbPool.query(
-          'UPDATE users SET password_hash = $1 WHERE LOWER(email) = $2 RETURNING id, email', 
+          'UPDATE users SET password_hash = $1 WHERE LOWER(email) = $2 RETURNING id, email',
           [hashedPassword, cleanEmail]
         );
         updatedDbRows = dbResult.rowCount || 0;
@@ -1954,10 +1953,10 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
   </div>
 </body>
 </html>`
-    }).catch(() => {});
+    }).catch(() => { });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Your password has been successfully updated in NeonDB! You can now sign in with your new password.',
       dbUpdated: updatedDbRows > 0
     });
@@ -2022,7 +2021,7 @@ app.post('/api/assessments', enquiryLimiter, async (req, res) => {
            VALUES ($1, $2, $3, $4, $5, $6, 'new', NOW())`,
           [enquiryId, leadName, leadEmail, leadPhone, newEnquiry.subject, assessmentMessage]
         );
-      } catch (e: any) {}
+      } catch (e: any) { }
     }
 
     res.status(201).json({ message: 'Lead self-assessment recorded successfully', data: newEnquiry });
@@ -2074,7 +2073,7 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
            VALUES ($1, $2, $3, $4, $5, $6, 'new', NOW())`,
           [enquiryId, leadName, leadEmail, leadPhone, newEnquiry.subject, consultationMessage]
         );
-      } catch (e: any) {}
+      } catch (e: any) { }
 
       try {
         await dbPool.query(
@@ -2096,7 +2095,7 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Confirmed')`,
           [bookingRef, leadName, leadEmail, leadPhone, leadGoal, leadDuration, date, time]
         );
-      } catch (e: any) {}
+      } catch (e: any) { }
     }
 
     // Trigger Email Notifications to Client & Admin via Unified Email Service
@@ -2281,7 +2280,7 @@ app.get('/api/consultations', async (req, res) => {
       try {
         const result = await dbPool.query('SELECT * FROM consultations ORDER BY created_at DESC');
         return res.json(result.rows);
-      } catch {}
+      } catch { }
     }
     const consultationEnquiries = enquiriesStore.filter(e => e.subject.includes('Consultation'));
     res.json(consultationEnquiries);
@@ -2391,11 +2390,11 @@ app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
             billing_statements = COALESCE($11, billing_statements)
            WHERE id = $12`,
           [
-            name ? sanitizeInput(name) : null, 
-            email ? sanitizeInput(email).toLowerCase() : null, 
-            phone ? sanitizeInput(phone) : null, 
-            cleanRole, 
-            coachPosition ? sanitizeInput(coachPosition) : null, 
+            name ? sanitizeInput(name) : null,
+            email ? sanitizeInput(email).toLowerCase() : null,
+            phone ? sanitizeInput(phone) : null,
+            cleanRole,
+            coachPosition ? sanitizeInput(coachPosition) : null,
             parsedHeight,
             age ? Number(age) : null,
             gender ? sanitizeInput(gender) : null,
@@ -2548,7 +2547,7 @@ app.get('/api/reviews', async (req, res) => {
     if (dbPool) {
       try {
         // Automatically purge any curl/test entries from NeonDB table
-        await dbPool.query("DELETE FROM reviews WHERE LOWER(name) LIKE '%test%' OR id LIKE 'rev-17893%'").catch(() => {});
+        await dbPool.query("DELETE FROM reviews WHERE LOWER(name) LIKE '%test%' OR id LIKE 'rev-17893%'").catch(() => { });
 
         const result = await dbPool.query('SELECT * FROM reviews ORDER BY created_at DESC');
         rawList = result.rows.map(r => ({
@@ -2571,7 +2570,7 @@ app.get('/api/reviews', async (req, res) => {
       rawList = [...SEED_REVIEWS];
     }
 
-    const cleanRows = rawList.filter(r => 
+    const cleanRows = rawList.filter(r =>
       r.name && !r.name.toLowerCase().includes('test') &&
       r.id !== 'rev-1' && r.id !== 'rev-2' && r.id !== 'rev-3' &&
       r.id !== 't1' && r.id !== 't2' && r.id !== 't3'
@@ -2604,7 +2603,7 @@ app.post('/api/reviews', async (req, res) => {
     let processedAvatar = avatar;
     if (processedAvatar && typeof processedAvatar === 'string' && processedAvatar.startsWith('data:image')) {
       processedAvatar = processedAvatar.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&');
-      
+
       // Strict Server-side 500KB Image Size Limit check
       const base64Data = processedAvatar.split(',')[1] || '';
       const approximateBytes = Math.round((base64Data.length * 3) / 4);
@@ -2749,7 +2748,7 @@ const ensureTrainerColumnsExist = async () => {
   for (const stmt of alterStatements) {
     try {
       await dbPool.query(stmt);
-    } catch {}
+    } catch { }
   }
 };
 
@@ -2767,7 +2766,7 @@ app.get('/api/trainers', async (req, res) => {
           try {
             const retryRes = await dbPool.query('SELECT * FROM trainers ORDER BY created_at ASC');
             return res.json(retryRes.rows.map(mapRowToTrainer));
-          } catch {}
+          } catch { }
         }
       }
     }
@@ -2799,7 +2798,7 @@ app.post('/api/trainers', authenticateToken, async (req: any, res: any) => {
     const cleanSecondaryBio = sanitizeInput(secondaryBio || '');
     const cleanCert = sanitizeInput(certification || 'UK Certified Master Coach');
     const cleanAvail = sanitizeInput(availability || 'Mon - Sat (Flexible)');
-    
+
     const parsedSpecialties = Array.isArray(specialties) ? specialties : (typeof specialties === 'string' ? specialties.split(',').map(s => s.trim()).filter(Boolean) : ['Strength & Conditioning']);
     const parsedLanguages = Array.isArray(languages) ? languages : (typeof languages === 'string' ? languages.split(',').map(l => l.trim()).filter(Boolean) : ['English']);
     const parsedCerts = Array.isArray(certifications) ? certifications : (typeof certifications === 'string' ? certifications.split('\n').map(c => c.trim()).filter(Boolean) : [cleanCert]);
@@ -2974,7 +2973,7 @@ app.delete('/api/trainers/:id', authenticateToken, authorizeRoles('admin', 'coac
     if (dbPool) {
       try {
         await dbPool.query('DELETE FROM trainers WHERE id = $1', [id]);
-      } catch (e: any) {}
+      } catch (e: any) { }
     }
 
     const idx = trainersStore.findIndex(t => t.id === id);
@@ -3299,7 +3298,7 @@ app.listen(Number(PORT) || 3001, '0.0.0.0', () => {
       .then((res) => {
         if (res.ok) console.log(`  ➜  Keep-Alive Heartbeat: Active (${new Date().toLocaleTimeString()})`);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, KEEP_ALIVE_INTERVAL_MS);
 });
 
