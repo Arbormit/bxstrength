@@ -83,7 +83,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
     { label: '🏋️ Coaching Programs', query: 'What coaching programs do you offer?' },
     { label: '📅 Book 15-Min Session', query: 'How can I book a 15-min discovery session?' },
     { label: '💰 Pricing & Packages', query: 'What are your pricing plans and session rates?' },
-    { label: '👤 Speak with Human Coach', query: 'I want to speak with a human coach' },
+    { label: '👤 Talk with Agent', query: 'I want to speak with a human coach' },
   ];
 
   const processBotResponse = (userQuery: string) => {
@@ -101,7 +101,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
       } else if (q.includes('price') || q.includes('cost') || q.includes('package') || q.includes('fee') || q.includes('rate')) {
         botAnswer = "Our 1-on-1 virtual coaching starts at $20 per session, with premium packages at $40, $60, and $80 depending on the level of dedicated 24/7 support and customized nutrition plans.";
       } else if (q.includes('human') || q.includes('coach') || q.includes('support') || q.includes('agent') || q.includes('talk') || q.includes('contact') || q.includes('phone') || q.includes('number')) {
-        botAnswer = "I will connect you directly with our Head Coach & support team. Please fill in your details below so we can contact you directly via WhatsApp or Email!";
+        botAnswer = "I will connect you directly with our customer support team. Please fill in your details below so we can contact you directly via WhatsApp or Email!";
         triggerForm = true;
         setShowEscalationForm(true);
       } else {
@@ -179,7 +179,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
       userName: contactName,
       userEmail: contactEmail,
       subject: `[${targetAgent}] Chatbot Inquiry from ${contactName}`,
-      category: targetAgent === 'CS Team' ? 'CS Support Team' : 'Executive Coaching Agent',
+      category: targetAgent === 'CS Team' ? 'Customer Support Team' : 'CST',
       priority: 'high',
       description: `[Routed to ${targetAgent}]\n${contactMsg || 'User requested support callback.'}`
     }).catch(() => {});
@@ -241,7 +241,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
                   BxStrength AI Assistant
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </h3>
-                <p className="text-[10px] text-zinc-400 font-semibold">Head Coach &amp; Support Team Active</p>
+                <p className="text-[10px] text-zinc-400 font-semibold">AI Assistant Active</p>
               </div>
             </div>
             <button
@@ -328,7 +328,6 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
 
                 {/* CS Team vs Company Agent Selection */}
                 <div>
-                  <label className="block text-[10px] font-bold text-zinc-300 uppercase mb-1">Select Support Agent *</label>
                   <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#121214] border border-zinc-700 rounded-lg">
                     <button
                       type="button"
@@ -339,18 +338,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
                           : 'text-zinc-400 hover:text-white'
                       }`}
                     >
-                      CS Team
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTargetAgent('Company Agent')}
-                      className={`py-1.5 px-2 rounded-md font-bold text-[10px] uppercase transition-all cursor-pointer ${
-                        targetAgent === 'Company Agent'
-                          ? 'bg-[#CCFF00] text-black shadow-sm font-black'
-                          : 'text-zinc-400 hover:text-white'
-                      }`}
-                    >
-                      Company Agent
+                      Customer Support Team
                     </button>
                   </div>
                 </div>
