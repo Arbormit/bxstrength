@@ -485,7 +485,7 @@ export const VelocityAPI = {
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
   },
 
-  // --- USERS MANAGEMENT (CRM) ---
+  //USERS MANAGEMENT (CRM)
   getUsers(): User[] {
     initStore();
     return getItem<User[]>(STORAGE_KEYS.USERS, SEED_USERS);
@@ -649,7 +649,7 @@ export const VelocityAPI = {
       this.addAuditLog(users[idx].id, users[idx].name, users[idx].role, 'PASSWORD_RESET_SUCCESS', `Password successfully reset for account ${email}`);
       return true;
     }
-    return true; // Return true to avoid user enumeration leaking
+    return true;
   },
 
   async deleteUser(id: string): Promise<void> {
@@ -682,7 +682,7 @@ export const VelocityAPI = {
     return await this.updateUser(id, { isVerified });
   },
 
-  // --- BODY STATS & BMI ---
+  // BODY STATS & BMI
   getBodyStats(userId: string): BodyStat[] {
     initStore();
     const stats = getItem<BodyStat[]>(STORAGE_KEYS.BODY_STATS, SEED_BODY_STATS);
@@ -720,7 +720,7 @@ export const VelocityAPI = {
     return newStat;
   },
 
-  // --- CLASSES & SCHEDULE ---
+  // CLASSES & SCHEDULE
   getClasses(): ClassSchedule[] {
     initStore();
     return getItem<ClassSchedule[]>(STORAGE_KEYS.CLASSES, SEED_CLASSES);
@@ -774,7 +774,7 @@ export const VelocityAPI = {
     }
   },
 
-  // --- BOOKINGS ---
+  // BOOKINGS
   getBookings(userId?: string): Booking[] {
     initStore();
     const bookings = getItem<Booking[]>(STORAGE_KEYS.BOOKINGS, SEED_BOOKINGS);
@@ -849,7 +849,7 @@ export const VelocityAPI = {
     }
   },
 
-  // --- WORKOUT PROGRAMS ---
+  // WORKOUT PROGRAMS
   getPrograms(assignedUserId?: string): WorkoutProgram[] {
     initStore();
     const progs = getItem<WorkoutProgram[]>(STORAGE_KEYS.PROGRAMS, SEED_PROGRAMS);
@@ -898,7 +898,7 @@ export const VelocityAPI = {
     setItem(STORAGE_KEYS.PROGRAMS, progs);
   },
 
-  // --- NUTRITION PLANS ---
+  //NUTRITION PLANS
   getNutritionPlans(assignedUserId?: string): NutritionPlan[] {
     initStore();
     const plans = getItem<NutritionPlan[]>(STORAGE_KEYS.NUTRITION, SEED_NUTRITION);
@@ -942,7 +942,7 @@ export const VelocityAPI = {
     return newPlan;
   },
 
-  // --- SUBSCRIPTIONS ---
+  // SUBSCRIPTIONS
   getSubscriptions(): Subscription[] {
     initStore();
     return getItem<Subscription[]>(STORAGE_KEYS.SUBSCRIPTIONS, SEED_SUBSCRIPTIONS);
@@ -1012,7 +1012,7 @@ export const VelocityAPI = {
     return subs[idx];
   },
 
-  // --- ENQUIRIES & CONTACT MESSAGES ---
+  // ENQUIRIES & CONTACT
   getEnquiries(emailOrUserId?: string): Enquiry[] {
     initStore();
     const raw = getItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, []);
@@ -1092,7 +1092,7 @@ export const VelocityAPI = {
     return enquiries[idx];
   },
 
-  // --- AUDIT LOGS ---
+  // AUDIT LOGS
   getAuditLogs(): AuditLog[] {
     initStore();
     return getItem<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, SEED_AUDIT_LOGS);
@@ -1115,7 +1115,7 @@ export const VelocityAPI = {
     setItem(STORAGE_KEYS.AUDIT_LOGS, logs.slice(0, 100)); // retain last 100 logs
   },
 
-  // --- ANNOUNCEMENTS
+  // ANNOUNCEMENTS
   getAnnouncements(): Announcement[] {
     initStore();
     const list = getItem<Announcement[]>(STORAGE_KEYS.ANNOUNCEMENTS, []);
