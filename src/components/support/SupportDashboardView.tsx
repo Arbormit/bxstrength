@@ -380,59 +380,59 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
         </div>
 
         {/* WORKSPACE MAIN TABS */}
-        <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setActiveTab('inbox')}
-              className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
-                activeTab === 'inbox' ? 'bg-[#CCFF00] text-black shadow-lg' : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
+              className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'inbox' ? 'bg-[#CCFF00] text-black shadow-lg scale-102' : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
               }`}
             >
-              <Mail className="w-4 h-4" />
-              <span>CENTRAL TICKET INBOX ({filteredTickets.length})</span>
+              <Mail className="w-4 h-4 text-emerald-400" />
+              <span>📬 ALL ENQUIRIES &amp; TICKETS ({filteredTickets.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
-                activeTab === 'analytics' ? 'bg-[#CCFF00] text-black shadow-lg' : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
+              className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'analytics' ? 'bg-[#CCFF00] text-black shadow-lg scale-102' : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
               }`}
             >
-              <BarChart2 className="w-4 h-4" />
-              <span>SUPPORT ANALYTICS</span>
+              <BarChart2 className="w-4 h-4 text-blue-400" />
+              <span>📊 PERFORMANCE ANALYTICS</span>
             </button>
             <button
               onClick={() => setActiveTab('audit_logs')}
-              className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
-                activeTab === 'audit_logs' ? 'bg-[#CCFF00] text-black shadow-lg' : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
+              className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'audit_logs' ? 'bg-[#CCFF00] text-black shadow-lg scale-102' : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
               }`}
             >
-              <Lock className="w-4 h-4" />
-              <span>AUDIT LOGS &amp; SECURITY</span>
+              <Lock className="w-4 h-4 text-purple-400" />
+              <span>🛡️ SECURITY &amp; AUDIT LOGS</span>
             </button>
             <button
               onClick={() => setActiveTab('account_settings')}
-              className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
-                activeTab === 'account_settings' ? 'bg-[#CCFF00] text-black shadow-lg' : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
+              className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'account_settings' ? 'bg-[#CCFF00] text-black shadow-lg scale-102' : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
               }`}
             >
-              <UserCheck className="w-4 h-4" />
-              <span>MY ACCOUNT &amp; PASSWORD SETTINGS</span>
+              <UserCheck className="w-4 h-4 text-amber-400" />
+              <span>👤 MY SUPPORT PROFILE</span>
             </button>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCreateTicketModalOpen(true)}
-              className="bg-[#CCFF00] hover:bg-[#b8e600] text-black text-xs font-black uppercase px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow"
+              className="bg-[#CCFF00] hover:bg-[#b8e600] text-black text-xs font-black uppercase px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow active:scale-95"
             >
-              <Plus className="w-3.5 h-3.5 text-black" />
+              <Plus className="w-4 h-4 text-black" />
               <span>LOG NEW INQUIRY</span>
             </button>
             <button
               onClick={fetchTickets}
-              className="text-xs text-zinc-400 hover:text-white flex items-center gap-1.5 bg-[#18181b] px-3 py-1.5 rounded-lg border border-zinc-800 cursor-pointer"
+              className="text-xs font-bold text-zinc-300 hover:text-white flex items-center gap-1.5 bg-[#18181b] hover:bg-zinc-800 px-3.5 py-2 rounded-xl border border-zinc-800 cursor-pointer transition-all active:scale-95"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-3.5 h-3.5 text-[#CCFF00]" />
               <span className="hidden sm:inline">REFRESH LIVE FEED</span>
             </button>
           </div>
@@ -442,6 +442,61 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
         {activeTab === 'inbox' && (
           <div className="space-y-4">
             
+            {/* QUICK SOURCE CATEGORY FILTER PILLS */}
+            <div className="flex flex-wrap items-center gap-2 bg-[#121214] p-3 rounded-2xl border border-zinc-800">
+              <span className="text-[11px] font-black uppercase text-zinc-400 tracking-wider mr-1">QUICK CHANNELS:</span>
+              <button
+                onClick={() => setSourceFilter('all')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  sourceFilter === 'all'
+                    ? 'bg-[#CCFF00] text-black font-black'
+                    : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
+                }`}
+              >
+                All Channels ({tickets.length})
+              </button>
+              <button
+                onClick={() => setSourceFilter('Website Contact Form')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  sourceFilter === 'Website Contact Form'
+                    ? 'bg-[#CCFF00] text-black font-black'
+                    : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
+                }`}
+              >
+                💬 Website Enquiries ({tickets.filter(t => t.source?.toLowerCase().includes('contact') || t.source?.toLowerCase().includes('form')).length})
+              </button>
+              <button
+                onClick={() => setSourceFilter('Chatbot')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  sourceFilter === 'Chatbot'
+                    ? 'bg-[#CCFF00] text-black font-black'
+                    : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
+                }`}
+              >
+                🤖 Chatbot AI ({tickets.filter(t => t.source?.toLowerCase().includes('chat') || t.source?.toLowerCase().includes('bot')).length})
+              </button>
+              <button
+                onClick={() => setSourceFilter('Booking')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  sourceFilter === 'Booking'
+                    ? 'bg-[#CCFF00] text-black font-black'
+                    : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
+                }`}
+              >
+                📅 Consultations &amp; Bookings ({tickets.filter(t => t.source?.toLowerCase().includes('book') || t.source?.toLowerCase().includes('assessment')).length})
+              </button>
+              <button
+                onClick={() => setPriorityFilter(priorityFilter === 'urgent' ? 'all' : 'urgent')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ml-auto ${
+                  priorityFilter === 'urgent'
+                    ? 'bg-red-500 text-white font-black'
+                    : 'bg-red-950/40 text-red-400 hover:bg-red-950/80 border border-red-900/60'
+                }`}
+              >
+                🚨 Urgent Priority ({tickets.filter(t => t.priority === 'urgent' || t.priority === 'high').length})
+              </button>
+            </div>
+
             {/* SEARCH & FILTERS BAR */}
             <div className="bg-[#121214] p-4 rounded-2xl border border-zinc-800 space-y-3">
               <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
@@ -491,13 +546,13 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
                     onChange={(e) => setSourceFilter(e.target.value)}
                     className="bg-[#18181b] border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-[#CCFF00] cursor-pointer"
                   >
-                    <option value="all">Source: All</option>
-                    <option value="Website Contact Form">Source: Contact Form</option>
-                    <option value="Chatbot">Source: Chatbot</option>
-                    <option value="Booking">Source: Booking</option>
-                    <option value="Payment">Source: Payment</option>
-                    <option value="WhatsApp">Source: WhatsApp</option>
-                    <option value="Callback Request">Source: Callback Request</option>
+                    <option value="all">Source: All Channels</option>
+                    <option value="Website Contact Form">Channel: Website Contact Form</option>
+                    <option value="Chatbot">Channel: Chatbot AI</option>
+                    <option value="Booking">Channel: Consultation / Booking</option>
+                    <option value="Payment">Channel: Payment &amp; Billing</option>
+                    <option value="WhatsApp">Channel: WhatsApp Support</option>
+                    <option value="Callback Request">Channel: Phone Callback</option>
                   </select>
 
                   {/* SORT BY */}

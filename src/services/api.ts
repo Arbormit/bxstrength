@@ -1041,6 +1041,21 @@ export const VelocityAPI = {
     };
     enquiries.unshift(newEnq);
     setItem(STORAGE_KEYS.ENQUIRIES, enquiries);
+
+    try {
+      this.createTicket({
+        userName: data.name,
+        userEmail: data.email,
+        userPhone: data.phone,
+        subject: data.subject || 'Website Contact Form Enquiry',
+        description: data.message,
+        category: 'General',
+        priority: 'normal',
+        source: 'Website Contact Form',
+        assignedAgent: 'CS Team'
+      });
+    } catch (e) {}
+
     return newEnq;
   },
 
@@ -1100,7 +1115,7 @@ export const VelocityAPI = {
     setItem(STORAGE_KEYS.AUDIT_LOGS, logs.slice(0, 100)); // retain last 100 logs
   },
 
-  // --- ANNOUNCEMENTS ---
+  // --- ANNOUNCEMENTS
   getAnnouncements(): Announcement[] {
     initStore();
     const list = getItem<Announcement[]>(STORAGE_KEYS.ANNOUNCEMENTS, []);
@@ -1127,7 +1142,7 @@ export const VelocityAPI = {
     announcements.unshift(newAnn);
     setItem(STORAGE_KEYS.ANNOUNCEMENTS, announcements);
 
-    // Sync to backend DB if available
+    // Sync to backend
     fetch(getApiUrl('/api/announcements'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1248,7 +1263,7 @@ export const VelocityAPI = {
     return newBooking;
   },
 
-  // --- BLOG POSTS ENGINE ---
+  // BLOG POSTS
   getBlogPosts(): BlogPost[] {
     initStore();
     return getItem<BlogPost[]>(STORAGE_KEYS.BLOG_POSTS, []);
@@ -1280,7 +1295,7 @@ export const VelocityAPI = {
     return newPost;
   },
 
-  // --- CLIENT REVIEWS ENGINE ---
+  // CLIENT REVIEWS
   getReviews(): Testimonial[] {
     initStore();
     const raw = getItem<Testimonial[]>(STORAGE_KEYS.REVIEWS, []);
@@ -1290,7 +1305,6 @@ export const VelocityAPI = {
       r.id !== 't1' && r.id !== 't2' && r.id !== 't3'
     );
     
-    // Deduplicate by content key (name + comment)
     const uniqueMap = new Map<string, Testimonial>();
     clean.forEach(r => {
       const key = `${r.name.toLowerCase().trim()}:::${r.comment.trim()}`;
@@ -1312,7 +1326,6 @@ export const VelocityAPI = {
     const cleanName = reviewData.name.trim();
     const cleanComment = reviewData.comment.trim();
 
-    // Check if review already exists locally by id or identical content
     const dupIdx = existing.findIndex(r =>
       (reviewData.id && r.id === reviewData.id) ||
       (r.name.toLowerCase().trim() === cleanName.toLowerCase() && r.comment.trim() === cleanComment)
@@ -1344,12 +1357,61 @@ export const VelocityAPI = {
     return newReview;
   },
 
-  // --- REAL-TIME SUPPORT TICKETS ENGINE ---
+  // SUPPORT TICKETS ENGINE 
   getTickets(userId?: string): SupportTicket[] {
     initStore();
     const raw = getItem<SupportTicket[]>(STORAGE_KEYS.TICKETS, []);
-    const clean = raw.filter(t => t.id !== 'TICKET-849201' && t.id !== 'TICKET-739104');
+    let clean = raw.filter(t => t.id !== 'TICKET-849201' && t.id !== 'TICKET-739104');
     
+    try {
+      const enquiries = getItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, []);
+      let hasUpdates = false;
+
+      enquiries.forEach(enq => {
+        const exists = clean.some(t => 
+          (t.userEmail && enq.email && t.userEmail.toLowerCase() === enq.email.toLowerCase() && (t.description === enq.message || t.createdAt === enq.createdAt))
+        );
+        if (!exists && enq.message) {
+          const syncedTicket: SupportTicket = {
+            id: `TKT-${Math.floor(100000 + Math.random() * 900000)}`,
+            userId: `user-enq-${Date.now()}`,
+            userName: enq.name || 'Website Visitor',
+            userEmail: enq.email || 'visitor@bxstrength.com',
+            userPhone: enq.phone || '',
+            userCountry: 'GB',
+            subject: enq.subject || 'Website Contact Form Enquiry',
+            category: 'General',
+            priority: 'normal',
+            description: enq.message,
+            status: enq.status === 'resolved' ? 'resolved' : (enq.status === 'in_progress' ? 'in_progress' : 'new'),
+            source: 'Website Contact Form',
+            serviceOrProduct: 'General Coaching',
+            assignedAgent: 'CS Team',
+            assignedAgentRole: 'cs_agent',
+            createdAt: enq.createdAt || new Date().toISOString(),
+            updatedAt: enq.createdAt || new Date().toISOString(),
+            lastActivity: enq.createdAt || new Date().toISOString(),
+            conversationHistory: [
+              {
+                id: `msg-${Date.now()}`,
+                senderName: enq.name || 'Website Visitor',
+                senderRole: 'customer',
+                text: enq.message,
+                channel: 'email',
+                createdAt: enq.createdAt || new Date().toISOString()
+              }
+            ]
+          };
+          clean.unshift(syncedTicket);
+          hasUpdates = true;
+        }
+      });
+
+      if (hasUpdates) {
+        setItem(STORAGE_KEYS.TICKETS, clean);
+      }
+    } catch (e) {}
+
     if (userId) {
       return clean.filter(t => t.userId === userId || t.userEmail.toLowerCase() === userId.toLowerCase());
     }

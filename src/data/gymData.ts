@@ -122,9 +122,9 @@ export interface BxTrainer extends Trainer {
 export const TRAINERS_DATA: BxTrainer[] = [
   {
     id: 'head-coach',
-    name: 'Head Coach & Team',
+    name: 'Shaban Faridi',
     role: 'Head Coach | Boxing Instructor | Physiotherapy Professional',
-    coachPosition: 'HEAD COACH & FOUNDER TEAM',
+    coachPosition: 'HEADCOACH',
     headline: 'HEAD COACH | BOXING INSTRUCTOR | PHYSIOTHERAPY PROFESSIONAL',
     image: 'https://res.cloudinary.com/yuyxn5b0/image/upload/v1789568682/ChatGPT_Image_Sep_16_2026_07_51_52_PM.png?auto=format&fit=crop&q=80&w=800',
     imagePosition: 'object-[center_top]',
