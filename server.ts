@@ -2310,14 +2310,15 @@ app.post('/api/users', authenticateToken, async (req: any, res: any) => {
 app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, role, coachPosition, heightCm, age, gender, fitnessGoals, subscriptionTier, billingStatements } = req.body;
+    const { name, email, phone, role, coachPosition, heightCm, age, gender, fitnessGoals, subscriptionTier, billingStatements, isVerified } = req.body;
 
     // Authorization check: User can update their own profile OR must be admin/coach
     if (req.user.id !== id && req.user.role !== 'admin' && req.user.role !== 'coach') {
       return res.status(403).json({ error: 'Forbidden: You can only update your own profile.' });
     }
 
-    const cleanRole = req.user.role === 'admin' ? (role || null) : null;
+    const cleanRole = req.user.role === 'admin' && role !== undefined ? sanitizeInput(role) : null;
+    const parsedIsVerified = req.user.role === 'admin' && isVerified !== undefined ? Boolean(isVerified) : null;
     const parsedHeight = heightCm !== undefined && heightCm !== null && !isNaN(Number(heightCm)) ? Number(heightCm) : null;
     const statementsJson = billingStatements !== undefined ? JSON.stringify(billingStatements) : null;
 
@@ -2328,15 +2329,16 @@ app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
             name = COALESCE($1, name), 
             email = COALESCE($2, email), 
             phone = COALESCE($3, phone), 
-            role = COALESCE($4, role), 
+            role = CASE WHEN $4::text IS NOT NULL THEN $4::text ELSE role END, 
             coach_position = COALESCE($5, coach_position),
             height_cm = CASE WHEN $6::integer IS NOT NULL THEN $6::integer ELSE height_cm END,
             age = COALESCE($7, age),
             gender = COALESCE($8, gender),
             fitness_goals = COALESCE($9, fitness_goals),
             subscription_tier = COALESCE($10, subscription_tier),
-            billing_statements = COALESCE($11, billing_statements)
-           WHERE id = $12`,
+            billing_statements = COALESCE($11, billing_statements),
+            is_verified = CASE WHEN $12::boolean IS NOT NULL THEN $12::boolean ELSE is_verified END
+           WHERE id = $13`,
           [
             name ? sanitizeInput(name) : null,
             email ? sanitizeInput(email).toLowerCase() : null,
@@ -2349,6 +2351,7 @@ app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
             fitnessGoals ? sanitizeInput(fitnessGoals) : null,
             subscriptionTier ? sanitizeInput(subscriptionTier) : null,
             statementsJson,
+            parsedIsVerified,
             id
           ]
         );
@@ -2361,6 +2364,49 @@ app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
   } catch (err: any) {
     console.error('Update user error:', err.message);
     res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+app.put('/api/admin/users/:id/role', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    if (!role) {
+      return res.status(400).json({ error: 'Role is required.' });
+    }
+    const cleanRole = sanitizeInput(role);
+
+    if (dbPool) {
+      try {
+        await dbPool.query('UPDATE users SET role = $1 WHERE id = $2', [cleanRole, id]);
+      } catch (e: any) {
+        console.error('NeonDB update role error:', e.message);
+      }
+    }
+
+    res.json({ message: `User ${id} role updated to "${cleanRole}" live in NeonDB!` });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update user role' });
+  }
+});
+
+app.put('/api/admin/users/:id/verify', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const { isVerified } = req.body;
+    const status = isVerified !== undefined ? Boolean(isVerified) : true;
+
+    if (dbPool) {
+      try {
+        await dbPool.query('UPDATE users SET is_verified = $1 WHERE id = $2', [status, id]);
+      } catch (e: any) {
+        console.error('NeonDB update verify error:', e.message);
+      }
+    }
+
+    res.json({ message: `User ${id} verification status set to ${status} live in NeonDB!` });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update user verification' });
   }
 });
 

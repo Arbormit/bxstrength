@@ -584,8 +584,13 @@ export const VelocityAPI = {
     const users = this.getUsers();
     const current = this.getCurrentUser();
 
-    // Match by ID or by current email
-    let idx = users.findIndex((u) => u.id === id || (current && u.email.toLowerCase() === current.email.toLowerCase()));
+    // 1. First try exact match by user ID
+    let idx = users.findIndex((u) => u.id === id);
+    
+    // 2. If updating current logged in user and ID didn't match directly, match by email
+    if (idx === -1 && current && (current.id === id || id === 'me')) {
+      idx = users.findIndex((u) => u.email.toLowerCase() === current.email.toLowerCase());
+    }
 
     let targetUser: User;
 
@@ -599,7 +604,7 @@ export const VelocityAPI = {
         name: updates.name || current?.name || 'User',
         email: updates.email || current?.email || '',
         role: updates.role || current?.role || 'client',
-        isVerified: true,
+        isVerified: updates.isVerified !== undefined ? updates.isVerified : true,
         status: 'active',
         createdAt: new Date().toISOString(),
         ...updates
@@ -609,7 +614,7 @@ export const VelocityAPI = {
 
     setItem(STORAGE_KEYS.USERS, users);
 
-    // If logged-in user updated their own profile
+    // If logged-in user updated their own profile or role, sync active session
     if (current && (current.id === id || current.email.toLowerCase() === targetUser.email.toLowerCase())) {
       setItem(STORAGE_KEYS.CURRENT_USER, targetUser);
     }
@@ -634,7 +639,7 @@ export const VelocityAPI = {
       current?.name || targetUser.name, 
       current?.role || targetUser.role, 
       'UPDATE_USER_PROFILE', 
-      `Updated user profile details for ${targetUser.name}`
+      `Updated user profile & role (${targetUser.role.toUpperCase()}) details for ${targetUser.name}`
     );
 
     return targetUser;

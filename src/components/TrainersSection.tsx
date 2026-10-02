@@ -186,7 +186,7 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
                   {/* Bottom Left Overlay Badge & Name matching uploaded sample */}
                   <div className="absolute bottom-6 left-6 right-6 text-left z-10">
                     <span className="inline-block bg-black/75 backdrop-blur-md text-[#CCFF00] border border-zinc-800/80 text-[10px] font-black tracking-widest px-3 py-1 rounded-md uppercase mb-2">
-                      {trainer.coachPosition || (trainer.role.toLowerCase().includes('head') ? 'HEAD COACH' : 'SENIOR COACH')}
+                      {trainer.coachPosition || (trainer.role.toLowerCase().includes('head') ? 'HEADCOACH' : 'COACH')}
                     </span>
                     <h3 className="text-3xl sm:text-4xl font-serif font-bold text-white tracking-tight uppercase leading-none">
                       {trainer.name}
@@ -309,7 +309,7 @@ export const TrainersSection: React.FC<TrainersSectionProps> = ({
               <div className="flex-1 text-center md:text-left space-y-4">
                 <div className="space-y-1">
                   <span className="bg-zinc-900 border border-zinc-800 text-[#CCFF00] text-[10px] font-black tracking-widest px-3 py-1 rounded-md uppercase inline-block">
-                    {selectedTrainerForProfile.coachPosition || (selectedTrainerForProfile.role.toLowerCase().includes('head') ? 'HEAD COACH' : 'SENIOR COACH')}
+                    {selectedTrainerForProfile.coachPosition || (selectedTrainerForProfile.role.toLowerCase().includes('head') ? 'HEADCOACH' : 'COACH')}
                   </span>
                   <h2 className="text-3xl sm:text-5xl font-serif font-black text-white uppercase tracking-tight">
                     {selectedTrainerForProfile.name}

@@ -3,7 +3,7 @@ import { User, UserRole, SubscriptionTier, BillingStatement } from '../../types'
 import { VelocityAPI, getApiUrl } from '../../services/api';
 import { isValidUkMobile, UK_PHONE_ERROR_MSG } from '../../utils/phoneValidation';
 import { PhoneInput } from '../PhoneInput';
-import { Users, Search, Plus, Edit2, Trash2, CheckCircle2, Filter, X } from 'lucide-react';
+import { Users, Search, Plus, Edit2, Trash2, CheckCircle2, Filter, X, ShieldCheck, UserCheck } from 'lucide-react';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface UserManagementProps {
@@ -30,7 +30,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   const [phone, setPhone] = useState('');
   const [heightCm, setHeightCm] = useState<number | ''>(175);
   const [role, setRole] = useState<UserRole>('client');
-  const [coachPosition, setCoachPosition] = useState<string>('Senior Coach');
+  const [isVerified, setIsVerified] = useState<boolean>(true);
+  const [coachPosition, setCoachPosition] = useState<string>('HeadCoach');
   const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>('Normal User');
   const [billingStatements, setBillingStatements] = useState<BillingStatement[]>([]);
   const [fitnessGoals, setFitnessGoals] = useState('');
@@ -42,7 +43,15 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     const matchesSearch =
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+    
+    let matchesRole = roleFilter === 'all';
+    if (!matchesRole) {
+      if (roleFilter === 'cs') {
+        matchesRole = u.role === 'cs_agent' || u.role === 'customer_support';
+      } else {
+        matchesRole = u.role === roleFilter;
+      }
+    }
     return matchesSearch && matchesRole;
   });
 
@@ -53,7 +62,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setPhone('');
     setHeightCm(175);
     setRole('client');
-    setCoachPosition('Senior Coach');
+    setIsVerified(true);
+    setCoachPosition('HeadCoach');
     setSubscriptionTier('Normal User');
     setBillingStatements([]);
     setFitnessGoals('');
@@ -67,7 +77,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setPhone('');
     setHeightCm(175);
     setRole('coach');
-    setCoachPosition('Head Coach');
+    setIsVerified(true);
+    setCoachPosition('HeadCoach');
     setSubscriptionTier('Premium Elite User');
     setBillingStatements([]);
     setFitnessGoals('UK Certified Fitness & Strength Master Coach');
@@ -81,7 +92,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setPhone(user.phone || '');
     setHeightCm(user.heightCm || 175);
     setRole(user.role);
-    setCoachPosition(user.coachPosition || 'Senior Coach');
+    setIsVerified(user.isVerified !== undefined ? Boolean(user.isVerified) : true);
+    setCoachPosition(user.coachPosition || 'HeadCoach');
     setSubscriptionTier(user.subscriptionTier || 'Normal User');
     setBillingStatements(user.billingStatements || []);
     setFitnessGoals(user.fitnessGoals || '');
@@ -152,7 +164,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           coachPosition: finalCoachPos,
           subscriptionTier,
           billingStatements,
-          fitnessGoals
+          fitnessGoals,
+          isVerified
         });
 
         onShowToast(`Updated ${targetRole.toUpperCase()} profile for ${name}`);
@@ -164,7 +177,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           heightCm: numHeight,
           role: targetRole,
           coachPosition: finalCoachPos,
-          fitnessGoals
+          fitnessGoals,
+          isVerified
         });
 
         onShowToast(`Created new ${targetRole.toUpperCase()} account for ${name}`);
@@ -192,10 +206,15 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     }
   };
 
-  const handleToggleVerify = async (id: string, userName: string) => {
-    await VelocityAPI.toggleVerifyUser(id);
-    onShowToast(`Toggled verification status for ${userName}`);
-    onUsersUpdated();
+  const handleToggleVerify = async (id: string, userName: string, currentStatus?: boolean) => {
+    const nextStatus = currentStatus !== undefined ? !currentStatus : true;
+    try {
+      await VelocityAPI.updateUser(id, { isVerified: nextStatus });
+      onShowToast(`${nextStatus ? 'Verified' : 'Unverified'} account for ${userName}`);
+      onUsersUpdated();
+    } catch (err: any) {
+      onShowToast(err.message || 'Failed to update verification status');
+    }
   };
 
   return (
@@ -210,7 +229,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           <p className="text-xs text-gray-400 mt-1">
             {isCoach
               ? 'View client profiles, add new clients, update fitness goals, and manage your athlete roster.'
-              : 'Manage user accounts, add/delete coaches, assign roles, verify profiles, edit contact information, and delete users.'}
+              : 'Admin Authority Control: Seamlessly assign user roles (Coach, Client, Customer Support, Admin) and verify accounts in real-time.'}
           </p>
         </div>
 
@@ -243,7 +262,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search clients by name or email..."
+            placeholder="Search accounts by name or email..."
             className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white pl-9 pr-4 py-2 text-xs rounded-none outline-none"
           />
         </div>
@@ -255,11 +274,12 @@ export const UserManagement: React.FC<UserManagementProps> = ({
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-gray-900 border border-gray-800 text-white text-xs px-3 py-2 rounded-none outline-none"
+              className="bg-gray-900 border border-gray-800 text-white text-xs px-3 py-2 rounded-none outline-none cursor-pointer"
             >
               <option value="all">All Roles ({users.length})</option>
               <option value="client">Clients Only</option>
               <option value="coach">Coaches Only</option>
+              <option value="cs_agent">Customer Support Only</option>
               <option value="admin">Admins Only</option>
             </select>
           </div>
@@ -272,11 +292,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="bg-gray-900 border-b border-gray-800 text-gray-400 uppercase font-bold tracking-wider">
-                <th className="py-3.5 px-4">Client Details</th>
-                <th className="py-3.5 px-4">Role</th>
+                <th className="py-3.5 px-4">Account Details</th>
+                <th className="py-3.5 px-4">Account Role (Admin Controlled)</th>
                 <th className="py-3.5 px-4">Signup Method</th>
-                <th className="py-3.5 px-4">Verification</th>
-                <th className="py-3.5 px-4">Fitness Goals</th>
+                <th className="py-3.5 px-4">Verification Authority</th>
+                <th className="py-3.5 px-4">Fitness Goals / Notes</th>
                 <th className="py-3.5 px-4">Joined Date</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -303,22 +323,47 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                   </td>
                   <td className="py-3.5 px-4">
                     <div className="flex flex-col items-start gap-1">
-                      <span
-                        className={`px-2.5 py-1 font-black uppercase text-[10px] border ${
-                          u.role === 'admin'
-                            ? 'bg-purple-950 text-purple-300 border-purple-800'
-                            : u.role === 'coach'
-                            ? 'bg-pink-950 text-pink-300 border-pink-800'
-                            : u.role === 'user'
-                            ? 'bg-blue-950 text-blue-300 border-blue-800'
-                            : 'bg-gray-800 text-gray-300 border-gray-700'
-                        }`}
-                      >
-                        {u.role}
-                      </span>
+                      {!isCoach ? (
+                        <select
+                          value={u.role === 'customer_support' ? 'cs_agent' : u.role}
+                          onChange={async (e) => {
+                            const newRole = e.target.value as UserRole;
+                            try {
+                              await VelocityAPI.updateUser(u.id, { role: newRole });
+                              onShowToast(`Updated role for "${u.name}" to ${newRole.toUpperCase()} in real-time!`);
+                              onUsersUpdated();
+                            } catch (err: any) {
+                              onShowToast(err.message || 'Failed to update user role');
+                            }
+                          }}
+                          className={`px-2 py-1 font-black uppercase text-[10px] border rounded outline-none cursor-pointer transition-colors ${
+                            u.role === 'admin'
+                              ? 'bg-purple-950/90 text-purple-300 border-purple-800 hover:bg-purple-900'
+                              : u.role === 'coach'
+                              ? 'bg-pink-950/90 text-pink-300 border-pink-800 hover:bg-pink-900'
+                              : u.role === 'cs_agent' || u.role === 'customer_support'
+                              ? 'bg-emerald-950/90 text-emerald-300 border-emerald-800 hover:bg-emerald-900'
+                              : u.role === 'user'
+                              ? 'bg-blue-950/90 text-blue-300 border-blue-800 hover:bg-blue-900'
+                              : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'
+                          }`}
+                          title="Admin Role Switcher: Change account role in real-time"
+                        >
+                          <option value="client" className="bg-gray-900 text-white font-bold">CLIENT / ATHLETE</option>
+                          <option value="coach" className="bg-gray-900 text-white font-bold">FITNESS COACH</option>
+                          <option value="cs_agent" className="bg-gray-900 text-white font-bold">CUSTOMER SUPPORT</option>
+                          <option value="admin" className="bg-gray-900 text-white font-bold">SYSTEM ADMIN</option>
+                          <option value="user" className="bg-gray-900 text-white font-bold">MEMBER / USER</option>
+                        </select>
+                      ) : (
+                        <span className="px-2.5 py-1 font-black uppercase text-[10px] border bg-gray-800 text-gray-300 border-gray-700">
+                          {u.role}
+                        </span>
+                      )}
+
                       {u.role === 'coach' && (
                         <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-amber-950/80 text-amber-300 border border-amber-800/80">
-                          {u.coachPosition || 'Senior Coach'}
+                          {u.coachPosition || 'HeadCoach'}
                         </span>
                       )}
                     </div>
@@ -348,15 +393,16 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                   </td>
                   <td className="py-3.5 px-4">
                     <button
-                      onClick={() => handleToggleVerify(u.id, u.name)}
-                      className={`text-[10px] font-bold px-2 py-0.5 border uppercase flex items-center gap-1 ${
+                      onClick={() => handleToggleVerify(u.id, u.name, u.isVerified)}
+                      className={`text-[10px] font-black px-2.5 py-1 border uppercase flex items-center gap-1.5 cursor-pointer rounded transition-all ${
                         u.isVerified
-                          ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800'
-                          : 'bg-amber-950/60 text-amber-400 border-amber-800'
+                          ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800 hover:bg-emerald-900'
+                          : 'bg-amber-950/90 text-amber-400 border-amber-800 hover:bg-amber-900 animate-pulse'
                       }`}
+                      title={u.isVerified ? "Account Verified by Admin. Click to revoke." : "Account Pending Verification. Click Admin 1-Click Verify."}
                     >
-                      <CheckCircle2 className="w-3 h-3" />
-                      {u.isVerified ? 'VERIFIED' : 'PENDING'}
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      {u.isVerified ? 'VERIFIED' : 'VERIFY NOW'}
                     </button>
                   </td>
                   <td className="py-3.5 px-4 max-w-xs truncate text-gray-400">
@@ -370,7 +416,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                       <button
                         onClick={() => handleOpenEdit(u)}
                         className="p-1.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded transition-colors"
-                        title="Edit Client Details"
+                        title="Edit Details & Role"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -400,7 +446,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       {/* Modal for Create/Edit User */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="relative w-full max-w-md bg-[#111111] text-white border border-gray-800 p-6 shadow-2xl">
+          <div className="relative w-full max-w-md bg-[#111111] text-white border border-gray-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowModal(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white"
@@ -410,7 +456,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
             <h3 className="text-lg font-black uppercase text-white mb-4">
               {editingUser
-                ? `EDIT CLIENT: ${editingUser.name}`
+                ? `EDIT ACCOUNT: ${editingUser.name}`
                 : isCoach
                 ? 'ADD NEW CLIENT PROFILE'
                 : 'CREATE NEW USER ACCOUNT'}
@@ -466,20 +512,39 @@ export const UserManagement: React.FC<UserManagementProps> = ({
               </div>
 
               {!isCoach && (
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                    Assign Role
-                  </label>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as UserRole)}
-                    className="w-full bg-gray-900 border border-gray-800 text-white px-2 py-2 text-sm outline-none"
-                  >
-                    <option value="client">Client / Athlete</option>
-                    <option value="user">Member / User</option>
-                    <option value="coach">Fitness Coach</option>
-                    <option value="admin">System Admin</option>
-                  </select>
+                <div className="space-y-3 p-3 bg-gray-900/60 border border-gray-800 rounded">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-amber-400 mb-1">
+                      Assign Account Role (Admin Authority) *
+                    </label>
+                    <select
+                      value={role}
+                      onChange={(e) => setRole(e.target.value as UserRole)}
+                      className="w-full bg-black border border-amber-800 text-white px-3 py-2 text-sm outline-none font-bold uppercase cursor-pointer"
+                    >
+                      <option value="client">Client / Athlete</option>
+                      <option value="coach">Fitness Coach</option>
+                      <option value="cs_agent">Customer Support Agent</option>
+                      <option value="admin">System Admin</option>
+                      <option value="user">Member / User</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">
+                      Verification Authority Status *
+                    </label>
+                    <select
+                      value={isVerified ? 'verified' : 'pending'}
+                      onChange={(e) => setIsVerified(e.target.value === 'verified')}
+                      className={`w-full bg-black border px-3 py-2 text-sm outline-none font-bold uppercase cursor-pointer ${
+                        isVerified ? 'border-emerald-700 text-emerald-400' : 'border-amber-700 text-amber-400'
+                      }`}
+                    >
+                      <option value="verified">✅ Verified Account (Active)</option>
+                      <option value="pending">⏳ Pending Admin Verification</option>
+                    </select>
+                  </div>
                 </div>
               )}
 
@@ -576,11 +641,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                     onChange={(e) => setCoachPosition(e.target.value)}
                     className="w-full bg-gray-900 border border-amber-800/80 text-white px-3 py-2 text-xs font-bold outline-none rounded-none"
                   >
-                    <option value="Head Coach">Head Coach</option>
-                    <option value="Super Senior Coach">Super Senior Coach</option>
-                    <option value="Senior Coach">Senior Coach</option>
-                    <option value="Junior Coach">Junior Coach</option>
-                    <option value="Lead Performance Specialist">Lead Performance Specialist</option>
+                    <option value="HeadCoach">HeadCoach</option>
+                    <option value="Coach">Coach</option>
                   </select>
                 </div>
               )}

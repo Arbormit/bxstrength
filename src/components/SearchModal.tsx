@@ -184,7 +184,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               name: String(u.name || u.email || 'Coach'),
               email: String(u.email || ''),
               role: (u.role || 'coach') as any,
-              coachPosition: u.coach_position || u.coachPosition || (u.role === 'coach' ? 'Senior Coach' : 'Head Coach'),
+              coachPosition: u.coach_position || u.coachPosition || (u.role === 'HeadCoach' ? 'Coach' : ''),
               phone: u.phone || '',
               avatarUrl: u.avatar_url || u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.email)}`,
               fitnessGoals: u.fitness_goals || u.fitnessGoals || 'Strength & Biomechanics',
@@ -694,7 +694,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                             </h5>
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider bg-amber-950/60 px-2 py-0.5 rounded border border-amber-900/60">
-                                {trainer.coachPosition || 'Senior Coach'}
+                                {trainer.coachPosition || 'HeadCoach'}
                               </span>
                               <span className="text-[9px] text-zinc-400 font-mono">{trainer.email}</span>
                             </div>

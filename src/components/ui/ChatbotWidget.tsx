@@ -326,9 +326,9 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
                   </span>
                 </div>
 
-                {/* CS Team vs Company Agent Selection */}
+                {/* CS Team */}
                 <div>
-                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#121214] border border-zinc-700 rounded-lg">
+                  <div className="grid grid-cols-1 gap-1.5 p-1 bg-[#121214] border border-zinc-700 rounded-lg">
                     <button
                       type="button"
                       onClick={() => setTargetAgent('CS Team')}

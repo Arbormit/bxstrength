@@ -64,7 +64,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
               name: String(u.name || u.email || 'User'),
               email: String(u.email || ''),
               role: (u.role || 'client') as UserRole,
-              coachPosition: u.coach_position || u.coachPosition || (u.role === 'coach' ? 'Senior Coach' : undefined),
+              coachPosition: u.coach_position || u.coachPosition || (u.role === 'coach' ? 'HeadCoach' : undefined),
               phone: u.phone || '',
               age: u.age || 25,
               heightCm: (u.height_cm !== undefined && u.height_cm !== null && !isNaN(Number(u.height_cm))) ? Number(u.height_cm) : (u.heightCm || 175),

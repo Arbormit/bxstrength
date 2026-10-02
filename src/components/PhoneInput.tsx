@@ -42,12 +42,8 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   return (
     <div className={`space-y-1.5 ${className}`}>
       {label && (
-        <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center justify-between">
-          <span>{label} {required && '*'}</span>
-          <span className="text-[10px] text-emerald-400 font-mono font-bold flex items-center gap-1">
-            <span>{selectedCountry.flag}</span>
-            <span>{selectedCountry.dialCode}</span>
-          </span>
+        <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300">
+          {label} {required && '*'}
         </label>
       )}
       <div className="relative flex items-center">

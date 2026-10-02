@@ -21,7 +21,7 @@ export const CoachesManager: React.FC<CoachesManagerProps> = ({ user, onShowToas
   // Form State
   const [name, setName] = useState<string>('');
   const [role, setRole] = useState<string>('');
-  const [coachPosition, setCoachPosition] = useState<string>('SENIOR COACH');
+  const [coachPosition, setCoachPosition] = useState<string>('HEADCOACH');
   const [headline, setHeadline] = useState<string>('');
   const [image, setImage] = useState<string>('');
   const [bio, setBio] = useState<string>('');
@@ -59,7 +59,7 @@ export const CoachesManager: React.FC<CoachesManagerProps> = ({ user, onShowToas
     setEditingTrainer(null);
     setName('');
     setRole('');
-    setCoachPosition('SENIOR COACH');
+    setCoachPosition('HEADCOACH');
     setHeadline('');
     setImage('https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&q=80&w=600');
     setBio('');
@@ -88,7 +88,7 @@ export const CoachesManager: React.FC<CoachesManagerProps> = ({ user, onShowToas
     setEditingTrainer(trainer);
     setName(trainer.name);
     setRole(trainer.role);
-    setCoachPosition(trainer.coachPosition || 'SENIOR COACH');
+    setCoachPosition(trainer.coachPosition || 'HEADCOACH');
     setHeadline(trainer.headline || '');
     setImage(trainer.image);
     setBio(trainer.bio);
@@ -298,7 +298,7 @@ export const CoachesManager: React.FC<CoachesManagerProps> = ({ user, onShowToas
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                 <span className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-[#CCFF00] border border-zinc-800 text-[10px] font-black tracking-widest px-2.5 py-1 rounded uppercase">
-                  {trainer.coachPosition || 'SENIOR COACH'}
+                  {trainer.coachPosition || 'HEADCOACH'}
                 </span>
                 <div className="absolute bottom-3 left-4 right-4">
                   <h3 className="text-xl font-black text-white uppercase tracking-tight">{trainer.name}</h3>
@@ -434,10 +434,8 @@ export const CoachesManager: React.FC<CoachesManagerProps> = ({ user, onShowToas
                     onChange={(e) => setCoachPosition(e.target.value)}
                     className="w-full bg-[#18181b] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#CCFF00]"
                   >
-                    <option value="HEAD COACH">HEAD COACH</option>
-                    <option value="SUPER SENIOR COACH">SUPER SENIOR COACH</option>
-                    <option value="SENIOR COACH">SENIOR COACH</option>
-                    <option value="LEAD SPECIALIST">LEAD SPECIALIST</option>
+                    <option value="HEADCOACH">HEADCOACH</option>
+                    <option value="COACH">COACH</option>
                   </select>
                 </div>
 
