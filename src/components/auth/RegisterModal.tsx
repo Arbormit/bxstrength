@@ -10,6 +10,7 @@ interface RegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenLogin: () => void;
+  onRequireOtp?: (email: string) => void;
   onSuccessNavigate?: (role: UserRole) => void;
 }
 
@@ -17,6 +18,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   isOpen,
   onClose,
   onOpenLogin,
+  onRequireOtp,
   onSuccessNavigate
 }) => {
   const { register, loginWithGoogle } = useAuth();
@@ -72,10 +74,13 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const newUser = await register(name, email, phone, role, password);
+      const regResult = await register(name, email, phone, role, password);
       onClose();
-      if (onSuccessNavigate) {
-        onSuccessNavigate(newUser.role);
+
+      if (regResult.requireOtp && onRequireOtp) {
+        onRequireOtp(email);
+      } else if (onSuccessNavigate) {
+        onSuccessNavigate(regResult.user.role);
       }
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');

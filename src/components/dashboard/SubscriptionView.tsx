@@ -14,11 +14,22 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ user, onShow
   const [userSubs, setUserSubs] = useState<Subscription[]>([]);
 
   useEffect(() => {
-    try {
-      const allSubs = VelocityAPI.getSubscriptions();
-      const userActive = allSubs.filter(s => s.userEmail.toLowerCase() === user.email.toLowerCase() || s.userId === user.id);
-      setUserSubs(userActive);
-    } catch (e) {}
+    const fetchSubs = () => {
+      try {
+        const allSubs = VelocityAPI.getSubscriptions();
+        const userActive = allSubs.filter(s => s.userEmail.toLowerCase() === user.email.toLowerCase() || s.userId === user.id);
+        setUserSubs(userActive);
+      } catch (e) {}
+    };
+
+    fetchSubs();
+    window.addEventListener('storage', fetchSubs);
+    const interval = setInterval(fetchSubs, 3000);
+
+    return () => {
+      window.removeEventListener('storage', fetchSubs);
+      clearInterval(interval);
+    };
   }, [user]);
 
   const tierDetails = {
@@ -170,160 +181,124 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({ user, onShow
         <div>
           <h2 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-emerald-400" />
-            MY MEMBERSHIP SUBSCRIPTION & BILLING
+            MY SUBSCRIPTION & SERVICES
           </h2>
           <p className="text-xs text-gray-400 mt-1">
-            Active plan tier, automated billing schedules, payment receipts, and upgrade options.
+            Active plan tier, payment receipts, and upgrade options.
           </p>
         </div>
       </div>
 
-      {/* Purchased Individual & Custom Service Plans Card */}
-      {userSubs.length > 0 && (
-        <div className="bg-[#121214] border border-[#CCFF00]/40 p-6 rounded-2xl space-y-4 shadow-xl">
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-            <div className="flex items-center gap-2">
-              <Dumbbell className="w-5 h-5 text-[#CCFF00]" />
-              <h3 className="text-base font-black uppercase text-white tracking-tight">ACTIVE PURCHASED SERVICE PLANS</h3>
-            </div>
-            <span className="text-xs font-black uppercase px-3 py-1 bg-[#CCFF00] text-black rounded-full">
-              {userSubs.length} ACTIVE PLAN{userSubs.length > 1 ? 'S' : ''}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {userSubs.map((sub) => (
-              <div key={sub.id} className="bg-[#18181b] border border-zinc-800 p-4 rounded-xl space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-[#CCFF00] bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded">
-                      {sub.serviceType ? `${sub.serviceType.toUpperCase()} MODE` : 'SERVICE PLAN'}
-                    </span>
-                    <h4 className="text-sm font-black uppercase text-white mt-1.5">{sub.planName}</h4>
-                  </div>
-                  <span className="text-sm font-black text-[#CCFF00] font-mono">£{sub.price}</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs bg-[#121214] p-3 rounded-lg border border-zinc-800">
-                  <div>
-                    <span className="text-[9px] text-zinc-500 font-bold uppercase block">Start Date</span>
-                    <span className="font-bold text-white block text-[11px]">{new Date(sub.startDate).toLocaleDateString()}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-zinc-500 font-bold uppercase block">Expiry Date</span>
-                    <span className="font-bold text-[#CCFF00] block text-[11px]">{sub.expiryDate || new Date(sub.nextBillingDate).toLocaleDateString()}</span>
-                  </div>
-                </div>
-
-                {sub.customExercises && sub.customExercises.length > 0 && (
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
-                      Included Exercises ({sub.customExercises.length}):
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      {sub.customExercises.map((ex, i) => (
-                        <span key={i} className="text-[9px] bg-zinc-900 text-zinc-300 border border-zinc-800 px-2 py-0.5 rounded">
-                          ✓ {ex}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
+      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Active Card */}
-        <div className="lg:col-span-2 bg-[#111111] border border-gray-800 p-6 relative overflow-hidden">
-          <div className="h-1 w-full bg-emerald-400 absolute top-0 left-0"></div>
-
-          <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-6">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-950/60 px-2.5 py-1 border border-emerald-800">
-                {tierDetails.badge}
-              </span>
-              <h3 className="text-2xl font-black uppercase text-white mt-2">{tier}</h3>
-            </div>
-
-            <div className="text-right">
-              <span className="text-2xl font-black text-white font-mono">£{tierDetails.price}</span>
-              <span className="text-xs text-gray-400 block">/ monthly</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-xs text-gray-300">
-            <div>
-              <span className="text-gray-500 font-bold uppercase block">Subscription Status</span>
-              <span className="text-emerald-400 font-bold uppercase flex items-center gap-1 mt-0.5">
-                <CheckCircle2 className="w-4 h-4" /> ACTIVE IN DATABASE
-              </span>
-            </div>
-
-            <div>
-              <span className="text-gray-500 font-bold uppercase block">Account Reference</span>
-              <span className="text-white font-mono font-bold mt-0.5 block">{user.email}</span>
-            </div>
-          </div>
-
-          {/* Included Features */}
-          <div className="border-t border-gray-800 pt-4 space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-300 mb-2">Included Membership Privileges:</h4>
-            {tierDetails.privileges.map((feat, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs text-gray-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>{feat}</span>
+        {/* Left Column: Active Plans or No Service State */}
+        <div className="lg:col-span-2 space-y-6">
+          {userSubs.length > 0 ? (
+            <div className="bg-[#121214] border border-[#CCFF00]/40 p-6 rounded-2xl space-y-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Dumbbell className="w-5 h-5 text-[#CCFF00]" />
+                  <h3 className="text-base font-black uppercase text-white tracking-tight">ACTIVE PURCHASED SERVICE PLANS</h3>
+                </div>
+                <span className="text-xs font-black uppercase px-3 py-1 bg-[#CCFF00] text-black rounded-full">
+                  {userSubs.length} ACTIVE PLAN{userSubs.length > 1 ? 'S' : ''}
+                </span>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Invoice Download */}
-        <div className="bg-[#111111] border border-gray-800 p-6 space-y-4">
-          <h3 className="text-sm font-black uppercase tracking-wider text-white border-b border-gray-800 pb-3 flex items-center justify-between">
-            <span>BILLING STATEMENTS</span>
-            <span className="text-[10px] text-gray-400 font-mono">({statements.length})</span>
-          </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {userSubs.map((sub) => (
+                  <div key={sub.id} className="bg-[#18181b] border border-zinc-800 p-4 rounded-xl space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-[#CCFF00] bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded">
+                          {sub.serviceType ? `${sub.serviceType.toUpperCase()} MODE` : 'SERVICE PLAN'}
+                        </span>
+                        <h4 className="text-sm font-black uppercase text-white mt-1.5">{sub.planName}</h4>
+                      </div>
+                      <span className="text-sm font-black text-[#CCFF00] font-mono">£{sub.price}</span>
+                    </div>
 
-          {statements.length === 0 ? (
-            <div className="bg-gray-900/60 border border-gray-800 p-6 text-center space-y-2 rounded">
-              <FileText className="w-8 h-8 text-gray-600 mx-auto" />
-              <p className="text-xs text-gray-300 font-bold uppercase">No billing statements issued</p>
-              <p className="text-[11px] text-gray-500 leading-relaxed">
-                Billing statements and official tax receipts will appear here once issued by your coach or system administrator.
-              </p>
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-[#121214] p-3 rounded-lg border border-zinc-800">
+                      <div>
+                        <span className="text-[9px] text-zinc-500 font-bold uppercase block">Start Date</span>
+                        <span className="font-bold text-white block text-[11px]">{new Date(sub.startDate).toLocaleDateString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-zinc-500 font-bold uppercase block">Expiry Date</span>
+                        <span className="font-bold text-[#CCFF00] block text-[11px]">{sub.expiryDate || new Date(sub.nextBillingDate).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+
+                    {sub.customExercises && sub.customExercises.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+                          Included Exercises ({sub.customExercises.length}):
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {sub.customExercises.map((ex, i) => (
+                            <span key={i} className="text-[9px] bg-zinc-900 text-zinc-300 border border-zinc-800 px-2 py-0.5 rounded">
+                              ✓ {ex}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : tier && tier !== 'Normal User' && tierDetails ? (
+            <div className="bg-[#111111] border border-gray-800 p-6 relative overflow-hidden rounded-2xl">
+              <div className="h-1 w-full bg-emerald-400 absolute top-0 left-0"></div>
+
+              <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-6">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-950/60 px-2.5 py-1 border border-emerald-800">
+                    {tierDetails.badge}
+                  </span>
+                  <h3 className="text-2xl font-black uppercase text-white mt-2">{tier}</h3>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-2xl font-black text-white font-mono">£{tierDetails.price}</span>
+                  <span className="text-xs text-gray-400 block">/ monthly</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-xs text-gray-300">
+                <div>
+                  <span className="text-gray-500 font-bold uppercase block">Subscription Status</span>
+                  <span className="text-emerald-400 font-bold uppercase flex items-center gap-1 mt-0.5">
+                    <CheckCircle2 className="w-4 h-4" /> ACTIVE IN DATABASE
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-gray-500 font-bold uppercase block">Account Reference</span>
+                  <span className="text-white font-mono font-bold mt-0.5 block">{user.email}</span>
+                </div>
+              </div>
+
+              {/* Included Features */}
+              <div className="border-t border-gray-800 pt-4 space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-300 mb-2">Included Membership Privileges:</h4>
+                {tierDetails.privileges.map((feat, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs text-gray-300">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <span>{feat}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="space-y-2 max-h-[350px] overflow-y-auto">
-              {statements.map((inv) => (
-                <div key={inv.id} className="bg-gray-900 border border-gray-800 p-3.5 rounded space-y-2 hover:border-gray-700 transition-colors">
-                  <div className="flex items-center justify-between text-xs">
-                    <div>
-                      <span className="block text-white font-bold font-mono">{inv.invoiceNumber}</span>
-                      <span className="text-gray-400 text-[11px] block">{inv.description || 'Monthly Subscription'}</span>
-                      <span className="text-emerald-400 font-mono text-[10px] font-bold">
-                        £{inv.amount}.00 • {inv.status} ({inv.date})
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-gray-800 flex items-center justify-between text-[11px]">
-                    <span className="text-[10px] text-gray-400 truncate max-w-[150px]">
-                      {inv.fileName ? `📄 ${inv.fileName}` : 'Tax Receipt Document'}
-                    </span>
-                    <button
-                      onClick={() => handleDownloadDocument(inv)}
-                      className="bg-emerald-400 hover:bg-emerald-300 text-black text-[10px] font-black tracking-wider px-3 py-1.5 rounded uppercase transition-colors flex items-center gap-1 cursor-pointer"
-                      title="Download Official Billing Document"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>{inv.receiptFileUrl ? 'DOWNLOAD SLIP' : 'DOWNLOAD RECEIPT'}</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-[#111111] border border-gray-800 p-8 sm:p-12 text-center rounded-2xl space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
+                <CreditCard className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-black text-white uppercase tracking-wider">NO SERVICE BOOKED YET</h3>
+              <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+                You currently have no active service plan or membership subscription booked. Browse our coaching programs and services to get started.
+              </p>
             </div>
           )}
         </div>

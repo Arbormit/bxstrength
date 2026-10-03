@@ -19,13 +19,13 @@ export const BodyStatsTracker: React.FC<BodyStatsTrackerProps> = ({
   const [showAddForm, setShowAddForm] = useState(false);
 
   // Form fields
-  const [weightKg, setWeightKg] = useState<string>('80.0');
-  const [heightCm, setHeightCm] = useState<string>('178');
-  const [bodyFat, setBodyFat] = useState<string>('18.5');
-  const [chestCm, setChestCm] = useState<string>('102');
-  const [waistCm, setWaistCm] = useState<string>('84');
-  const [bicepsCm, setBicepsCm] = useState<string>('37.5');
-  const [thighsCm, setThighsCm] = useState<string>('58');
+  const [weightKg, setWeightKg] = useState<string>('');
+  const [heightCm, setHeightCm] = useState<string>('');
+  const [bodyFat, setBodyFat] = useState<string>('');
+  const [chestCm, setChestCm] = useState<string>('');
+  const [waistCm, setWaistCm] = useState<string>('');
+  const [bicepsCm, setBicepsCm] = useState<string>('');
+  const [thighsCm, setThighsCm] = useState<string>('');
 
   // Preview BMI calculation
   const weightNum = parseFloat(weightKg) || 0;

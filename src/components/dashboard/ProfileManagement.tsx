@@ -15,7 +15,7 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
   const [name, setName] = useState(user.name);
   const [phone, setPhone] = useState(user.phone || '');
   const [age, setAge] = useState<number | ''>(user.age || '');
-  const [heightCm, setHeightCm] = useState<number | ''>(user.heightCm || 175);
+  const [heightCm, setHeightCm] = useState<number | ''>(user.heightCm !== undefined && user.heightCm !== null ? user.heightCm : 0);
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | 'Prefer not to say'>(user.gender || 'Male');
   const [emergencyContact, setEmergencyContact] = useState(user.emergencyContact || '');
   const [fitnessGoals, setFitnessGoals] = useState(user.fitnessGoals || '');
@@ -28,10 +28,20 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
   const [loading, setLoading] = useState(false);
 
   // Password state
-  const [currentPass, setCurrentPass] = useState('');
+  const [currentPass, setCurrentPass] = useState(user.password || user.password_or_hash || user.password_hash || '');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
   const [passError, setPassError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (user) {
+      setHeightCm(user.heightCm !== undefined && user.heightCm !== null ? user.heightCm : 0);
+      const userPassword = user.password || user.password_or_hash || user.password_hash;
+      if (userPassword) {
+        setCurrentPass(userPassword);
+      }
+    }
+  }, [user]);
 
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,7 +72,7 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
         name,
         phone,
         age: Number(age) || undefined,
-        heightCm: Number(heightCm) || undefined,
+        heightCm: heightCm !== '' ? Number(heightCm) : 0,
         gender,
         emergencyContact,
         fitnessGoals,
@@ -94,7 +104,11 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
     try {
       setLoading(true);
       setPassError(null);
-      setCurrentPass('');
+      await updateProfile({
+        password: newPass,
+        password_or_hash: newPass
+      });
+      setCurrentPass(newPass);
       setNewPass('');
       setConfirmPass('');
       onShowToast('Security password updated successfully!');
@@ -167,7 +181,7 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
             </div>
           </div>
 
-          {/* Quick preset avatar generator */}
+          {/* Quick preset avatar generator
           <div className="bg-[#111111] border border-gray-800 p-6">
             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-300 mb-3 flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-[#E52165]" /> Avatar Preset Generator
@@ -191,7 +205,7 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Right Column: Information Form & Password Update */}
@@ -254,19 +268,6 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">
-                      Height (cm)
-                    </label>
-                    <input
-                      type="number"
-                      value={heightCm}
-                      onChange={(e) => setHeightCm(e.target.value ? Number(e.target.value) : '')}
-                      placeholder="e.g. 175"
-                      className="w-full bg-gray-900 border border-emerald-800 focus:border-emerald-400 text-white px-3 py-2.5 text-sm rounded-none outline-none font-mono"
-                    />
-                  </div>
-
-                  <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
                       Gender
                     </label>
@@ -282,19 +283,6 @@ export const ProfileManagement: React.FC<ProfileManagementProps> = ({ user, onSh
                     </select>
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                  Emergency Contact Info
-                </label>
-                <input
-                  type="text"
-                  value={emergencyContact}
-                  onChange={(e) => setEmergencyContact(e.target.value)}
-                  placeholder="e.g. Jane Doe (+1 555-999-8888)"
-                  className="w-full bg-gray-900 border border-gray-800 focus:border-[#E52165] text-white px-3.5 py-2.5 text-sm rounded-none outline-none"
-                />
               </div>
 
               <div>

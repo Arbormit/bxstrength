@@ -1,11 +1,12 @@
 import React from 'react';
-import { Booking, Enquiry } from '../../types';
+import { Booking, Enquiry, ClassSchedule } from '../../types';
 import { VelocityAPI } from '../../services/api';
-import { Calendar, CheckCircle2, XCircle, Clock, MapPin, Tag, FileText, Send, Activity, MessageSquare } from 'lucide-react';
+import { Calendar, CheckCircle2, XCircle, Clock, MapPin, Tag, FileText, Send, Activity, MessageSquare, ShieldCheck } from 'lucide-react';
 
 interface MyBookingsViewProps {
   bookings: Booking[];
   enquiries?: Enquiry[];
+  classSchedules?: ClassSchedule[];
   onBookingsUpdated: () => void;
   onShowToast: (msg: string) => void;
 }
@@ -13,6 +14,7 @@ interface MyBookingsViewProps {
 export const MyBookingsView: React.FC<MyBookingsViewProps> = ({
   bookings,
   enquiries = [],
+  classSchedules = [],
   onBookingsUpdated,
   onShowToast
 }) => {
@@ -36,10 +38,59 @@ export const MyBookingsView: React.FC<MyBookingsViewProps> = ({
             MY BOOKED SESSIONS & SUBMITTED FORMS RECORD
           </h2>
           <p className="text-xs text-gray-400 mt-1">
-            View all confirmed class reservations, 15-min sessions, self-assessments, and form submissions sent to BxStrength coaches & support team.
+            View all confirmed class reservations, assigned class schedules, self-assessments, and form submissions.
           </p>
         </div>
       </div>
+
+      {/* SECTION: APPROVED CLASS SCHEDULES & TIMETABLE */}
+      {classSchedules.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2 border-b border-gray-800 pb-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            LIVE & APPROVED CLASS SCHEDULES ({classSchedules.length})
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {classSchedules.map((cls) => (
+              <div
+                key={cls.id}
+                className="bg-[#111111] border border-emerald-900/60 p-6 flex flex-col justify-between transition-all hover:border-emerald-500/60 rounded"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-950/60 px-2.5 py-0.5 border border-amber-800 uppercase">
+                      {cls.category}
+                    </span>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-emerald-500 text-black rounded flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Live & Approved
+                    </span>
+                  </div>
+
+                  <h3 className="text-lg font-black uppercase text-white mb-1">{cls.title}</h3>
+                  <p className="text-xs text-gray-300 flex items-center gap-1.5 mb-2 font-semibold">
+                    <Clock className="w-3.5 h-3.5 text-[#E52165]" />
+                    <span>{cls.dayOfWeek} {cls.startTime} - {cls.endTime}</span>
+                  </p>
+                  
+                  <div className="space-y-1.5 text-xs text-gray-400 border-t border-gray-800/80 pt-2.5 mt-2">
+                    <p className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-gray-500" />
+                      <span>Assigned Coach / Trainer: <strong className="text-amber-300">{cls.trainerName}</strong></span>
+                    </p>
+                    {cls.instructions && (
+                      <p className="text-[11px] text-zinc-300 bg-zinc-950 p-2 border border-zinc-800 rounded mt-1">
+                        <strong className="text-amber-400 block text-[10px] uppercase">Instructions:</strong>
+                        {cls.instructions}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* SECTION 1: CONFIRMED CLASS SESSIONS */}
       <div className="space-y-4">

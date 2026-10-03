@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, BodyStat, Booking, WorkoutProgram, NutritionPlan, Announcement, Enquiry } from '../../types';
-import { Scale, Activity, Flame, Calendar, Dumbbell, Utensils, Award, ShieldAlert, CheckCircle2, ChevronRight, Zap, Mail } from 'lucide-react';
+import { Scale, Activity, Calendar, Dumbbell, Award, ShieldAlert, CheckCircle2, ChevronRight, Zap, Mail } from 'lucide-react';
 
 interface DashboardOverviewProps {
   user: User;
@@ -31,14 +31,26 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       const baseUrl = (import.meta as any).env?.VITE_API_URL || '';
       return `${baseUrl}${path}`;
     };
-    fetch(getApiUrl(`/api/journey/latest-by-email/${encodeURIComponent(user.email)}`))
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.record) {
-          setActiveJourney(data.record);
-        }
-      })
-      .catch(() => {});
+
+    const fetchJourney = () => {
+      fetch(getApiUrl(`/api/journey/latest-by-email/${encodeURIComponent(user.email)}`))
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.record) {
+            setActiveJourney(data.record);
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchJourney();
+    window.addEventListener('storage', fetchJourney);
+    const interval = setInterval(fetchJourney, 3000);
+
+    return () => {
+      window.removeEventListener('storage', fetchJourney);
+      clearInterval(interval);
+    };
   }, [user?.email]);
 
   return (
@@ -60,9 +72,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-[#E52165] text-white">
-                  MEMBER ATHLETE
-                </span>
                 {user.isVerified && (
                   <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> Profile Verified
@@ -84,7 +93,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               className="bg-[#E52165] hover:bg-[#c41551] text-white text-xs font-black tracking-widest px-5 py-3 uppercase transition-all shadow-md shadow-pink-500/20 flex items-center gap-2"
             >
               <Scale className="w-4 h-4" />
-              <span>LOG BODY WEIGHT</span>
+              <span>ADD BODY WEIGHT</span>
             </button>
             <button
               onClick={() => onNavigateTab('workouts')}
@@ -149,7 +158,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <a
-              href={activeJourney.joinUrl || `https://bxstrength.co.uk/join/${activeJourney.id}`}
+              href={activeJourney.joinUrl || `https://bxstrength.com/join/${activeJourney.id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs uppercase px-4 py-2.5 rounded-lg transition-all shadow-md flex items-center gap-1.5"
@@ -162,7 +171,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       )}
 
       {/* KPI Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Card 1: Current Weight */}
         <div className="bg-[#111111] border border-gray-800 p-5 relative overflow-hidden group hover:border-[#E52165]/50 transition-colors">
           <div className="flex items-center justify-between text-gray-400 mb-2">
@@ -170,11 +179,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <Scale className="w-5 h-5 text-[#E52165]" />
           </div>
           <div className="text-3xl font-black text-white tracking-tight">
-            {latestStat ? `${latestStat.weightKg} kg` : '80.0 kg'}
+            {latestStat ? `${latestStat.weightKg} kg` : '0 kg'}
           </div>
-          <p className="text-[11px] text-emerald-400 mt-1 font-semibold flex items-center gap-1">
-            <Zap className="w-3 h-3" /> Down 4.1 kg in last 30 days
-          </p>
         </div>
 
         {/* Card 2: BMI Category */}
@@ -184,39 +190,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <Activity className="w-5 h-5 text-emerald-400" />
           </div>
           <div className="text-3xl font-black text-white tracking-tight">
-            {latestStat ? latestStat.bmi : '24.7'}
+            {latestStat ? latestStat.bmi : '0'}
           </div>
-          <p className="text-[11px] text-emerald-400 mt-1 font-semibold">
-            Category: {latestStat ? latestStat.bmiCategory : 'Normal Weight'}
-          </p>
-        </div>
-
-        {/* Card 3: Workout Streak */}
-        <div className="bg-[#111111] border border-gray-800 p-5 relative overflow-hidden group hover:border-[#E52165]/50 transition-colors">
-          <div className="flex items-center justify-between text-gray-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Workout Streak</span>
-            <Flame className="w-5 h-5 text-orange-500 animate-pulse" />
-          </div>
-          <div className="text-3xl font-black text-white tracking-tight">
-            14 DAYS
-          </div>
-          <p className="text-[11px] text-orange-400 mt-1 font-semibold">
-            Consistency level: Elite 🔥
-          </p>
-        </div>
-
-        {/* Card 4: Daily Nutrition Target */}
-        <div className="bg-[#111111] border border-gray-800 p-5 relative overflow-hidden group hover:border-[#E52165]/50 transition-colors">
-          <div className="flex items-center justify-between text-gray-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Daily Calorie Target</span>
-            <Utensils className="w-5 h-5 text-blue-400" />
-          </div>
-          <div className="text-3xl font-black text-white tracking-tight">
-            {nutritionPlan ? `${nutritionPlan.dailyCalories} kcal` : '2,400 kcal'}
-          </div>
-          <p className="text-[11px] text-blue-400 mt-1 font-semibold">
-            Macro Target: {nutritionPlan ? `${nutritionPlan.targetProteinG}g Protein` : '190g Protein'}
-          </p>
         </div>
       </div>
 
@@ -229,15 +204,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <div className="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
               <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-[#E52165]" />
-                UPCOMING GYM SESSION
+                UPCOMING CLASS SESSION
               </h3>
-              <button
-                onClick={() => onNavigateTab('bookings')}
-                className="text-xs text-[#E52165] font-bold uppercase hover:underline flex items-center gap-1"
-              >
-                <span>All Bookings</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
             </div>
 
             {nextBooking ? (
@@ -265,13 +233,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             ) : (
               <div className="text-center py-6 bg-gray-900/40 border border-dashed border-gray-800">
                 <Calendar className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-                <p className="text-xs text-gray-400 mb-3">No upcoming class sessions booked yet.</p>
-                <button
-                  onClick={() => onNavigateTab('bookings')}
-                  className="bg-[#E52165] text-white text-xs font-bold tracking-wider px-4 py-2 uppercase"
-                >
-                  BOOK A CLASS NOW
-                </button>
+                <p className="text-xl text-gray-400 mb-3">No upcoming class sessions booked yet.</p>
               </div>
             )}
           </div>
@@ -281,15 +243,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <div className="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
               <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
                 <Dumbbell className="w-4 h-4 text-[#E52165]" />
-                ASSIGNED TRAINING PROGRAM
+                TRAINING PROGRAM
               </h3>
-              <button
-                onClick={() => onNavigateTab('workouts')}
-                className="text-xs text-[#E52165] font-bold uppercase hover:underline flex items-center gap-1"
-              >
-                <span>View Full Routine</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
             </div>
 
             {activeProgram ? (
@@ -332,8 +287,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           {/* Gym Announcements */}
           <div className="bg-[#111111] border border-gray-800 p-6">
             <h3 className="text-sm font-black uppercase tracking-wider text-white mb-4 flex items-center gap-2 border-b border-gray-800 pb-3">
-              <ShieldAlert className="w-4 h-4 text-[#E52165]" />
-              CLUB ANNOUNCEMENTS
+              ANNOUNCEMENTS
             </h3>
 
             <div className="space-y-3">
@@ -354,47 +308,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 ))
               ) : (
                 <div className="text-center py-6 px-4 bg-zinc-900/40 border border-zinc-800/80 rounded-xl space-y-1.5">
-                  <ShieldAlert className="w-5 h-5 text-zinc-500 mx-auto" />
-                  <p className="text-xs font-bold text-zinc-300 uppercase tracking-wider">No Active Club Announcements</p>
-                  <p className="text-[11px] text-zinc-500 max-w-xs mx-auto">
-                    There are no broadcast notices at this time. Check back soon for official updates, events, and coaching news.
-                  </p>
+                  <p className="text-xs font-bold text-zinc-300 uppercase tracking-wider">No Active Announcements</p>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Quick Badges Preview */}
-          <div className="bg-[#111111] border border-gray-800 p-6">
-            <div className="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
-              <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-400" />
-                ACHIEVEMENTS UNLOCKED
-              </h3>
-              <button
-                onClick={() => onNavigateTab('achievements')}
-                className="text-xs text-[#E52165] font-bold uppercase hover:underline"
-              >
-                View All
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-900 border border-gray-800 p-3 text-center">
-                <div className="w-9 h-9 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-1 font-bold text-sm">
-                  🏆
-                </div>
-                <span className="block text-[11px] font-bold text-white uppercase">First Workout</span>
-                <span className="text-[9px] text-emerald-400">Unlocked</span>
-              </div>
-
-              <div className="bg-gray-900 border border-gray-800 p-3 text-center">
-                <div className="w-9 h-9 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center mx-auto mb-1 font-bold text-sm">
-                  🔥
-                </div>
-                <span className="block text-[11px] font-bold text-white uppercase">14-Day Streak</span>
-                <span className="text-[9px] text-emerald-400">Unlocked</span>
-              </div>
             </div>
           </div>
 

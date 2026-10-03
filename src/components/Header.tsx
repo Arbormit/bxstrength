@@ -97,10 +97,10 @@ export const Header: React.FC<HeaderProps> = ({
   const getTargetDashboardPage = (): ViewPage => {
     if (!user) return 'dashboard';
     const roleClean = (user.role || '').toLowerCase();
-    if (['customer_support', 'cs_agent', 'support'].includes(roleClean)) {
+    if (['customer_support', 'support'].includes(roleClean)) {
       return 'support_dashboard';
     }
-    if (roleClean === 'admin' || roleClean === 'coach') {
+    if (roleClean === 'admin' || roleClean === 'headcoach' || roleClean === 'coach') {
       return 'admin';
     }
     return 'dashboard';
@@ -109,10 +109,11 @@ export const Header: React.FC<HeaderProps> = ({
   const getRoleBadgeLabel = (): string => {
     if (!user) return 'PORTAL';
     const roleClean = (user.role || '').toLowerCase();
-    if (['customer_support', 'cs_agent', 'support'].includes(roleClean)) {
+    if (['customer_support', 'support'].includes(roleClean)) {
       return 'CUSTOMER SUPPORT PORTAL';
     }
     if (roleClean === 'admin') return 'ADMIN PORTAL';
+    if (roleClean === 'headcoach') return 'HEAD COACH PORTAL';
     if (roleClean === 'coach') return 'COACH PORTAL';
     return 'CLIENT PORTAL';
   };

@@ -9,7 +9,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password_or_hash: string) => Promise<User>;
   loginWithGoogle: (email?: string, name?: string, avatarUrl?: string) => Promise<User>;
-  register: (name: string, email: string, phone?: string, role?: UserRole, password?: string) => Promise<User>;
+  register: (name: string, email: string, phone?: string, role?: UserRole, password?: string) => Promise<{ user: User; requireOtp?: boolean }>;
+  verifyOtp: (email: string, otp: string) => Promise<User>;
+  resendOtp: (email: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   updateProfile: (updates: Partial<User>) => Promise<User>;
   verifyEmail: () => void;
@@ -26,7 +28,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const syncUser = () => {
     const currentUser = VelocityAPI.getCurrentUser();
     const storedToken = localStorage.getItem('velocity_jwt_token');
-    if (currentUser) {
+    // Only consider authenticated if user exists AND isVerified is true
+    if (currentUser && currentUser.isVerified !== false) {
       setUser(currentUser);
       setToken(storedToken || `jwt_${currentUser.id}`);
     } else {
@@ -53,8 +56,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password_or_hash: string): Promise<User> => {
     const res = await VelocityAPI.login(email, password_or_hash);
-    setUser(res.user);
-    setToken(res.token);
+    if (res.user && res.user.isVerified !== false) {
+      setUser(res.user);
+      setToken(res.token);
+    }
     return res.user;
   };
 
@@ -65,11 +70,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res.user;
   };
 
-  const register = async (name: string, email: string, phone?: string, role?: UserRole, password?: string): Promise<User> => {
+  const register = async (name: string, email: string, phone?: string, role?: UserRole, password?: string): Promise<{ user: User; requireOtp?: boolean }> => {
     const res = await VelocityAPI.register({ name, email, phone, role, password });
+    if (!res.requireOtp && res.token) {
+      setUser(res.user);
+      setToken(res.token);
+    }
+    return { user: res.user, requireOtp: res.requireOtp };
+  };
+
+  const verifyOtp = async (email: string, otp: string): Promise<User> => {
+    const res = await VelocityAPI.verifyOtp(email, otp);
     setUser(res.user);
     setToken(res.token);
     return res.user;
+  };
+
+  const resendOtp = async (email: string): Promise<{ success: boolean; message: string }> => {
+    return await VelocityAPI.resendOtp(email);
   };
 
   const logout = () => {
@@ -115,10 +133,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         role: user ? user.role : null,
         token,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && user.isVerified !== false,
         login,
         loginWithGoogle,
         register,
+        verifyOtp,
+        resendOtp,
         logout,
         updateProfile,
         verifyEmail,

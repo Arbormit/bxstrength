@@ -39,7 +39,8 @@ export const SupportTicketsView: React.FC<SupportTicketsViewProps> = ({ user, on
     sessionStorage.setItem('bxstrength_ticket_draft_desc', description);
   }, [description]);
 
-  const fetchUserTickets = async () => {
+  const fetchUserTickets = async (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     try {
       const localTickets = VelocityAPI.getTickets(user.id);
       const res = await fetch(getApiUrl(`/api/tickets?userId=${encodeURIComponent(user.id)}&userEmail=${encodeURIComponent(user.email)}`));
@@ -54,13 +55,13 @@ export const SupportTicketsView: React.FC<SupportTicketsViewProps> = ({ user, on
     } catch {
       setTickets(VelocityAPI.getTickets(user.id));
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUserTickets();
-    const interval = setInterval(fetchUserTickets, 3000); // 3 sec real-time polling
+    fetchUserTickets(true);
+    const interval = setInterval(() => fetchUserTickets(false), 5000);
     return () => clearInterval(interval);
   }, [user.id, user.email]);
 
@@ -180,11 +181,10 @@ export const SupportTicketsView: React.FC<SupportTicketsViewProps> = ({ user, on
       <div className="bg-[#121214] border border-zinc-800 p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <LifeBuoy className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-xl font-black text-white uppercase tracking-tight">SUPPORT TICKETS & DESK</h2>
+            <h2 className="text-xl font-black text-white uppercase tracking-tight">SUPPORT TICKETS</h2>
           </div>
           <p className="text-xs text-zinc-400">
-            Raise issues regarding training programs, nutrition plans, or scheduling. Real-time updates reflect live from admin.
+            Raise issues regarding training programs, nutrition plans, or scheduling. Real-time updates reflect live from headcoach / coach.
           </p>
         </div>
 
@@ -202,7 +202,6 @@ export const SupportTicketsView: React.FC<SupportTicketsViewProps> = ({ user, on
         <Skeleton variant="card" count={3} />
       ) : tickets.length === 0 ? (
         <div className="bg-[#121214] border border-zinc-800/80 p-12 text-center rounded-2xl space-y-3">
-          <LifeBuoy className="w-12 h-12 text-zinc-700 mx-auto" />
           <h3 className="text-base font-bold text-white uppercase tracking-wider">No Support Tickets Raised Yet</h3>
           <p className="text-xs text-zinc-500 max-w-sm mx-auto">
             If you experience any training issue, injury adjustment request, or diet query, click above to alert your coach team.

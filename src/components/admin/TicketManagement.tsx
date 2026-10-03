@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { SupportTicket, TicketStatus, TicketPriority, TicketCategory } from '../../types';
+import { SupportTicket, TicketStatus, TicketPriority, TicketCategory, User } from '../../types';
 import { VelocityAPI } from '../../services/api';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import {
@@ -9,6 +9,8 @@ import {
 import { Skeleton } from '../ui/Skeleton';
 
 interface TicketManagementProps {
+  user?: User;
+  coaches?: User[];
   onShowToast: (msg: string) => void;
 }
 
@@ -30,7 +32,7 @@ const formatTicketDate = (rawDate?: string): string => {
   }
 };
 
-export const TicketManagement: React.FC<TicketManagementProps> = ({ onShowToast }) => {
+export const TicketManagement: React.FC<TicketManagementProps> = ({ user, coaches = [], onShowToast }) => {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
@@ -45,6 +47,10 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({ onShowToast 
   const [ticketToDelete, setTicketToDelete] = useState<SupportTicket | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+  const currentUser = user || VelocityAPI.getCurrentUser();
+  const isHeadCoach = currentUser?.role === 'headcoach' || (currentUser?.role === 'coach' && Boolean((currentUser as any)?.isHeadCoach));
+  const isCoachOnly = currentUser?.role === 'coach' && !isHeadCoach;
 
   const fetchAllTickets = async (showSpin = false) => {
     if (showSpin) setIsRefreshing(true);
@@ -61,14 +67,33 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({ onShowToast 
         console.error('Failed to fetch server tickets:', e);
       }
 
-      const map = new Map<string, SupportTicket>();
+      // Deduplicate by both ID and Content (userEmail + description snippet)
+      const mapById = new Map<string, SupportTicket>();
+      const mapByContent = new Map<string, SupportTicket>();
+
       [...localTickets, ...serverTickets].forEach(t => {
         if (t && t.id && t.id !== 'TICKET-849201' && t.id !== 'TICKET-739104') {
-          map.set(t.id, t);
+          const email = (t.userEmail || '').toLowerCase().trim();
+          const descSnippet = (t.description || t.subject || '').toLowerCase().trim().slice(0, 40);
+          const contentKey = `${email}|${descSnippet}`;
+
+          if (!mapByContent.has(contentKey)) {
+            mapByContent.set(contentKey, t);
+            mapById.set(t.id, t);
+          } else {
+            const existing = mapByContent.get(contentKey)!;
+            const newDate = new Date(t.createdAt || 0).getTime();
+            const existingDate = new Date(existing.createdAt || 0).getTime();
+            if (newDate > existingDate) {
+              mapById.delete(existing.id);
+              mapByContent.set(contentKey, t);
+              mapById.set(t.id, t);
+            }
+          }
         }
       });
 
-      setTickets(Array.from(map.values()));
+      setTickets(Array.from(mapById.values()));
     } catch (e) {
       setTickets(VelocityAPI.getTickets().filter(t => t.id !== 'TICKET-849201' && t.id !== 'TICKET-739104'));
     } finally {
@@ -85,9 +110,23 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({ onShowToast 
 
   // Filtered Tickets
   const filteredTickets = useMemo(() => {
-    const term = searchTerm.toLowerCase().trim();
+    const term = searchTerm.toLowerCase().trim().replace(/^#/, '');
 
     return tickets.filter((t) => {
+      // Role Scope: Normal coach only views tickets assigned to them
+      if (isCoachOnly && currentUser) {
+        const coachName = (currentUser.name || '').toLowerCase().trim();
+        const coachEmail = (currentUser.email || '').toLowerCase().trim();
+        const assigned = (t.assignedAgent || '').toLowerCase().trim();
+
+        if (!assigned || assigned === 'unassigned' || assigned === 'cs team') {
+          return false;
+        }
+
+        const isAssignedToMe = assigned.includes(coachName) || (coachEmail && assigned.includes(coachEmail));
+        if (!isAssignedToMe) return false;
+      }
+
       // 1. Status Filter
       if (statusFilter !== 'all' && t.status !== statusFilter) return false;
 
@@ -111,7 +150,7 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({ onShowToast 
 
       return matchId || matchName || matchEmail || matchPhone || matchSubject || matchCategory || matchDesc || matchAgent;
     });
-  }, [tickets, searchTerm, statusFilter, priorityFilter, categoryFilter]);
+  }, [tickets, searchTerm, statusFilter, priorityFilter, categoryFilter, isCoachOnly, currentUser]);
 
   // Stats Counters
   const stats = useMemo(() => {
@@ -519,12 +558,16 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({ onShowToast 
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black uppercase text-zinc-400">ASSIGNEE:</span>
                     <select
-                      value={t.assignedAgent || 'Unassigned'}
+                      value={
+                        (t.assignedAgent === 'Head Coach & Team' || t.assignedAgent === 'Head Coach' || t.assignedAgent === 'Shaban Faridi (Head Coach)')
+                          ? 'Shaban Faridi'
+                          : (t.assignedAgent || 'Unassigned')
+                      }
                       onChange={(ev) => handleAssignAgent(t.id, ev.target.value)}
                       className="bg-[#121214] border border-zinc-700 text-[#CCFF00] text-xs font-bold px-2.5 py-1 rounded focus:outline-none focus:border-[#CCFF00] cursor-pointer"
                     >
                       <option value="Unassigned">Unassigned (General Queue)</option>
-                      <option value="Head Coach & Team">Head Coach &amp; Team</option>
+                      <option value="Shaban Faridi">Shaban Faridi (Head Coach)</option>
                       <option value="Sadeem (Strength & Conditioning)">Sadeem (Strength &amp; Conditioning)</option>
                       <option value="Moheeb Khan (Boxing Specialist)">Moheeb Khan (Boxing Specialist)</option>
                       <option value="CS Agent Desk">CS Agent Desk</option>

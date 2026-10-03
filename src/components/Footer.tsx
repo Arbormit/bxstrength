@@ -215,10 +215,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             © 2026 BxStrength. All rights reserved.
           </p>
 
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 text-xs">
             <button onClick={() => handleNav('terms')} className="hover:text-white transition-colors cursor-pointer">Terms</button>
             <span>•</span>
             <button onClick={() => handleNav('privacy')} className="hover:text-white transition-colors cursor-pointer">Privacy</button>
+            <span>•</span>
+            <button onClick={() => handleNav('onboarding_terms')} className="hover:text-[#CCFF00] text-zinc-300 font-bold transition-colors cursor-pointer">Onboarding &amp; Checkout Policies</button>
             <span>•</span>
             <span className="text-zinc-400">support@bxstrength.com</span>
           </div>

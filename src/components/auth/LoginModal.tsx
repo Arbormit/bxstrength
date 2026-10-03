@@ -10,6 +10,7 @@ interface LoginModalProps {
   onClose: () => void;
   onOpenRegister: () => void;
   onOpenForgotPassword: () => void;
+  onRequireOtp?: (email: string) => void;
   onSuccessNavigate?: (role: UserRole) => void;
 }
 
@@ -18,6 +19,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onClose,
   onOpenRegister,
   onOpenForgotPassword,
+  onRequireOtp,
   onSuccessNavigate
 }) => {
   const { login, loginWithGoogle } = useAuth();
@@ -29,6 +31,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const [showNoAccountModal, setShowNoAccountModal] = useState(false);
+  const [showUnverifiedModal, setShowUnverifiedModal] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState('');
   const [showGooglePrompt, setShowGooglePrompt] = useState(false);
   const [customGoogleEmail, setCustomGoogleEmail] = useState('');
   const [customGoogleName, setCustomGoogleName] = useState('');
@@ -59,7 +63,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     } catch (err: any) {
       const msg = err.message || 'Login failed. Please check your credentials.';
       setError(msg);
-      if (msg.toLowerCase().includes('no account found') || msg.toLowerCase().includes('create an account first')) {
+
+      if (err.code === 'EMAIL_NOT_VERIFIED' || msg.toLowerCase().includes('verification required') || msg.toLowerCase().includes('not verified')) {
+        setUnverifiedEmail(err.email || email);
+        setShowUnverifiedModal(true);
+      } else if (msg.toLowerCase().includes('no account found') || msg.toLowerCase().includes('create an account first')) {
         setShowNoAccountModal(true);
       }
     } finally {
@@ -383,6 +391,46 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs uppercase py-2.5 rounded-xl transition-all cursor-pointer"
                 >
                   Try Different Email
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Interactive Popup Alert when account is not verified */}
+        {showUnverifiedModal && (
+          <div className="absolute inset-0 bg-black/95 z-50 p-6 flex flex-col justify-center items-center text-center animate-in fade-in duration-150">
+            <div className="space-y-4 max-w-xs">
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-inner">
+                <Lock className="w-6 h-6 text-[#CCFF00]" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-base font-black uppercase tracking-tight text-white">EMAIL VERIFICATION REQUIRED</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Your BxStrength account for <strong className="text-white">{unverifiedEmail}</strong> requires 2-step OTP verification before accessing the Client Dashboard.
+                </p>
+              </div>
+              <div className="space-y-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUnverifiedModal(false);
+                    onClose();
+                    if (onRequireOtp) {
+                      onRequireOtp(unverifiedEmail);
+                    }
+                  }}
+                  className="w-full bg-[#CCFF00] hover:bg-[#b3e600] text-black font-black text-xs uppercase py-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <span>ENTER 6-DIGIT OTP CODE NOW</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowUnverifiedModal(false)}
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs uppercase py-2.5 rounded-xl transition-all cursor-pointer"
+                >
+                  Back to Sign In
                 </button>
               </div>
             </div>

@@ -13,12 +13,21 @@ CREATE TABLE IF NOT EXISTS users (
   gender VARCHAR(50),
   emergency_contact VARCHAR(255),
   fitness_goals TEXT,
-  is_verified BOOLEAN DEFAULT true,
-  status VARCHAR(50) DEFAULT 'active',
+  is_verified BOOLEAN DEFAULT false,
+  status VARCHAR(50) DEFAULT 'pending_verification',
   signup_method VARCHAR(50) DEFAULT 'Email / Password',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   last_login_at TIMESTAMP WITH TIME ZONE
 );
+
+CREATE TABLE IF NOT EXISTS otps (
+  email VARCHAR(255) PRIMARY KEY,
+  otp_code VARCHAR(64) NOT NULL,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  attempts INT DEFAULT 0,
+  last_sent_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 
 CREATE TABLE IF NOT EXISTS body_stats (
   id VARCHAR(64) PRIMARY KEY,

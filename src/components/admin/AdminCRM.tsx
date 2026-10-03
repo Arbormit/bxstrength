@@ -15,7 +15,7 @@ import { SupportDashboardView } from '../support/SupportDashboardView';
 import { CoachesManager } from './CoachesManager';
 import {
   LayoutDashboard, Users, Calendar, Dumbbell, Utensils,
-  CreditCard, Mail, ShieldAlert, ShieldCheck, LogOut, CheckCircle2, X, LifeBuoy, UserCheck
+  CreditCard, Mail, ShieldAlert, ShieldCheck, LogOut, CheckCircle2, X, LifeBuoy, UserCheck, Headphones, FileText
 } from 'lucide-react';
 
 import { SkeletonLoader } from '../ui/SkeletonLoader';
@@ -44,60 +44,47 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
   const loadCRMData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(getApiUrl('/api/users'));
-      if (res.ok) {
-        const rawUsers = await res.json();
-        if (Array.isArray(rawUsers)) {
-          const formattedUsers: User[] = rawUsers.map((u: any) => {
-            let statements: any[] = [];
-            if (u.billing_statements) {
-              if (Array.isArray(u.billing_statements)) statements = u.billing_statements;
-              else if (typeof u.billing_statements === 'string') {
-                try { statements = JSON.parse(u.billing_statements); } catch { statements = []; }
-              }
-            } else if (u.billingStatements) {
-              statements = Array.isArray(u.billingStatements) ? u.billingStatements : [];
-            }
+      const [
+        fetchedUsers,
+        fetchedClasses,
+        fetchedSubs,
+        fetchedAudit,
+        fetchedEnq,
+        fetchedProgs,
+        fetchedNut,
+        fetchedAnn
+      ] = await Promise.all([
+        VelocityAPI.fetchUsers(),
+        VelocityAPI.fetchClasses(),
+        VelocityAPI.fetchSubscriptions(),
+        VelocityAPI.fetchAuditLogs(),
+        VelocityAPI.fetchEnquiries(),
+        VelocityAPI.fetchPrograms(),
+        VelocityAPI.fetchNutritionPlans(),
+        VelocityAPI.fetchAnnouncements()
+      ]);
 
-            return {
-              id: String(u.id || `user-${Date.now()}`),
-              name: String(u.name || u.email || 'User'),
-              email: String(u.email || ''),
-              role: (u.role || 'client') as UserRole,
-              coachPosition: u.coach_position || u.coachPosition || (u.role === 'coach' ? 'HeadCoach' : undefined),
-              phone: u.phone || '',
-              age: u.age || 25,
-              heightCm: (u.height_cm !== undefined && u.height_cm !== null && !isNaN(Number(u.height_cm))) ? Number(u.height_cm) : (u.heightCm || 175),
-              gender: u.gender || 'Other',
-              subscriptionTier: u.subscription_tier || u.subscriptionTier || 'Normal User',
-              billingStatements: statements,
-              signupMethod: u.signup_method || u.signupMethod || (u.password_hash && String(u.password_hash).includes('GoogleAuthPass') ? 'Google SSO' : 'Email / Password'),
-              avatarUrl: u.avatar_url || u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.email || 'User')}`,
-              fitnessGoals: u.fitness_goals || u.fitnessGoals || '',
-              isVerified: u.is_verified !== undefined ? Boolean(u.is_verified) : (u.isVerified !== undefined ? Boolean(u.isVerified) : true),
-              status: u.status || 'active',
-              createdAt: u.created_at || u.createdAt || new Date().toISOString()
-            };
-          });
-          setUsers(formattedUsers);
-        } else {
-          setUsers(VelocityAPI.getUsers());
-        }
-      } else {
-        setUsers(VelocityAPI.getUsers());
-      }
-    } catch {
+      setUsers(fetchedUsers);
+      setClasses(fetchedClasses);
+      setSubscriptions(fetchedSubs);
+      setAuditLogs(fetchedAudit);
+      setEnquiries(fetchedEnq);
+      setPrograms(fetchedProgs);
+      setNutritionPlans(fetchedNut);
+      setAnnouncements(fetchedAnn);
+    } catch (e: any) {
+      console.error('Error loading CRM data from NeonDB:', e);
       setUsers(VelocityAPI.getUsers());
+      setClasses(VelocityAPI.getClasses());
+      setSubscriptions(VelocityAPI.getSubscriptions());
+      setAuditLogs(VelocityAPI.getAuditLogs());
+      setEnquiries(VelocityAPI.getEnquiries());
+      setPrograms(VelocityAPI.getPrograms());
+      setNutritionPlans(VelocityAPI.getNutritionPlans());
+      setAnnouncements(VelocityAPI.getAnnouncements());
+    } finally {
+      setIsLoading(false);
     }
-
-    setClasses(VelocityAPI.getClasses());
-    setSubscriptions(VelocityAPI.getSubscriptions());
-    setAuditLogs(VelocityAPI.getAuditLogs());
-    setEnquiries(VelocityAPI.getEnquiries());
-    setPrograms(VelocityAPI.getPrograms());
-    setNutritionPlans(VelocityAPI.getNutritionPlans());
-    setAnnouncements(VelocityAPI.getAnnouncements());
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -109,36 +96,55 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
     setTimeout(() => setToastMsg(null), 4000);
   };
 
-  const isCoach = user.role === 'coach';
   const isAdmin = user.role === 'admin';
+  const isHeadCoach = user.role === 'headcoach' || (user.role === 'coach' && Boolean(
+    user.coachPosition && (
+      user.coachPosition.toLowerCase() === 'head coach' ||
+      user.coachPosition.toLowerCase() === 'headcoach' ||
+      user.coachPosition.toLowerCase() === 'chief athletic officer'
+    )
+  ));
+  const isCoach = user.role === 'coach' || isHeadCoach;
 
   // Dynamic Coach Tab Access Control configured by Admin
   const coachPerms = VelocityAPI.getCoachPermissions();
   const allowedCoachTabs: string[] = [];
-  if (coachPerms.allowLeadPipeline) allowedCoachTabs.push('overview');
-  if (coachPerms.allowClientRoster) allowedCoachTabs.push('users');
-  if (coachPerms.allowClassSchedules) allowedCoachTabs.push('schedule');
-  if (coachPerms.allowWorkoutPrograms) allowedCoachTabs.push('programs');
-  if (coachPerms.allowNutritionPlans) allowedCoachTabs.push('nutrition');
-  if (coachPerms.allowFinancials) allowedCoachTabs.push('subscriptions'); // Only visible if Admin explicitly enables it!
-  if (coachPerms.allowSupportTickets) allowedCoachTabs.push('tickets');
+
+  if (isHeadCoach) {
+    // Head Coach gets full operational & management access over coaches & clients
+    allowedCoachTabs.push('overview', 'users', 'schedule', 'programs', 'nutrition', 'enquiries', 'cs_dashboard', 'tickets', 'announcements');
+    if (coachPerms.allowFinancials) allowedCoachTabs.push('subscriptions');
+  } else if (isCoach) {
+    // Specialist / Normal Coach access - strictly restricted to assigned items & clean ENQUIRIES tab
+    if (coachPerms.allowLeadPipeline) allowedCoachTabs.push('overview');
+    if (coachPerms.allowClientRoster) allowedCoachTabs.push('users');
+    if (coachPerms.allowClassSchedules) allowedCoachTabs.push('schedule');
+    if (coachPerms.allowWorkoutPrograms) allowedCoachTabs.push('programs');
+    if (coachPerms.allowNutritionPlans) allowedCoachTabs.push('nutrition');
+    allowedCoachTabs.push('enquiries');
+    if (coachPerms.allowFinancials) allowedCoachTabs.push('subscriptions');
+  } else {
+    // Admin has master access to all tabs
+    allowedCoachTabs.push('overview', 'users', 'schedule', 'programs', 'nutrition', 'subscriptions', 'enquiries', 'cs_dashboard', 'tickets', 'announcements', 'audit');
+  }
 
   const allNavItems = [
-    { id: 'overview', label: isCoach ? 'COACH DASHBOARD' : 'CRM OVERVIEW', icon: LayoutDashboard },
+    { id: 'overview', label: isHeadCoach ? 'HEAD COACH DASHBOARD' : (isCoach ? 'COACH DASHBOARD' : 'CRM OVERVIEW'), icon: LayoutDashboard },
     { id: 'users', label: isCoach ? 'CLIENT ROSTER' : 'USER DIRECTORY', icon: Users },
     { id: 'schedule', label: 'CLASS SCHEDULES', icon: Calendar },
     { id: 'programs', label: 'WORKOUT PROGRAMS', icon: Dumbbell },
     { id: 'nutrition', label: 'DIET PLANS', icon: Utensils },
     { id: 'subscriptions', label: 'FINANCIAL BILLING', icon: CreditCard },
-    { id: 'enquiries', label: 'WEBSITE ENQUIRIES', icon: Mail },
+    { id: 'enquiries', label: isCoach && !isHeadCoach ? 'ENQUIRIES' : (isHeadCoach ? 'HEAD COACH ENQUIRIES' : 'WEBSITE ENQUIRIES'), icon: Mail },
+    { id: 'cs_dashboard', label: 'CUSTOMER SUPPORT DESK', icon: Headphones },
     { id: 'tickets', label: 'SUPPORT TICKETS', icon: LifeBuoy },
     { id: 'announcements', label: 'ANNOUNCEMENTS', icon: ShieldAlert },
-    { id: 'audit', label: 'AUDIT LOGS & PERMISSIONS', icon: ShieldCheck }
+    { id: 'audit', label: 'SECURITY & PERMISSIONS', icon: ShieldCheck }
   ];
 
-  const navItems = isCoach
-    ? allNavItems.filter((item) => allowedCoachTabs.includes(item.id))
-    : allNavItems;
+  const navItems = isAdmin
+    ? allNavItems
+    : allNavItems.filter((item) => allowedCoachTabs.includes(item.id));
 
   const groupedNavSections = [
     {
@@ -157,17 +163,18 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
       ]
     },
     {
-      category: 'FINANCE & COMMUNICATIONS',
+      category: isCoach && !isHeadCoach ? 'MY ASSIGNED WORKSPACE' : 'CUSTOMER SUPPORT & COMMUNICATIONS',
       items: [
-        { id: 'subscriptions', label: 'FINANCIAL BILLING', icon: CreditCard },
-        { id: 'enquiries', label: 'WEBSITE ENQUIRIES', icon: Mail },
+        { id: 'enquiries', label: isCoach && !isHeadCoach ? 'ENQUIRIES' : (isHeadCoach ? 'HEAD COACH ENQUIRIES' : 'WEBSITE ENQUIRIES'), icon: Mail },
+        { id: 'cs_dashboard', label: 'CUSTOMER SUPPORT DESK', icon: Headphones },
         { id: 'tickets', label: 'SUPPORT TICKETS', icon: LifeBuoy },
         { id: 'announcements', label: 'ANNOUNCEMENTS', icon: ShieldAlert },
       ]
     },
     {
-      category: 'GOVERNANCE & SECURITY',
+      category: 'FINANCE & SECURITY',
       items: [
+        { id: 'subscriptions', label: 'FINANCIAL BILLING', icon: CreditCard },
         { id: 'audit', label: 'SECURITY & PERMISSIONS', icon: ShieldCheck }
       ]
     }
@@ -182,7 +189,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
     }
   }, [isCoach, activeTab, allowedCoachTabs]);
 
-  const coaches = users.filter((u) => u.role === 'coach' || u.role === 'admin');
+  const coaches = users.filter((u) => u.role === 'coach' || u.role === 'headcoach' || u.role === 'admin');
   const clients = users.filter((u) => u.role === 'client');
 
   return (
@@ -210,7 +217,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
               <div className="overflow-hidden">
                 <h2 className="text-sm font-black uppercase text-white truncate">{user.name}</h2>
                 <span className="text-[10px] font-bold text-zinc-400 uppercase block">
-                  {isCoach ? `BxStrength Coach • ${user.coachPosition || 'Head Coach'}` : 'BxStrength System Admin'}
+                  {isAdmin ? 'BxStrength Admin' : (isHeadCoach ? 'BxStrength Head Coach' : 'BxStrength Coach')}
                 </span>
               </div>
             </div>
@@ -297,6 +304,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
               <UserManagement
                 users={users}
                 isCoach={isCoach}
+                isHeadCoach={isHeadCoach}
                 onUsersUpdated={loadCRMData}
                 onShowToast={showToast}
               />
@@ -316,6 +324,8 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
               <ProgramManager
                 programs={programs}
                 clients={clients}
+                coaches={coaches}
+                user={user}
                 onProgramsUpdated={loadCRMData}
                 onShowToast={showToast}
               />
@@ -325,6 +335,8 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
               <NutritionManager
                 plans={nutritionPlans}
                 clients={clients}
+                coaches={coaches}
+                user={user}
                 onPlansUpdated={loadCRMData}
                 onShowToast={showToast}
               />
@@ -342,13 +354,43 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
             {activeTab === 'enquiries' && (
               <EnquiriesManager
                 enquiries={enquiries}
+                user={user}
+                coaches={coaches}
                 onEnquiriesUpdated={loadCRMData}
                 onShowToast={showToast}
               />
             )}
 
+            {activeTab === 'cs_dashboard' && (
+              <div className="space-y-6">
+                <div className="bg-[#121214] border border-zinc-800 p-6 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-amber-950/80 text-amber-300 rounded border border-amber-800/80">
+                        {isAdmin ? 'ADMIN CRM • CUSTOMER SUPPORT CONTROL' : 'HEAD COACH • SUPPORT CONTROL'}
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
+                        Live Database Sync
+                      </span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+                      <Headphones className="w-6 h-6 text-[#CCFF00]" />
+                      CUSTOMER SUPPORT DESK & INBOX MODULE
+                    </h2>
+                    <p className="text-xs text-zinc-400 mt-1 max-w-3xl">
+                      Master control over customer support operations: View live client tickets, compose email responses, log callbacks, edit tickets, assign agents, escalate urgent cases to Head Coach, and inspect complete audit logs.
+                    </p>
+                  </div>
+                </div>
+
+                <SupportDashboardView
+                  onShowToast={showToast}
+                />
+              </div>
+            )}
+
             {activeTab === 'tickets' && (
-              <TicketManagement onShowToast={showToast} />
+              <TicketManagement user={user} coaches={coaches} onShowToast={showToast} />
             )}
 
             {activeTab === 'announcements' && (

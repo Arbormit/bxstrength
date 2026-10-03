@@ -71,8 +71,12 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
   const [disclosureHealth, setDisclosureHealth] = useState<boolean>(true);
   const [disclosureSafeSpace, setDisclosureSafeSpace] = useState<boolean>(true);
 
-  // Screen 2: Mandatory Terms & Privacy Consent Checkbox
-  const [termsConsentAccepted, setTermsConsentAccepted] = useState<boolean>(false);
+  // Screen 2: Mandatory Pre-Payment Consent Checkboxes (3 Points Required)
+  const [consentInfoAccurate, setConsentInfoAccurate] = useState<boolean>(false);
+  const [consentTermsAccepted, setConsentTermsAccepted] = useState<boolean>(false);
+  const [consentEarlyStart, setConsentEarlyStart] = useState<boolean>(false);
+
+  const allConsentAccepted = consentInfoAccurate && consentTermsAccepted && consentEarlyStart;
 
   // Account Signup/Login state for non-logged in users
   const [authName, setAuthName] = useState<string>('');
@@ -110,7 +114,9 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
   useEffect(() => {
     if (isOpen && service) {
       setJourneyStep(1);
-      setTermsConsentAccepted(false);
+      setConsentInfoAccurate(false);
+      setConsentTermsAccepted(false);
+      setConsentEarlyStart(false);
       const isIndividual = service.category === 'Individual Service' || service.category === 'Individual';
       setServiceType(isIndividual ? 'individual' : 'custom');
     }
@@ -227,8 +233,8 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
   };
 
   const handlePaySecurely = async () => {
-    if (!termsConsentAccepted) {
-      setAuthError('Mandatory requirement: You must check the terms & conditions consent box.');
+    if (!allConsentAccepted) {
+      setAuthError('Mandatory requirement: You must check and confirm all 3 pre-payment declaration statements.');
       return;
     }
     setAuthError(null);
@@ -809,36 +815,69 @@ export const ServiceCustomizationModal: React.FC<ServiceCustomizationModalProps>
                 </div>
               </div>
 
-              {/* MANDATORY CONSENT CHECKBOX (STRICTLY REQUIRED FOR PAY BUTTON) */}
-              <div className="bg-[#18181b] border border-zinc-800 p-4 rounded-xl">
-                <label className="flex items-start gap-3 cursor-pointer">
+              {/* MANDATORY CONSENT CHECKBOXES (ALL 3 REQUIRED FOR PAY BUTTON) */}
+              <div className="bg-[#18181b] border border-zinc-800 p-4 rounded-xl space-y-3">
+                <h4 className="text-xs font-black uppercase text-[#CCFF00] tracking-wider flex items-center gap-1.5 border-b border-zinc-800 pb-2">
+                  <ShieldCheck className="w-4 h-4 text-[#CCFF00]" /> MANDATORY PRE-PAYMENT DECLARATIONS & TERMS
+                </h4>
+
+                {/* Point 1 */}
+                <label className="flex items-start gap-3 cursor-pointer group">
                   <input
                     type="checkbox"
-                    checked={termsConsentAccepted}
-                    onChange={(e) => setTermsConsentAccepted(e.target.checked)}
+                    checked={consentInfoAccurate}
+                    onChange={(e) => setConsentInfoAccurate(e.target.checked)}
                     className="mt-0.5 accent-[#CCFF00] w-5 h-5 rounded cursor-pointer shrink-0"
                   />
-                  <span className="text-xs text-zinc-300 leading-normal">
+                  <span className="text-xs text-zinc-300 leading-relaxed group-hover:text-white">
+                    I confirm that the information I have provided is accurate and I wish to participate in BXStrength virtual fitness services.
+                  </span>
+                </label>
+
+                {/* Point 2 */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={consentTermsAccepted}
+                    onChange={(e) => setConsentTermsAccepted(e.target.checked)}
+                    className="mt-0.5 accent-[#CCFF00] w-5 h-5 rounded cursor-pointer shrink-0"
+                  />
+                  <span className="text-xs text-zinc-300 leading-relaxed group-hover:text-white">
                     I have read and agree to the{' '}
                     <a href="/terms" target="_blank" className="text-[#CCFF00] underline hover:text-white font-bold">
-                      Terms & Conditions
-                    </a>{' '}
-                    and{' '}
+                      BXStrength Terms &amp; Conditions
+                    </a>,{' '}
                     <a href="/privacy" target="_blank" className="text-[#CCFF00] underline hover:text-white font-bold">
                       Privacy Policy
-                    </a>.
+                    </a>, and{' '}
+                    <a href="/onboarding-terms" target="_blank" className="text-[#CCFF00] underline hover:text-white font-bold">
+                      Onboarding &amp; Checkout Policies
+                    </a>, including the booking, Session Pack validity, cancellation, refund, virtual-participation and health &amp; safety terms that apply to my purchase.
+                  </span>
+                </label>
+
+                {/* Point 3 */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={consentEarlyStart}
+                    onChange={(e) => setConsentEarlyStart(e.target.checked)}
+                    className="mt-0.5 accent-[#CCFF00] w-5 h-5 rounded cursor-pointer shrink-0"
+                  />
+                  <span className="text-xs text-zinc-300 leading-relaxed group-hover:text-white">
+                    I expressly request BXStrength to begin providing my service during any applicable cancellation period. I understand that if I cancel after service has begun, I may be required to pay for service already supplied, and that my cancellation right may end once the service has been fully performed where applicable law permits.
                   </span>
                 </label>
               </div>
 
-              {/* PAY SECURELY BUTTON (DISABLED UNTIL CONSENT CHECKBOX IS CHECKED) */}
+              {/* PAY SECURELY BUTTON (DISABLED UNTIL ALL 3 CONSENT CHECKBOXES ARE CHECKED) */}
               <div className="space-y-2">
                 <button
                   type="button"
                   onClick={handlePaySecurely}
-                  disabled={!termsConsentAccepted || isProcessing}
+                  disabled={!allConsentAccepted || isProcessing}
                   className={`w-full text-black font-black text-xs sm:text-sm uppercase tracking-wider py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2.5 ${
-                    termsConsentAccepted && !isProcessing
+                    allConsentAccepted && !isProcessing
                       ? 'bg-[#CCFF00] hover:bg-[#b8e600] hover:scale-[1.01] active:scale-95 cursor-pointer shadow-[#CCFF00]/20'
                       : 'bg-zinc-800 text-zinc-500 cursor-not-allowed opacity-50'
                   }`}

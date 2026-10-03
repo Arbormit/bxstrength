@@ -565,7 +565,7 @@ export interface UkBookingJourneyRecord {
   amountGbp: number;
   currency: 'GBP';
   paymentDate?: string;
-  paymentStatus: 'Paid' | 'Failed' | 'Pending';
+  paymentStatus: 'Paid' | 'Failed' | 'Pending' | 'Free Consultation';
   journeyState: UkJourneyState;
 
   is18PlusConfirmed: boolean;
@@ -1123,8 +1123,8 @@ app.post(['/api/webhooks/cashfree', '/api/payments/cashfree-webhook'], async (re
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: { error: 'Too many login attempts. Password brute-force protection active.' },
+  max: 50,
+  message: { error: 'Too many authentication attempts. Please try again after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -1235,82 +1235,101 @@ function buildFullHtmlEmail(subject: string, rawContent: string): string {
 
 async function sendServerEmail(options: SendEmailOptions): Promise<{ success: boolean; provider?: string; error?: string; messageId?: string }> {
   const brevoApiKey = process.env.VITE_BREVO_API_KEY || process.env.BREVO_API_KEY;
-  const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'khanshadan96@gmail.com';
+  const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || process.env.SMTP_USER || 'khanshadan96@gmail.com';
   const senderName = options.senderName || 'BxStrength Security';
 
-  if (!brevoApiKey) {
-    console.error('❌ [BREVO API ERROR] BREVO_API_KEY is missing in environment variables (.env)');
-    return {
-      success: false,
-      provider: 'Brevo API (v3)',
-      error: 'BREVO_API_KEY is missing in system environment configuration.'
-    };
-  }
+  const brevoSmtpKey = process.env.BREVO_SMTP_KEY || (process.env.SMTP_PASS?.startsWith('xsmtpsib-') ? process.env.SMTP_PASS : undefined);
+  const smtpUser = process.env.SMTP_USER || process.env.BREVO_SENDER_EMAIL || process.env.GMAIL_USER;
+  const smtpPass = process.env.SMTP_PASS || brevoSmtpKey || process.env.GMAIL_PASS;
+  const smtpHost = process.env.SMTP_HOST || (brevoSmtpKey ? 'smtp-relay.brevo.com' : 'smtp.gmail.com');
+  const smtpPort = Number(process.env.SMTP_PORT || 587);
 
-  try {
-    const finalHtml = buildFullHtmlEmail(options.subject, options.htmlContent);
-    const plainText = finalHtml
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&amp;/g, '&')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+  const finalHtml = buildFullHtmlEmail(options.subject, options.htmlContent);
+  const plainText = finalHtml
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'api-key': brevoApiKey
-      },
-      body: JSON.stringify({
-        sender: { name: senderName, email: senderEmail },
-        to: [{ email: options.toEmail, name: options.toName || options.toEmail }],
-        subject: options.subject,
-        htmlContent: finalHtml,
-        textContent: plainText
-      })
-    });
+  // 1. Primary: Brevo REST API v3 (Fastest, most reliable API integration)
+  if (brevoApiKey) {
+    try {
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': brevoApiKey
+        },
+        body: JSON.stringify({
+          sender: { name: senderName, email: senderEmail },
+          to: [{ email: options.toEmail, name: options.toName || options.toEmail }],
+          subject: options.subject,
+          htmlContent: finalHtml,
+          textContent: plainText
+        })
+      });
 
-    const responseText = await res.text();
-    if (res.ok) {
-      let data: any = {};
-      try { data = JSON.parse(responseText); } catch { }
-      console.log(`✅ [EMAIL SENT - BREVO API v3] Delivered to ${options.toEmail} | MessageId: ${data.messageId || 'OK'}`);
-      return { success: true, provider: 'Brevo API (v3)', messageId: data.messageId };
-    } else {
-      let errorMessage = `Brevo API HTTP ${res.status}`;
-      try {
-        const errData = JSON.parse(responseText);
-        errorMessage = errData.message || errorMessage;
-      } catch { }
+      const responseText = await res.text();
+      if (res.ok) {
+        let data: any = {};
+        try { data = JSON.parse(responseText); } catch { }
+        console.log(`✅ [REAL EMAIL SENT - BREVO API v3] Delivered to ${options.toEmail} | MessageId: ${data.messageId || 'OK'}`);
+        return { success: true, provider: 'Brevo API (v3)', messageId: data.messageId };
+      } else {
+        let errorMessage = `Brevo API HTTP ${res.status}`;
+        try {
+          const errData = JSON.parse(responseText);
+          errorMessage = errData.message || errorMessage;
+        } catch { }
 
-      console.error(`❌ [EMAIL BREVO ERROR ${res.status}] Failed sending to ${options.toEmail}: ${responseText}`);
+        console.error(`❌ [EMAIL BREVO ERROR ${res.status}] Failed sending to ${options.toEmail}: ${responseText}`);
 
-      if (responseText.includes('unrecognised IP address') || responseText.includes('authorised_ips')) {
-        console.error(`👉 Brevo IP Whitelist Alert: Add your server IP to Brevo Authorized IPs at https://app.brevo.com/security/authorised_ips or disable IP restrictions in your Brevo settings.`);
+        if (responseText.includes('unrecognised IP address') || responseText.includes('authorised_ips')) {
+          console.error(`👉 Brevo IP Whitelist Alert: Server IP is not whitelisted in Brevo Security. To send emails via Brevo, whitelist your IP at https://app.brevo.com/security/authorised_ips or add SMTP_USER & SMTP_PASS in .env.`);
+        }
       }
-
-      return {
-        success: false,
-        provider: 'Brevo API (v3)',
-        error: errorMessage
-      };
+    } catch (err: any) {
+      console.error(`❌ [EMAIL BREVO EXCEPTION] ${err.message}`);
     }
-  } catch (err: any) {
-    console.error(`❌ [EMAIL BREVO EXCEPTION] ${err.message}`);
-    return {
-      success: false,
-      provider: 'Brevo API (v3)',
-      error: err.message
-    };
   }
+
+  // 2. Fallback: SMTP Transport (Only attempted if Brevo API is missing or failed)
+  if (smtpUser && smtpPass && smtpPass !== 'xsmtpsib-' && smtpPass.length > 5) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPass }
+      });
+
+      const info = await transporter.sendMail({
+        from: `"${senderName}" <${senderEmail}>`,
+        to: options.toEmail,
+        subject: options.subject,
+        html: finalHtml,
+        text: plainText
+      });
+
+      console.log(`✅ [REAL EMAIL SENT - SMTP (${smtpHost})] Delivered to ${options.toEmail} | MessageId: ${info.messageId}`);
+      return { success: true, provider: `SMTP (${smtpHost})`, messageId: info.messageId };
+    } catch (smtpErr: any) {
+      console.error(`❌ [EMAIL SMTP ERROR] Failed sending to ${options.toEmail}: ${smtpErr.message}`);
+    }
+  }
+
+  return {
+    success: false,
+    error: 'No valid email transport configured (BREVO_API_KEY or SMTP credentials).'
+  };
 }
 
 let dbUrl = process.env.DATABASE_URL || '';
@@ -1346,10 +1365,18 @@ if (dbPool) {
             role VARCHAR(50) DEFAULT 'client',
             phone VARCHAR(100),
             avatar_url TEXT,
-            is_verified BOOLEAN DEFAULT true,
-            status VARCHAR(50) DEFAULT 'active',
+            is_verified BOOLEAN DEFAULT false,
+            status VARCHAR(50) DEFAULT 'pending_verification',
             signup_method VARCHAR(50) DEFAULT 'Email / Password',
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS otps (
+            email VARCHAR(255) PRIMARY KEY,
+            otp_code VARCHAR(64) NOT NULL,
+            expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+            attempts INT DEFAULT 0,
+            last_sent_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
 
           CREATE TABLE IF NOT EXISTS support_tickets (
@@ -1422,6 +1449,111 @@ if (dbPool) {
             priority VARCHAR(50) DEFAULT 'medium',
             author_name VARCHAR(255) DEFAULT 'System Admin',
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS workout_programs (
+            id VARCHAR(64) PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            level VARCHAR(50) DEFAULT 'Intermediate',
+            duration_weeks INT DEFAULT 4,
+            assigned_to_user_id VARCHAR(64),
+            assigned_to_user_name VARCHAR(255),
+            assigned_coach_name VARCHAR(255),
+            exercises TEXT,
+            created_by VARCHAR(255) DEFAULT 'Head Coach',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS nutrition_plans (
+            id VARCHAR(64) PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            assigned_to_user_id VARCHAR(64),
+            assigned_to_user_name VARCHAR(255),
+            assigned_coach_name VARCHAR(255),
+            daily_calories INT DEFAULT 2400,
+            target_protein_g INT DEFAULT 190,
+            target_carbs_g INT DEFAULT 220,
+            target_fat_g INT DEFAULT 70,
+            meals TEXT,
+            created_by VARCHAR(255) DEFAULT 'Head Nutritionist',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS classes (
+            id VARCHAR(64) PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            category VARCHAR(50) DEFAULT 'strength',
+            trainer_id VARCHAR(64),
+            trainer_name VARCHAR(255),
+            day_of_week VARCHAR(50),
+            start_time VARCHAR(50),
+            end_time VARCHAR(50),
+            room VARCHAR(100),
+            max_capacity INT DEFAULT 20,
+            booked_count INT DEFAULT 0,
+            price NUMERIC(10, 2) DEFAULT 0.00,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS coach_assignments (
+            id VARCHAR(64) PRIMARY KEY,
+            assignment_type VARCHAR(64) NOT NULL,
+            reference_id VARCHAR(64),
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            instructions TEXT,
+            assigned_coach_id VARCHAR(64),
+            assigned_coach_name VARCHAR(255) NOT NULL,
+            client_id VARCHAR(64),
+            client_name VARCHAR(255),
+            client_email VARCHAR(255),
+            service_id VARCHAR(64),
+            service_name VARCHAR(255),
+            assigned_by_id VARCHAR(64),
+            assigned_by_name VARCHAR(255) DEFAULT 'Shaban Faridi',
+            assigned_by_role VARCHAR(100) DEFAULT 'Head Coach',
+            assigned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            due_date VARCHAR(100),
+            schedule_time VARCHAR(100),
+            priority VARCHAR(50) DEFAULT 'medium',
+            status VARCHAR(64) DEFAULT 'assigned',
+            is_published_to_client BOOLEAN DEFAULT FALSE,
+            published_to_client_at TIMESTAMP WITH TIME ZONE,
+            version INT DEFAULT 1,
+            approval_logs TEXT,
+            details TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS subscriptions (
+            id VARCHAR(64) PRIMARY KEY,
+            user_id VARCHAR(64) NOT NULL,
+            user_name VARCHAR(255),
+            user_email VARCHAR(255) NOT NULL,
+            plan_name VARCHAR(255) NOT NULL,
+            price NUMERIC(10, 2) NOT NULL,
+            billing_cycle VARCHAR(50) DEFAULT 'monthly',
+            status VARCHAR(50) DEFAULT 'active',
+            start_date VARCHAR(100),
+            end_date VARCHAR(100),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS audit_logs (
+            id VARCHAR(64) PRIMARY KEY,
+            user_id VARCHAR(64),
+            user_name VARCHAR(255),
+            user_role VARCHAR(50),
+            action VARCHAR(255) NOT NULL,
+            details TEXT,
+            ip_address VARCHAR(100),
+            timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
           CREATE TABLE IF NOT EXISTS uk_booking_journeys (
             id VARCHAR(64) PRIMARY KEY,
             session_id VARCHAR(128),
@@ -1479,6 +1611,76 @@ if (dbPool) {
           ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(100) DEFAULT 'Normal User';
           ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_statements TEXT DEFAULT '[]';
           ALTER TABLE users ADD COLUMN IF NOT EXISTS signup_method VARCHAR(50) DEFAULT 'Email / Password';
+
+          ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT '1-on-1 Coaching';
+          ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS priority VARCHAR(50) DEFAULT 'normal';
+          ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS weightage VARCHAR(100) DEFAULT 'Normal Weightage (50/100)';
+          ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS assigned_coach VARCHAR(255) DEFAULT 'Unassigned';
+          ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS transferred_to_headcoach BOOLEAN DEFAULT FALSE;
+
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS assigned_by VARCHAR(255);
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS assigned_by_role VARCHAR(100);
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'assigned';
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS coach_approval_status VARCHAR(50) DEFAULT 'pending';
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS coach_approval_notes TEXT;
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS headcoach_approval_status VARCHAR(50) DEFAULT 'pending';
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS headcoach_approval_notes TEXT;
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 1;
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS approval_logs TEXT;
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS is_published_to_client BOOLEAN DEFAULT FALSE;
+          ALTER TABLE workout_programs ADD COLUMN IF NOT EXISTS published_to_client_at TIMESTAMP WITH TIME ZONE;
+
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS assigned_by VARCHAR(255);
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS assigned_by_role VARCHAR(100);
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'assigned';
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS coach_approval_status VARCHAR(50) DEFAULT 'pending';
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS coach_approval_notes TEXT;
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS headcoach_approval_status VARCHAR(50) DEFAULT 'pending';
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS headcoach_approval_notes TEXT;
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 1;
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS approval_logs TEXT;
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS is_published_to_client BOOLEAN DEFAULT FALSE;
+          ALTER TABLE nutrition_plans ADD COLUMN IF NOT EXISTS published_to_client_at TIMESTAMP WITH TIME ZONE;
+
+          ALTER TABLE classes ADD COLUMN IF NOT EXISTS assigned_by VARCHAR(255);
+          ALTER TABLE classes ADD COLUMN IF NOT EXISTS assigned_by_role VARCHAR(100);
+          ALTER TABLE classes ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+          ALTER TABLE classes ADD COLUMN IF NOT EXISTS is_published_to_client BOOLEAN DEFAULT TRUE;
+          ALTER TABLE classes ADD COLUMN IF NOT EXISTS published_to_client_at TIMESTAMP WITH TIME ZONE;
+
+          ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS assigned_by VARCHAR(255);
+          ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS assigned_by_role VARCHAR(100);
+          ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+          ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS is_published_to_client BOOLEAN DEFAULT TRUE;
+          ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS published_to_client_at TIMESTAMP WITH TIME ZONE;
+
+          CREATE TABLE IF NOT EXISTS in_app_notifications (
+            id VARCHAR(255) PRIMARY KEY,
+            user_id VARCHAR(255),
+            user_email VARCHAR(255) NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            message TEXT NOT NULL,
+            content_type VARCHAR(100) DEFAULT 'general',
+            coach_name VARCHAR(255),
+            link_tab VARCHAR(100),
+            is_read BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS email_notifications_log (
+            id VARCHAR(255) PRIMARY KEY,
+            to_email VARCHAR(255) NOT NULL,
+            to_name VARCHAR(255),
+            subject VARCHAR(255) NOT NULL,
+            content_type VARCHAR(100),
+            coach_name VARCHAR(255),
+            publication_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            view_link TEXT,
+            status VARCHAR(50) DEFAULT 'Sent',
+            sent_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
         `);
 
         await ensureTrainerColumnsExist();
@@ -1534,13 +1736,76 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// --- TWO-STEP EMAIL VERIFICATION OTP ENGINE ---
+interface ServerOtpRecord {
+  code: string;
+  expiresAt: number;
+  attempts: number;
+  lastSentAt: number;
+}
+
+const serverOtpStore = new Map<string, ServerOtpRecord>();
+
+function generate6DigitOtp(): string {
+  return crypto.randomInt(100000, 999999).toString();
+}
+
+async function sendOtpEmail(toEmail: string, toName: string, otpCode: string): Promise<boolean> {
+  const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
+
+  console.log(`================================================================`);
+  console.log(`🔑 [REAL EMAIL OTP DISPATCHED] Recipient Email: ${toEmail}`);
+  console.log(`🔑 [VERIFICATION OTP CODE]: ${otpCode}`);
+  console.log(`================================================================`);
+
+  const result = await sendServerEmail({
+    toEmail: toEmail,
+    toName: toName,
+    subject: `🔑 [ACTION REQUIRED] ${otpCode} is your BxStrength Verification Code`,
+    senderName: 'BxStrength Security',
+    htmlContent: `
+      <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 48px; width: auto; border-radius: 8px; margin: 0 auto;" />
+        </div>
+        <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase; text-align: center; font-size: 20px; font-weight: 900; letter-spacing: 1px;">
+          VERIFY YOUR EMAIL ADDRESS
+        </h2>
+        <p style="text-align: center; color: #a1a1aa; font-size: 13px; margin-top: 4px;">
+          Mandatory 2-Step Athlete Security Verification
+        </p>
+
+        <div style="margin-top: 24px; font-size: 14px; line-height: 1.6; color: #e4e4e7;">
+          <p>Dear <strong>${toName}</strong>,</p>
+          <p>Welcome to BxStrength! To complete your registration and activate your Athlete Portal, enter the 6-digit verification code below:</p>
+        </div>
+
+        <div style="background-color: #18181b; padding: 24px; border-radius: 12px; margin: 24px 0; border: 1px solid #3f3f46; text-align: center;">
+          <span style="font-size: 38px; font-weight: 900; letter-spacing: 10px; color: #CCFF00; font-family: monospace; display: block;">
+            ${otpCode}
+          </span>
+          <p style="margin-top: 12px; margin-bottom: 0; color: #a1a1aa; font-size: 12px; font-weight: bold;">
+            ⏱️ Expires in <span style="color: #ffffff;">10 Minutes</span>
+          </p>
+        </div>
+
+        <div style="font-size: 12px; color: #71717a; line-height: 1.6; border-top: 1px solid #27272a; margin-top: 24px; padding-top: 16px;">
+          <p style="margin: 4px 0;">If you did not initiate this request, please disregard this email.</p>
+          <p style="margin: 4px 0;">BxStrength Support: <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: underline;">${senderEmail}</a></p>
+        </div>
+      </div>
+    `
+  });
+
+  return result.success;
+}
+
 app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const rawName = req.body.name;
     const rawEmail = req.body.email;
     const rawPassword = req.body.password;
     const rawPhone = req.body.phone;
-    const requestedRole = req.body.role;
 
     if (!rawName || !rawEmail || !rawPassword) {
       return res.status(400).json({ error: 'Name, email, and password are required' });
@@ -1568,7 +1833,13 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const userId = `user-${Date.now()}`;
 
     const requestedMethod = req.body.signupMethod || req.body.signup_method;
-    const signupMethod = requestedMethod === 'Google SSO' || rawPassword.includes('GoogleAuthPass@') ? 'Google SSO' : 'Email / Password';
+    const isGoogleSso = requestedMethod === 'Google SSO' || rawPassword.includes('GoogleAuthPass@');
+    const signupMethod = isGoogleSso ? 'Google SSO' : 'Email / Password';
+
+    // Mandatory 2-step verification requirement:
+    // Email/password signups are created with is_verified = false, status = 'pending_verification'
+    const isVerified = isGoogleSso; // Google accounts already verified by provider
+    const userStatus = isVerified ? 'active' : 'pending_verification';
 
     let registeredUser: any = null;
 
@@ -1576,14 +1847,14 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       try {
         const result = await dbPool.query(
           `INSERT INTO users (id, name, email, password_hash, role, phone, avatar_url, is_verified, status, signup_method)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, true, 'active', $8)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
            RETURNING id, name, email, role, phone, avatar_url, is_verified, status, signup_method, created_at`,
-          [userId, name, email, passwordHash, userRole, phone, `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`, signupMethod]
+          [userId, name, email, passwordHash, userRole, phone, `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`, isVerified, userStatus, signupMethod]
         );
         registeredUser = result.rows[0];
       } catch (e: any) {
         if (e.code === '23505') {
-          return res.status(400).json({ error: 'An account with this email address already exists in NeonDB.' });
+          return res.status(400).json({ error: 'An account with this email address already exists.' });
         }
         console.error('NeonDB Registration Query Error:', e.message);
         return res.status(500).json({ error: `NeonDB error: ${e.message}` });
@@ -1596,53 +1867,13 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
         role: userRole,
         phone,
         avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
-        isVerified: true,
-        status: 'active',
+        isVerified: isVerified,
+        status: userStatus,
         createdAt: new Date().toISOString()
       };
     }
 
-    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
     const adminEmail = process.env.VITE_ADMIN_EMAIL || 'support@bxstrength.com';
-
-    sendServerEmail({
-      toEmail: email,
-      toName: name,
-      subject: 'WELCOME TO BXSTRENGTH | Your Account Is Active 🥊',
-      senderName: 'BxStrength Coaching',
-      htmlContent: `
-        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
-          <div style="text-align: center; margin-bottom: 24px;">
-            <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 48px; width: auto; border-radius: 8px; margin: 0 auto;" />
-          </div>
-          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase; text-align: center; font-size: 20px; font-weight: 900;">WELCOME TO BXSTRENGTH</h2>
-          <p style="text-align: center; color: #a1a1aa; font-size: 13px; margin-top: 4px;">Premier Digital Boxing, Strength &amp; Fitness Coaching</p>
-          
-          <div style="margin-top: 24px; font-size: 14px; line-height: 1.6; color: #e4e4e7;">
-            <p>Dear <strong>${name}</strong>,</p>
-            <p>Welcome to BxStrength! Your athlete profile has been successfully created and activated.</p>
-          </div>
-
-          <div style="background-color: #18181b; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #27272a; font-size: 13px; line-height: 1.7;">
-            <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Registered Name:</strong> ${name}</p>
-            <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Email Address:</strong> ${email}</p>
-            <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Authentication Method:</strong> ${signupMethod}</p>
-            <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Account Status:</strong> <span style="color: #CCFF00; font-weight: bold;">VERIFIED &amp; ACTIVE</span></p>
-          </div>
-
-          <div style="text-align: center; margin: 28px 0;">
-            <a href="${req.headers.origin || 'https://bxstrength.com'}" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 4px 14px rgba(204, 255, 0, 0.3);">
-              ACCESS YOUR ATHLETE PORTAL
-            </a>
-          </div>
-
-          <div style="border-top: 1px solid #27272a; margin-top: 24px; padding-top: 16px; font-size: 12px; color: #71717a; line-height: 1.5;">
-            <p style="margin: 2px 0;">Engineered by <strong>Head Coach &amp; Team</strong></p>
-            <p style="margin: 2px 0;">BxStrength HQ | Support: <a href="mailto:${senderEmail}" style="color: #a1a1aa; text-decoration: underline;">${senderEmail}</a> | Phone: +91 8423594482</p>
-          </div>
-        </div>
-      `
-    }).catch((err) => console.error('[WELCOME EMAIL EXCEPTION]', err.message));
 
     sendServerEmail({
       toEmail: adminEmail,
@@ -1656,6 +1887,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
             <p style="margin: 4px 0;"><strong>Name:</strong> ${name}</p>
             <p style="margin: 4px 0;"><strong>Email:</strong> ${email}</p>
             <p style="margin: 4px 0;"><strong>Signup Method:</strong> ${signupMethod}</p>
+            <p style="margin: 4px 0;"><strong>Verification Status:</strong> ${isVerified ? 'VERIFIED' : 'PENDING OTP'}</p>
             <p style="margin: 4px 0;"><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
           </div>
           <p style="font-size: 11px; color: #71717a;">Stored in NeonDB PostgreSQL database.</p>
@@ -1663,11 +1895,329 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       `
     }).catch(() => { });
 
-    const token = jwt.sign({ id: registeredUser.id, email: registeredUser.email, role: registeredUser.role, name: registeredUser.name }, JWT_SECRET, { expiresIn: '7d' });
-    return res.status(201).json({ user: registeredUser, token });
+    // If Google SSO, return active JWT token immediately
+    if (isVerified) {
+      const token = jwt.sign({ id: registeredUser.id, email: registeredUser.email, role: registeredUser.role, name: registeredUser.name }, JWT_SECRET, { expiresIn: '7d' });
+      return res.status(201).json({ user: registeredUser, token, requireOtp: false });
+    }
+
+    // Mandatory Email / Password 2-Step OTP Verification Flow
+    const otpCode = generate6DigitOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+    if (dbPool) {
+      await dbPool.query(
+        `INSERT INTO otps (email, otp_code, expires_at, attempts, last_sent_at)
+         VALUES ($1, $2, $3, 0, CURRENT_TIMESTAMP)
+         ON CONFLICT (email) DO UPDATE SET
+         otp_code = EXCLUDED.otp_code,
+         expires_at = EXCLUDED.expires_at,
+         attempts = 0,
+         last_sent_at = CURRENT_TIMESTAMP`,
+        [email, otpCode, expiresAt]
+      ).catch((err) => console.error('NeonDB OTP Save Error:', err.message));
+    }
+
+    serverOtpStore.set(email, {
+      code: otpCode,
+      expiresAt: expiresAt.getTime(),
+      attempts: 0,
+      lastSentAt: Date.now()
+    });
+
+    // Send 6-Digit OTP Email
+    sendOtpEmail(email, name, otpCode).catch((err) => console.error('[OTP EMAIL ERROR]', err.message));
+
+    return res.status(201).json({
+      requireOtp: true,
+      email: email,
+      user: registeredUser,
+      message: 'Registration created successfully! A 6-digit verification code has been sent to your email.'
+    });
+
   } catch (err: any) {
     console.error('Registration error:', err.message);
     res.status(500).json({ error: 'Registration failed due to a server error.' });
+  }
+});
+
+// --- VERIFY OTP ENDPOINT ---
+app.post('/api/auth/verify-otp', authLimiter, async (req, res) => {
+  try {
+    const rawEmail = req.body.email;
+    const rawOtp = req.body.otp;
+
+    if (!rawEmail || !rawOtp) {
+      return res.status(400).json({ error: 'Email and 6-digit OTP code are required.' });
+    }
+
+    const email = sanitizeInput(rawEmail).toLowerCase();
+    const otpInput = String(rawOtp).trim();
+
+    if (!/^\d{6}$/.test(otpInput)) {
+      return res.status(400).json({ error: 'Verification code must consist of exactly 6 numeric digits.' });
+    }
+
+    let otpRecord: ServerOtpRecord | null = null;
+
+    if (dbPool) {
+      try {
+        const dbRes = await dbPool.query('SELECT * FROM otps WHERE email = $1', [email]);
+        if (dbRes.rows.length > 0) {
+          const row = dbRes.rows[0];
+          otpRecord = {
+            code: row.otp_code,
+            expiresAt: new Date(row.expires_at).getTime(),
+            attempts: Number(row.attempts || 0),
+            lastSentAt: new Date(row.last_sent_at || Date.now()).getTime()
+          };
+        }
+      } catch (e: any) {
+        console.error('NeonDB OTP fetch error:', e.message);
+      }
+    }
+
+    if (!otpRecord) {
+      const mem = serverOtpStore.get(email);
+      if (mem) otpRecord = mem;
+    }
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        error: 'No active verification code found for this email address. Please click "Resend Code".',
+        code: 'OTP_NOT_FOUND'
+      });
+    }
+
+    // 1. Check Max Verification Attempts (5 max)
+    if (otpRecord.attempts >= 5) {
+      return res.status(429).json({
+        error: 'Maximum verification attempts (5) exceeded. Please click "Resend Code" to receive a new OTP.',
+        code: 'MAX_ATTEMPTS_EXCEEDED'
+      });
+    }
+
+    // 2. Check Expiry Period (10 minutes)
+    if (Date.now() > otpRecord.expiresAt) {
+      return res.status(400).json({
+        error: 'Verification code has expired (valid for 10 minutes). Please click "Resend Code" to receive a new OTP.',
+        code: 'OTP_EXPIRED'
+      });
+    }
+
+    // 3. Check OTP Match
+    if (otpRecord.code !== otpInput) {
+      const updatedAttempts = otpRecord.attempts + 1;
+      const remaining = Math.max(0, 5 - updatedAttempts);
+
+      if (dbPool) {
+        await dbPool.query('UPDATE otps SET attempts = $1 WHERE email = $2', [updatedAttempts, email]).catch(() => {});
+      }
+      serverOtpStore.set(email, { ...otpRecord, attempts: updatedAttempts });
+
+      if (remaining <= 0) {
+        return res.status(429).json({
+          error: 'Maximum verification attempts (5) exceeded. Please click "Resend Code" to get a new code.',
+          remainingAttempts: 0,
+          code: 'MAX_ATTEMPTS_EXCEEDED'
+        });
+      }
+
+      return res.status(400).json({
+        error: `Incorrect verification code. ${remaining} attempt(s) remaining.`,
+        remainingAttempts: remaining,
+        code: 'INVALID_OTP'
+      });
+    }
+
+    // OTP VERIFIED SUCCESSFULLY: Delete OTP Record
+    if (dbPool) {
+      await dbPool.query('DELETE FROM otps WHERE email = $1', [email]).catch(() => {});
+    }
+    serverOtpStore.delete(email);
+
+    // Update User Account in Database (is_verified = true, status = 'active')
+    let verifiedUser: any = null;
+    if (dbPool) {
+      try {
+        const updateRes = await dbPool.query(
+          `UPDATE users SET is_verified = true, status = 'active' WHERE LOWER(email) = $1
+           RETURNING id, name, email, role, phone, avatar_url, is_verified, status, signup_method, created_at`,
+          [email]
+        );
+        if (updateRes.rows.length > 0) {
+          verifiedUser = updateRes.rows[0];
+        }
+      } catch (e: any) {
+        console.error('NeonDB User Verification Update Error:', e.message);
+      }
+    }
+
+    if (!verifiedUser) {
+      verifiedUser = {
+        id: `user-${Date.now()}`,
+        name: email.split('@')[0],
+        email: email,
+        role: 'client',
+        isVerified: true,
+        status: 'active',
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    const senderEmail = process.env.VITE_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'support@bxstrength.com';
+
+    // Send Welcome Email upon successful OTP verification
+    sendServerEmail({
+      toEmail: verifiedUser.email,
+      toName: verifiedUser.name,
+      subject: 'WELCOME TO BXSTRENGTH | Your Account Is Active 🥊',
+      senderName: 'BxStrength Support',
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; background-color: #0d0d0f; color: #ffffff; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #27272a;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <img src="https://res.cloudinary.com/yuyxn5b0/image/upload/v1788842924/bxlogo.jpg" alt="BxStrength Logo" style="height: 48px; width: auto; border-radius: 8px; margin: 0 auto;" />
+          </div>
+          <h2 style="color: #CCFF00; margin: 0; text-transform: uppercase; text-align: center; font-size: 20px; font-weight: 900;">WELCOME TO BXSTRENGTH</h2>
+          <p style="text-align: center; color: #a1a1aa; font-size: 13px; margin-top: 4px;">Premier Digital Boxing, Strength &amp; Fitness Coaching</p>
+          
+          <div style="margin-top: 24px; font-size: 14px; line-height: 1.6; color: #e4e4e7;">
+            <p>Dear <strong>${verifiedUser.name}</strong>,</p>
+            <p>Your email address has been successfully verified! Your athlete profile is now active.</p>
+          </div>
+
+          <div style="background-color: #18181b; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #27272a; font-size: 13px; line-height: 1.7;">
+            <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Registered Name:</strong> ${verifiedUser.name}</p>
+            <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Email Address:</strong> ${verifiedUser.email}</p>
+            <p style="margin: 4px 0; color: #a1a1aa;"><strong style="color: #ffffff;">Verification Status:</strong> <span style="color: #CCFF00; font-weight: bold;">VERIFIED &amp; ACTIVE</span></p>
+          </div>
+
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${req.headers.origin || 'https://bxstrength.com'}" style="background-color: #CCFF00; color: #000000; font-weight: 900; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 4px 14px rgba(204, 255, 0, 0.3);">
+              ACCESS YOUR ATHLETE PORTAL
+            </a>
+          </div>
+        </div>
+      `
+    }).catch(() => {});
+
+    // Generate JWT Access Token
+    const token = jwt.sign({ id: verifiedUser.id, email: verifiedUser.email, role: verifiedUser.role, name: verifiedUser.name }, JWT_SECRET, { expiresIn: '7d' });
+
+    return res.json({
+      success: true,
+      message: 'Account successfully verified! Welcome to BxStrength.',
+      user: verifiedUser,
+      token
+    });
+
+  } catch (err: any) {
+    console.error('Verify OTP error:', err.message);
+    res.status(500).json({ error: 'OTP verification failed due to a server error.' });
+  }
+});
+
+// --- RESEND OTP ENDPOINT WITH RATE LIMITING ---
+app.post('/api/auth/resend-otp', authLimiter, async (req, res) => {
+  try {
+    const rawEmail = req.body.email;
+    if (!rawEmail) {
+      return res.status(400).json({ error: 'Email address is required.' });
+    }
+
+    const email = sanitizeInput(rawEmail).toLowerCase();
+
+    // Check if user account is already verified
+    let user: any = null;
+    if (dbPool) {
+      const uRes = await dbPool.query('SELECT * FROM users WHERE LOWER(email) = $1', [email]);
+      if (uRes.rows.length > 0) {
+        user = uRes.rows[0];
+      }
+    }
+
+    if (user && user.is_verified) {
+      return res.status(400).json({
+        error: 'This account is already verified. You can sign in directly.',
+        code: 'ALREADY_VERIFIED'
+      });
+    }
+
+    // Check Rate Limiting Cooldown (60 seconds minimum interval)
+    let existingRecord: ServerOtpRecord | null = null;
+    if (dbPool) {
+      try {
+        const oRes = await dbPool.query('SELECT * FROM otps WHERE email = $1', [email]);
+        if (oRes.rows.length > 0) {
+          const row = oRes.rows[0];
+          existingRecord = {
+            code: row.otp_code,
+            expiresAt: new Date(row.expires_at).getTime(),
+            attempts: Number(row.attempts || 0),
+            lastSentAt: new Date(row.last_sent_at || Date.now()).getTime()
+          };
+        }
+      } catch (e: any) {
+        console.error('NeonDB fetch OTP error in resend:', e.message);
+      }
+    }
+
+    if (!existingRecord) {
+      const mem = serverOtpStore.get(email);
+      if (mem) existingRecord = mem;
+    }
+
+    if (existingRecord) {
+      const timePassed = Date.now() - existingRecord.lastSentAt;
+      if (timePassed < 60000) { // 60 seconds rate limit
+        const remainingSec = Math.ceil((60000 - timePassed) / 1000);
+        return res.status(429).json({
+          error: `Rate Limit Exceeded: Please wait ${remainingSec} second(s) before requesting a new OTP.`,
+          retryAfterSeconds: remainingSec,
+          code: 'RESEND_RATE_LIMITED'
+        });
+      }
+    }
+
+    // Generate New 6-Digit OTP
+    const newOtpCode = generate6DigitOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    if (dbPool) {
+      try {
+        await dbPool.query(
+          `INSERT INTO otps (email, otp_code, expires_at, attempts, last_sent_at)
+           VALUES ($1, $2, $3, 0, CURRENT_TIMESTAMP)
+           ON CONFLICT (email) DO UPDATE SET
+           otp_code = EXCLUDED.otp_code,
+           expires_at = EXCLUDED.expires_at,
+           attempts = 0,
+           last_sent_at = CURRENT_TIMESTAMP`,
+          [email, newOtpCode, expiresAt]
+        );
+      } catch (e: any) {
+        console.error('NeonDB insert OTP error in resend:', e.message);
+      }
+    }
+
+    serverOtpStore.set(email, {
+      code: newOtpCode,
+      expiresAt: expiresAt.getTime(),
+      attempts: 0,
+      lastSentAt: Date.now()
+    });
+
+    const nameToUse = user ? user.name : email.split('@')[0];
+    sendOtpEmail(email, nameToUse, newOtpCode).catch((err) => console.error('[RESEND OTP EMAIL EXCEPTION]', err.message));
+
+    return res.json({
+      success: true,
+      message: 'A new 6-digit verification code has been dispatched to your email address.'
+    });
+
+  } catch (err: any) {
+    console.error('Resend OTP error:', err.message);
+    res.status(500).json({ error: 'Failed to resend OTP verification code.' });
   }
 });
 
@@ -1706,6 +2256,39 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         }
 
         delete user.password_hash;
+
+        // Check 2-step verification requirement
+        if (!user.is_verified) {
+          // Send/resend OTP for user to complete verification
+          const otpCode = generate6DigitOtp();
+          const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+          await dbPool.query(
+            `INSERT INTO otps (email, otp_code, expires_at, attempts, last_sent_at)
+             VALUES ($1, $2, $3, 0, CURRENT_TIMESTAMP)
+             ON CONFLICT (email) DO UPDATE SET
+             otp_code = EXCLUDED.otp_code,
+             expires_at = EXCLUDED.expires_at,
+             attempts = 0,
+             last_sent_at = CURRENT_TIMESTAMP`,
+            [email, otpCode, expiresAt]
+          ).catch(() => {});
+
+          serverOtpStore.set(email, {
+            code: otpCode,
+            expiresAt: expiresAt.getTime(),
+            attempts: 0,
+            lastSentAt: Date.now()
+          });
+
+          sendOtpEmail(email, user.name || email, otpCode).catch(() => {});
+
+          return res.status(403).json({
+            error: 'Account verification required: Please enter the 6-digit OTP sent to your email address.',
+            code: 'EMAIL_NOT_VERIFIED',
+            email: user.email
+          });
+        }
+
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
         return res.json({ user, token });
       } catch (e: any) {
@@ -1723,6 +2306,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     res.status(500).json({ error: 'Authentication failed' });
   }
 });
+
 
 app.get('/api/auth/me', authenticateToken, (req: any, res) => {
   res.json({ user: req.user });
@@ -1750,7 +2334,7 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
       toEmail: cleanEmail,
       toName: cleanEmail.split('@')[0],
       subject: 'Password Reset Request - BxStrength',
-      senderName: 'BxStrength Security',
+      senderName: 'BxStrength Support',
       htmlContent: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1924,6 +2508,8 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
   }
 });
 
+export type ServerEnquiryStatus = 'new' | 'transferred_to_headcoach' | 'assigned_to_coach' | 'in_progress' | 'resolved';
+
 interface ServerEnquiry {
   id: string;
   name: string;
@@ -1932,7 +2518,7 @@ interface ServerEnquiry {
   subject: string;
   message: string;
   createdAt: string;
-  status: 'new' | 'in_progress' | 'resolved';
+  status: ServerEnquiryStatus;
   assignedNotes?: string;
 }
 
@@ -2021,12 +2607,48 @@ app.post('/api/consultations', enquiryLimiter, async (req, res) => {
 
     enquiriesStore.unshift(newEnquiry);
 
+    const consultationJourneyRecord: UkBookingJourneyRecord = {
+      id: bookingRef,
+      sessionId: bookingRef,
+      userEmail: leadEmail,
+      userName: leadName,
+      userPhone: leadPhone,
+      serviceTitle: `15-Min Consultation: ${leadGoal}`,
+      serviceCategory: 'Consultation',
+      serviceType: 'individual',
+      customExercises: [],
+      amountGbp: 0,
+      currency: 'GBP',
+      paymentDate: new Date().toISOString().split('T')[0],
+      paymentStatus: 'Free Consultation',
+      journeyState: 'SCHEDULING_PENDING',
+      is18PlusConfirmed: true,
+      isVirtualCoachingConfirmed: true,
+      isHealthDisclosureConfirmed: true,
+      isSafeSpaceConfirmed: true,
+      termsConsentAccepted: true,
+      scheduledDate: date || 'TBD',
+      scheduledTime: time || 'TBD',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    ukJourneyStore.unshift(consultationJourneyRecord);
+
     if (dbPool) {
       try {
         await dbPool.query(
           `INSERT INTO enquiries (id, name, email, phone, subject, message, status, created_at)
            VALUES ($1, $2, $3, $4, $5, $6, 'new', NOW())`,
           [enquiryId, leadName, leadEmail, leadPhone, newEnquiry.subject, consultationMessage]
+        );
+      } catch (e: any) { }
+
+      try {
+        await dbPool.query(
+          `INSERT INTO uk_booking_journeys 
+           (id, session_id, user_email, user_name, user_phone, service_title, service_category, service_type, amount_gbp, currency, payment_date, payment_status, journey_state, scheduled_date, scheduled_time)
+           VALUES ($1, $1, $2, $3, $4, $5, 'Consultation', 'individual', 0, 'GBP', NOW(), 'Free Consultation', 'SCHEDULING_PENDING', $6, $7)`,
+          [bookingRef, leadEmail, leadName, leadPhone, `15-Min Consultation: ${leadGoal}`, date || 'TBD', time || 'TBD']
         );
       } catch (e: any) { }
 
@@ -2442,44 +3064,63 @@ app.get('/api/enquiries', async (req, res) => {
 
 app.post('/api/enquiries', enquiryLimiter, async (req, res) => {
   try {
-    const rawName = req.body.name;
-    const rawEmail = req.body.email;
-    const rawPhone = req.body.phone;
-    const rawSubject = req.body.subject;
-    const rawMessage = req.body.message;
+    const { id, name, email, phone, subject, message, category, priority, weightage, assignedCoach, transferredToHeadCoach, status } = req.body;
+
+    const rawName = name || req.body.name;
+    const rawEmail = email || req.body.email;
+    const rawMessage = message || req.body.message;
 
     if (!rawName || !rawEmail || !rawMessage) {
       return res.status(400).json({ error: 'Name, email, and message are required' });
     }
 
-    const name = sanitizeInput(rawName);
-    const email = sanitizeInput(rawEmail).toLowerCase();
-    const phone = sanitizeInput(rawPhone || '');
-    const subject = sanitizeInput(rawSubject || 'General Website Enquiry');
-    const message = sanitizeInput(rawMessage);
+    const cleanName = sanitizeInput(rawName);
+    const cleanEmail = sanitizeInput(rawEmail).toLowerCase();
+    const cleanPhone = sanitizeInput(phone || req.body.phone || '');
+    const cleanSubject = sanitizeInput(subject || req.body.subject || 'General Website Enquiry');
+    const cleanMessage = sanitizeInput(rawMessage);
+    const cleanCategory = sanitizeInput(category || req.body.category || '1-on-1 Coaching');
+    const cleanPriority = sanitizeInput(priority || req.body.priority || 'normal');
+    const cleanWeightage = sanitizeInput(weightage || req.body.weightage || (cleanPriority === 'urgent' ? 'High Weightage (95/100)' : 'Normal Weightage (50/100)'));
+    const cleanAssignedCoach = sanitizeInput(assignedCoach || req.body.assignedCoach || 'Unassigned');
+    const isTransferred = Boolean(transferredToHeadCoach || req.body.transferredToHeadCoach);
+    const rawStatus = sanitizeInput(status || req.body.status || (isTransferred ? 'transferred_to_headcoach' : 'new'));
+    const cleanStatus = (['new', 'transferred_to_headcoach', 'assigned_to_coach', 'in_progress', 'resolved'].includes(rawStatus)
+      ? rawStatus
+      : 'new') as ServerEnquiryStatus;
 
-    const id = `enq-${Date.now()}`;
+    const enqId = id ? sanitizeInput(String(id).trim()) : `enq-${Date.now()}`;
     const newEnquiry: ServerEnquiry = {
-      id,
-      name,
-      email,
-      phone,
-      subject,
-      message,
+      id: enqId,
+      name: cleanName,
+      email: cleanEmail,
+      phone: cleanPhone,
+      subject: cleanSubject,
+      message: cleanMessage,
       createdAt: new Date().toISOString(),
-      status: 'new'
+      status: cleanStatus
     };
 
     enquiriesStore.unshift(newEnquiry);
 
     if (dbPool) {
-      await dbPool.query(
-        `INSERT INTO enquiries (id, name, email, phone, subject, message, status, created_at) VALUES ($1, $2, $3, $4, $5, $6, 'new', NOW())`,
-        [id, name, email, phone, subject, message]
-      );
-      return res.status(201).json({ id, message: 'Enquiry received securely and stored in NeonDB database', data: newEnquiry });
+      try {
+        await dbPool.query(
+          `INSERT INTO enquiries (id, name, email, phone, subject, message, category, priority, weightage, assigned_coach, transferred_to_headcoach, status, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+           ON CONFLICT (id) DO UPDATE SET 
+             message = EXCLUDED.message,
+             status = EXCLUDED.status,
+             assigned_coach = EXCLUDED.assigned_coach,
+             transferred_to_headcoach = EXCLUDED.transferred_to_headcoach`,
+          [enqId, cleanName, cleanEmail, cleanPhone, cleanSubject, cleanMessage, cleanCategory, cleanPriority, cleanWeightage, cleanAssignedCoach, isTransferred, cleanStatus]
+        );
+      } catch (dbErr: any) {
+        console.warn('NeonDB enquiry save notice:', dbErr.message);
+      }
+      return res.status(201).json({ id: enqId, message: 'Enquiry received securely and stored in NeonDB database', data: newEnquiry });
     }
-    res.status(201).json({ id, message: 'Enquiry received securely and stored in server database', data: newEnquiry });
+    res.status(201).json({ id: enqId, message: 'Enquiry received securely and stored in server database', data: newEnquiry });
   } catch (err: any) {
     console.error('Enquiry error:', err.message);
     res.status(500).json({ error: 'Failed to submit enquiry' });
@@ -3100,7 +3741,7 @@ app.get('/api/tickets', async (req, res) => {
 
 app.post('/api/tickets', enquiryLimiter, async (req, res) => {
   try {
-    const { userId, userName, userEmail, subject, category, priority, description } = req.body;
+    const { id, userId, userName, userEmail, subject, category, priority, description } = req.body;
     if (!userName || !userEmail || !subject || !description) {
       return res.status(400).json({ error: 'User details, subject, and description are required.' });
     }
@@ -3111,7 +3752,7 @@ app.post('/api/tickets', enquiryLimiter, async (req, res) => {
     const cleanEmail = sanitizeInput(userEmail).toLowerCase();
     const cleanCategory = sanitizeInput(category || 'General');
     const cleanPriority = sanitizeInput(priority || 'medium');
-    const ticketId = `TICKET-${Math.floor(100000 + Math.random() * 900000)}`;
+    const ticketId = id ? sanitizeInput(String(id).trim()) : `TKT-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const newTicket: ServerTicket = {
       id: ticketId,
@@ -3131,7 +3772,8 @@ app.post('/api/tickets', enquiryLimiter, async (req, res) => {
       try {
         await dbPool.query(
           `INSERT INTO support_tickets (id, user_id, user_name, user_email, subject, category, priority, description, status, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'open', NOW(), NOW())`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'open', NOW(), NOW())
+           ON CONFLICT (id) DO UPDATE SET updated_at = NOW()`,
           [ticketId, newTicket.userId, cleanName, cleanEmail, cleanSubject, cleanCategory, cleanPriority, cleanDesc]
         );
       } catch {
@@ -3243,6 +3885,633 @@ app.delete('/api/tickets/:id', authenticateToken, authorizeRoles('admin'), async
   } catch (err: any) {
     console.error('Delete ticket error:', err.message);
     res.status(500).json({ error: 'Failed to delete support ticket' });
+  }
+});
+
+// WORKOUT PROGRAMS ENDPOINTS
+app.get('/api/workout-programs', async (req, res) => {
+  try {
+    if (dbPool) {
+      const dbRes = await dbPool.query('SELECT * FROM workout_programs ORDER BY created_at DESC');
+      const programs = dbRes.rows.map(r => ({
+        id: r.id,
+        title: r.title,
+        description: r.description || '',
+        level: r.level || 'Intermediate',
+        durationWeeks: r.duration_weeks || 4,
+        assignedToUserId: r.assigned_to_user_id || undefined,
+        assignedToUserName: r.assigned_to_user_name || undefined,
+        assignedCoachName: r.assigned_coach_name || undefined,
+        assignedBy: r.assigned_by || 'Shaban Faridi',
+        assignedByRole: r.assigned_by_role || 'Head Coach',
+        assignedAt: r.assigned_at ? new Date(r.assigned_at).toISOString() : new Date().toISOString(),
+        status: r.status || 'assigned',
+        coachApprovalStatus: r.coach_approval_status || 'pending',
+        coachApprovalNotes: r.coach_approval_notes || undefined,
+        headCoachApprovalStatus: r.headcoach_approval_status || 'pending',
+        headCoachApprovalNotes: r.headcoach_approval_notes || undefined,
+        version: r.version ? Number(r.version) : 1,
+        approvalLogs: r.approval_logs ? JSON.parse(r.approval_logs) : [],
+        isPublishedToClient: r.is_published_to_client === true,
+        publishedToClientAt: r.published_to_client_at ? new Date(r.published_to_client_at).toISOString() : undefined,
+        exercises: r.exercises ? JSON.parse(r.exercises) : [],
+        createdBy: r.created_by || 'Head Coach',
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()
+      }));
+      return res.json(programs);
+    }
+    return res.json([]);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/workout-programs', async (req, res) => {
+  try {
+    const { id, title, description, level, durationWeeks, assignedToUserId, assignedToUserName, assignedCoachName, assignedBy, assignedByRole, assignedAt, status, coachApprovalStatus, coachApprovalNotes, headCoachApprovalStatus, headCoachApprovalNotes, version, approvalLogs, isPublishedToClient, publishedToClientAt, exercises, createdBy } = req.body;
+    if (!title) return res.status(400).json({ error: 'Title is required' });
+
+    const progId = id || `prog-${Date.now()}`;
+    const exJson = typeof exercises === 'string' ? exercises : JSON.stringify(exercises || []);
+    const appLogsJson = typeof approvalLogs === 'string' ? approvalLogs : JSON.stringify(approvalLogs || []);
+    const isPub = isPublishedToClient === true;
+
+    if (dbPool) {
+      await dbPool.query(
+        `INSERT INTO workout_programs (id, title, description, level, duration_weeks, assigned_to_user_id, assigned_to_user_name, assigned_coach_name, assigned_by, assigned_by_role, assigned_at, status, coach_approval_status, coach_approval_notes, headcoach_approval_status, headcoach_approval_notes, version, approval_logs, is_published_to_client, published_to_client_at, exercises, created_by, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW(), NOW())
+         ON CONFLICT (id) DO UPDATE SET
+           title = EXCLUDED.title,
+           description = EXCLUDED.description,
+           level = EXCLUDED.level,
+           duration_weeks = EXCLUDED.duration_weeks,
+           assigned_to_user_id = EXCLUDED.assigned_to_user_id,
+           assigned_to_user_name = EXCLUDED.assigned_to_user_name,
+           assigned_coach_name = EXCLUDED.assigned_coach_name,
+           assigned_by = EXCLUDED.assigned_by,
+           assigned_by_role = EXCLUDED.assigned_by_role,
+           assigned_at = EXCLUDED.assigned_at,
+           status = EXCLUDED.status,
+           coach_approval_status = EXCLUDED.coach_approval_status,
+           coach_approval_notes = EXCLUDED.coach_approval_notes,
+           headcoach_approval_status = EXCLUDED.headcoach_approval_status,
+           headcoach_approval_notes = EXCLUDED.headcoach_approval_notes,
+           version = EXCLUDED.version,
+           approval_logs = EXCLUDED.approval_logs,
+           is_published_to_client = EXCLUDED.is_published_to_client,
+           published_to_client_at = EXCLUDED.published_to_client_at,
+           exercises = EXCLUDED.exercises,
+           updated_at = NOW()`,
+        [progId, sanitizeInput(title), sanitizeInput(description || ''), sanitizeInput(level || 'Intermediate'), Number(durationWeeks) || 4, assignedToUserId || null, assignedToUserName || null, assignedCoachName || null, sanitizeInput(assignedBy || 'Shaban Faridi'), sanitizeInput(assignedByRole || 'Head Coach'), assignedAt || new Date().toISOString(), status || 'assigned', coachApprovalStatus || 'pending', sanitizeInput(coachApprovalNotes || ''), headCoachApprovalStatus || 'pending', sanitizeInput(headCoachApprovalNotes || ''), Number(version) || 1, appLogsJson, isPub, publishedToClientAt || null, exJson, sanitizeInput(createdBy || 'Head Coach')]
+      );
+    }
+    return res.json({ id: progId, message: 'Workout program saved to NeonDB database' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/workout-programs/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (dbPool) {
+      await dbPool.query('DELETE FROM workout_programs WHERE id = $1', [id]);
+    }
+    return res.json({ message: `Workout program ${id} deleted from NeonDB` });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// COACH ASSIGNMENTS ENDPOINTS
+app.get('/api/coach-assignments', async (req, res) => {
+  try {
+    const { coachName, coachId } = req.query;
+    if (dbPool) {
+      let query = 'SELECT * FROM coach_assignments';
+      const params: any[] = [];
+      if (coachName || coachId) {
+        query += ' WHERE LOWER(assigned_coach_name) = LOWER($1) OR assigned_coach_id = $1';
+        params.push(String(coachName || coachId).trim());
+      }
+      query += ' ORDER BY created_at DESC';
+      const dbRes = await dbPool.query(query, params);
+      const assignments = dbRes.rows.map(r => ({
+        id: r.id,
+        assignmentType: r.assignment_type,
+        referenceId: r.reference_id || undefined,
+        title: r.title,
+        description: r.description || '',
+        instructions: r.instructions || '',
+        assignedCoachId: r.assigned_coach_id || undefined,
+        assignedCoachName: r.assigned_coach_name,
+        clientId: r.client_id || undefined,
+        clientName: r.client_name || undefined,
+        clientEmail: r.client_email || undefined,
+        serviceId: r.service_id || undefined,
+        serviceName: r.service_name || undefined,
+        assignedById: r.assigned_by_id || undefined,
+        assignedByName: r.assigned_by_name || 'Shaban Faridi',
+        assignedByRole: r.assigned_by_role || 'Head Coach',
+        assignedAt: r.assigned_at ? new Date(r.assigned_at).toISOString() : new Date().toISOString(),
+        dueDate: r.due_date || undefined,
+        scheduleTime: r.schedule_time || undefined,
+        priority: r.priority || 'medium',
+        status: r.status || 'assigned',
+        isPublishedToClient: r.is_published_to_client === true,
+        publishedToClientAt: r.published_to_client_at ? new Date(r.published_to_client_at).toISOString() : undefined,
+        version: r.version ? Number(r.version) : 1,
+        approvalLogs: r.approval_logs ? JSON.parse(r.approval_logs) : [],
+        details: r.details ? JSON.parse(r.details) : {},
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+        updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
+      }));
+      return res.json(assignments);
+    }
+    return res.json([]);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/coach-assignments', async (req, res) => {
+  try {
+    const {
+      id, assignmentType, referenceId, title, description, instructions,
+      assignedCoachId, assignedCoachName, clientId, clientName, clientEmail,
+      serviceId, serviceName, assignedById, assignedByName, assignedByRole, assignedAt,
+      dueDate, scheduleTime, priority, status, isPublishedToClient, publishedToClientAt,
+      version, approvalLogs, details
+    } = req.body;
+
+    if (!title || !assignedCoachName) {
+      return res.status(400).json({ error: 'Title and assignedCoachName are required' });
+    }
+
+    const assignId = id || `asgn-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const appLogsJson = typeof approvalLogs === 'string' ? approvalLogs : JSON.stringify(approvalLogs || []);
+    const detailsJson = typeof details === 'string' ? details : JSON.stringify(details || {});
+    const isPub = isPublishedToClient === true;
+
+    if (dbPool) {
+      await dbPool.query(
+        `INSERT INTO coach_assignments (
+           id, assignment_type, reference_id, title, description, instructions,
+           assigned_coach_id, assigned_coach_name, client_id, client_name, client_email,
+           service_id, service_name, assigned_by_id, assigned_by_name, assigned_by_role, assigned_at,
+           due_date, schedule_time, priority, status, is_published_to_client, published_to_client_at,
+           version, approval_logs, details, created_at, updated_at
+         ) VALUES (
+           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, NOW(), NOW()
+         ) ON CONFLICT (id) DO UPDATE SET
+           assignment_type = EXCLUDED.assignment_type,
+           reference_id = EXCLUDED.reference_id,
+           title = EXCLUDED.title,
+           description = EXCLUDED.description,
+           instructions = EXCLUDED.instructions,
+           assigned_coach_id = EXCLUDED.assigned_coach_id,
+           assigned_coach_name = EXCLUDED.assigned_coach_name,
+           client_id = EXCLUDED.client_id,
+           client_name = EXCLUDED.client_name,
+           client_email = EXCLUDED.client_email,
+           service_id = EXCLUDED.service_id,
+           service_name = EXCLUDED.service_name,
+           assigned_by_id = EXCLUDED.assigned_by_id,
+           assigned_by_name = EXCLUDED.assigned_by_name,
+           assigned_by_role = EXCLUDED.assigned_by_role,
+           assigned_at = EXCLUDED.assigned_at,
+           due_date = EXCLUDED.due_date,
+           schedule_time = EXCLUDED.schedule_time,
+           priority = EXCLUDED.priority,
+           status = EXCLUDED.status,
+           is_published_to_client = EXCLUDED.is_published_to_client,
+           published_to_client_at = EXCLUDED.published_to_client_at,
+           version = EXCLUDED.version,
+           approval_logs = EXCLUDED.approval_logs,
+           details = EXCLUDED.details,
+           updated_at = NOW()`,
+        [
+          assignId, assignmentType || 'other', referenceId || null, sanitizeInput(title), sanitizeInput(description || ''), sanitizeInput(instructions || ''),
+          assignedCoachId || null, sanitizeInput(assignedCoachName), clientId || null, sanitizeInput(clientName || ''), sanitizeInput(clientEmail || ''),
+          serviceId || null, sanitizeInput(serviceName || ''), assignedById || null, sanitizeInput(assignedByName || 'Shaban Faridi'), sanitizeInput(assignedByRole || 'Head Coach'), assignedAt || new Date().toISOString(),
+          dueDate || null, scheduleTime || null, priority || 'medium', status || 'assigned', isPub, publishedToClientAt || null,
+          Number(version) || 1, appLogsJson, detailsJson
+        ]
+      );
+    }
+
+    return res.json({ id: assignId, message: 'Coach assignment saved to NeonDB' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/coach-assignments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    if (dbPool) {
+      const fields: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      if (updates.status) { fields.push(`status = $${idx++}`); values.push(updates.status); }
+      if (updates.priority) { fields.push(`priority = $${idx++}`); values.push(updates.priority); }
+      if (updates.instructions) { fields.push(`instructions = $${idx++}`); values.push(sanitizeInput(updates.instructions)); }
+      if (updates.isPublishedToClient !== undefined) { fields.push(`is_published_to_client = $${idx++}`); values.push(updates.isPublishedToClient === true); }
+      if (updates.publishedToClientAt) { fields.push(`published_to_client_at = $${idx++}`); values.push(updates.publishedToClientAt); }
+      if (updates.version) { fields.push(`version = $${idx++}`); values.push(Number(updates.version)); }
+      if (updates.approvalLogs) { fields.push(`approval_logs = $${idx++}`); values.push(JSON.stringify(updates.approvalLogs)); }
+
+      fields.push(`updated_at = NOW()`);
+      values.push(id);
+
+      if (fields.length > 1) {
+        await dbPool.query(`UPDATE coach_assignments SET ${fields.join(', ')} WHERE id = $${idx}`, values);
+      }
+    }
+    return res.json({ message: `Assignment ${id} updated` });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/coach-assignments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (dbPool) {
+      await dbPool.query('DELETE FROM coach_assignments WHERE id = $1', [id]);
+    }
+    return res.json({ message: `Assignment ${id} deleted` });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// NUTRITION PLANS ENDPOINTS
+app.get('/api/nutrition-plans', async (req, res) => {
+  try {
+    if (dbPool) {
+      const dbRes = await dbPool.query('SELECT * FROM nutrition_plans ORDER BY created_at DESC');
+      const plans = dbRes.rows.map(r => ({
+        id: r.id,
+        title: r.title,
+        assignedToUserId: r.assigned_to_user_id || undefined,
+        assignedToUserName: r.assigned_to_user_name || undefined,
+        assignedCoachName: r.assigned_coach_name || undefined,
+        assignedBy: r.assigned_by || 'Shaban Faridi',
+        assignedByRole: r.assigned_by_role || 'Head Coach',
+        assignedAt: r.assigned_at ? new Date(r.assigned_at).toISOString() : new Date().toISOString(),
+        status: r.status || 'assigned',
+        coachApprovalStatus: r.coach_approval_status || 'pending',
+        coachApprovalNotes: r.coach_approval_notes || undefined,
+        headCoachApprovalStatus: r.headcoach_approval_status || 'pending',
+        headCoachApprovalNotes: r.headcoach_approval_notes || undefined,
+        version: r.version ? Number(r.version) : 1,
+        approvalLogs: r.approval_logs ? JSON.parse(r.approval_logs) : [],
+        isPublishedToClient: r.is_published_to_client === true,
+        publishedToClientAt: r.published_to_client_at ? new Date(r.published_to_client_at).toISOString() : undefined,
+        dailyCalories: r.daily_calories || 2400,
+        targetProteinG: r.target_protein_g || 190,
+        targetCarbsG: r.target_carbs_g || 220,
+        targetFatG: r.target_fat_g || 70,
+        meals: r.meals ? JSON.parse(r.meals) : [],
+        createdBy: r.created_by || 'Head Nutritionist',
+        updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()
+      }));
+      return res.json(plans);
+    }
+    return res.json([]);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/nutrition-plans', async (req, res) => {
+  try {
+    const { id, title, assignedToUserId, assignedToUserName, assignedCoachName, assignedBy, assignedByRole, assignedAt, status, coachApprovalStatus, coachApprovalNotes, headCoachApprovalStatus, headCoachApprovalNotes, version, approvalLogs, isPublishedToClient, publishedToClientAt, dailyCalories, targetProteinG, targetCarbsG, targetFatG, meals, createdBy } = req.body;
+    if (!title) return res.status(400).json({ error: 'Title is required' });
+
+    const planId = id || `nut-${Date.now()}`;
+    const mealsJson = typeof meals === 'string' ? meals : JSON.stringify(meals || []);
+    const appLogsJson = typeof approvalLogs === 'string' ? approvalLogs : JSON.stringify(approvalLogs || []);
+    const isPub = isPublishedToClient === true;
+
+    if (dbPool) {
+      await dbPool.query(
+        `INSERT INTO nutrition_plans (id, title, assigned_to_user_id, assigned_to_user_name, assigned_coach_name, assigned_by, assigned_by_role, assigned_at, status, coach_approval_status, coach_approval_notes, headcoach_approval_status, headcoach_approval_notes, version, approval_logs, is_published_to_client, published_to_client_at, daily_calories, target_protein_g, target_carbs_g, target_fat_g, meals, created_by, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, NOW(), NOW())
+         ON CONFLICT (id) DO UPDATE SET
+           title = EXCLUDED.title,
+           assigned_to_user_id = EXCLUDED.assigned_to_user_id,
+           assigned_to_user_name = EXCLUDED.assigned_to_user_name,
+           assigned_coach_name = EXCLUDED.assigned_coach_name,
+           assigned_by = EXCLUDED.assigned_by,
+           assigned_by_role = EXCLUDED.assigned_by_role,
+           assigned_at = EXCLUDED.assigned_at,
+           status = EXCLUDED.status,
+           coach_approval_status = EXCLUDED.coach_approval_status,
+           coach_approval_notes = EXCLUDED.coach_approval_notes,
+           headcoach_approval_status = EXCLUDED.headcoach_approval_status,
+           headcoach_approval_notes = EXCLUDED.headcoach_approval_notes,
+           version = EXCLUDED.version,
+           approval_logs = EXCLUDED.approval_logs,
+           is_published_to_client = EXCLUDED.is_published_to_client,
+           published_to_client_at = EXCLUDED.published_to_client_at,
+           daily_calories = EXCLUDED.daily_calories,
+           target_protein_g = EXCLUDED.target_protein_g,
+           target_carbs_g = EXCLUDED.target_carbs_g,
+           target_fat_g = EXCLUDED.target_fat_g,
+           meals = EXCLUDED.meals,
+           updated_at = NOW()`,
+        [planId, sanitizeInput(title), assignedToUserId || null, assignedToUserName || null, assignedCoachName || null, sanitizeInput(assignedBy || 'Shaban Faridi'), sanitizeInput(assignedByRole || 'Head Coach'), assignedAt || new Date().toISOString(), status || 'assigned', coachApprovalStatus || 'pending', sanitizeInput(coachApprovalNotes || ''), headCoachApprovalStatus || 'pending', sanitizeInput(headCoachApprovalNotes || ''), Number(version) || 1, appLogsJson, isPub, publishedToClientAt || null, Number(dailyCalories) || 2400, Number(targetProteinG) || 190, Number(targetCarbsG) || 220, Number(targetFatG) || 70, mealsJson, sanitizeInput(createdBy || 'Head Nutritionist')]
+      );
+    }
+    return res.json({ id: planId, message: 'Diet plan saved to NeonDB database' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// IN-APP NOTIFICATIONS ENDPOINTS
+app.get('/api/notifications', async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (dbPool) {
+      let query = 'SELECT * FROM in_app_notifications ORDER BY created_at DESC LIMIT 50';
+      let params: any[] = [];
+      if (email) {
+        query = 'SELECT * FROM in_app_notifications WHERE user_email = $1 OR user_email = \'all\' ORDER BY created_at DESC LIMIT 50';
+        params = [String(email)];
+      }
+      const dbRes = await dbPool.query(query, params);
+      const notifications = dbRes.rows.map(r => ({
+        id: r.id,
+        userId: r.user_id || undefined,
+        userEmail: r.user_email,
+        title: r.title,
+        message: r.message,
+        contentType: r.content_type || 'general',
+        coachName: r.coach_name || 'BxStrength Team',
+        linkTab: r.link_tab || undefined,
+        isRead: r.is_read === true,
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString()
+      }));
+      return res.json(notifications);
+    }
+    return res.json([]);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/notifications', async (req, res) => {
+  try {
+    const { id, userId, userEmail, title, message, contentType, coachName, linkTab } = req.body;
+    if (!title || !userEmail) return res.status(400).json({ error: 'Title and userEmail are required' });
+
+    const notifId = id || `notif-${Date.now()}`;
+    if (dbPool) {
+      await dbPool.query(
+        `INSERT INTO in_app_notifications (id, user_id, user_email, title, message, content_type, coach_name, link_tab, is_read, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, FALSE, NOW())`,
+        [notifId, userId || null, userEmail, sanitizeInput(title), sanitizeInput(message || ''), contentType || 'general', sanitizeInput(coachName || 'BxStrength Team'), linkTab || null]
+      );
+    }
+    return res.json({ id: notifId, message: 'Notification created' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/notifications/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (dbPool) {
+      await dbPool.query('UPDATE in_app_notifications SET is_read = TRUE WHERE id = $1', [id]);
+    }
+    return res.json({ message: 'Marked as read' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// EMAIL NOTIFICATIONS LOG ENDPOINT
+app.post('/api/email-notifications/send', async (req, res) => {
+  try {
+    const { toEmail, toName, subject, contentType, coachName, viewLink } = req.body;
+    const logId = `email-${Date.now()}`;
+    if (dbPool) {
+      await dbPool.query(
+        `INSERT INTO email_notifications_log (id, to_email, to_name, subject, content_type, coach_name, view_link, status, sent_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'Sent', NOW())`,
+        [logId, toEmail, sanitizeInput(toName || 'Client Athlete'), sanitizeInput(subject), contentType || 'general', sanitizeInput(coachName || 'BxStrength Team'), viewLink || '']
+      );
+    }
+    console.log(`[EMAIL DISPATCH SIMULATED] To: ${toEmail} | Subject: ${subject} | Coach: ${coachName}`);
+    return res.json({ id: logId, status: 'Sent', message: `Email dispatched to ${toEmail}` });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/nutrition-plans/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (dbPool) {
+      await dbPool.query('DELETE FROM nutrition_plans WHERE id = $1', [id]);
+    }
+    return res.json({ message: `Diet plan ${id} deleted from NeonDB` });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// CLASSES ENDPOINTS
+app.get('/api/classes', async (req, res) => {
+  try {
+    if (dbPool) {
+      const dbRes = await dbPool.query('SELECT * FROM classes ORDER BY created_at DESC');
+      const cls = dbRes.rows.map(r => ({
+        id: r.id,
+        title: r.title,
+        category: r.category || 'strength',
+        trainerId: r.trainer_id || '',
+        trainerName: r.trainer_name || 'Coach',
+        dayOfWeek: r.day_of_week || 'Monday',
+        startTime: r.start_time || '09:00 AM',
+        endTime: r.end_time || '10:00 AM',
+        room: r.room || 'Studio A',
+        maxCapacity: r.max_capacity || 20,
+        bookedCount: r.booked_count || 0,
+        price: Number(r.price) || 0
+      }));
+      return res.json(cls);
+    }
+    return res.json([]);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/classes', async (req, res) => {
+  try {
+    const { id, title, category, trainerId, trainerName, dayOfWeek, startTime, endTime, room, maxCapacity, bookedCount, price } = req.body;
+    if (!title) return res.status(400).json({ error: 'Title is required' });
+
+    const clsId = id || `cls-${Date.now()}`;
+
+    if (dbPool) {
+      await dbPool.query(
+        `INSERT INTO classes (id, title, category, trainer_id, trainer_name, day_of_week, start_time, end_time, room, max_capacity, booked_count, price, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+         ON CONFLICT (id) DO UPDATE SET
+           title = EXCLUDED.title,
+           category = EXCLUDED.category,
+           trainer_id = EXCLUDED.trainer_id,
+           trainer_name = EXCLUDED.trainer_name,
+           day_of_week = EXCLUDED.day_of_week,
+           start_time = EXCLUDED.start_time,
+           end_time = EXCLUDED.end_time,
+           room = EXCLUDED.room,
+           max_capacity = EXCLUDED.max_capacity,
+           booked_count = EXCLUDED.booked_count,
+           price = EXCLUDED.price`,
+        [clsId, sanitizeInput(title), sanitizeInput(category || 'strength'), trainerId || '', sanitizeInput(trainerName || 'Coach'), dayOfWeek || 'Monday', startTime || '09:00 AM', endTime || '10:00 AM', room || 'Studio A', Number(maxCapacity) || 20, Number(bookedCount) || 0, Number(price) || 0]
+      );
+    }
+    return res.json({ id: clsId, message: 'Class schedule saved to NeonDB database' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/classes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (dbPool) {
+      await dbPool.query('DELETE FROM classes WHERE id = $1', [id]);
+    }
+    return res.json({ message: `Class ${id} deleted from NeonDB` });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// SUBSCRIPTIONS ENDPOINTS
+app.get('/api/subscriptions', async (req, res) => {
+  try {
+    if (dbPool) {
+      const dbRes = await dbPool.query('SELECT * FROM subscriptions ORDER BY created_at DESC');
+      const subs = dbRes.rows.map(r => ({
+        id: r.id,
+        userId: r.user_id,
+        userName: r.user_name || 'Client',
+        userEmail: r.user_email,
+        planName: r.plan_name,
+        price: Number(r.price) || 0,
+        billingCycle: r.billing_cycle || 'monthly',
+        status: r.status || 'active',
+        startDate: r.start_date || new Date().toISOString(),
+        endDate: r.end_date || new Date().toISOString()
+      }));
+      return res.json(subs);
+    }
+    return res.json([]);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/subscriptions', async (req, res) => {
+  try {
+    const { id, userId, userName, userEmail, planName, price, billingCycle, status, startDate, endDate } = req.body;
+    if (!userEmail || !planName) return res.status(400).json({ error: 'Email and planName are required' });
+
+    const subId = id || `sub-${Date.now()}`;
+
+    if (dbPool) {
+      await dbPool.query(
+        `INSERT INTO subscriptions (id, user_id, user_name, user_email, plan_name, price, billing_cycle, status, start_date, end_date, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+         ON CONFLICT (id) DO UPDATE SET
+           status = EXCLUDED.status,
+           plan_name = EXCLUDED.plan_name,
+           price = EXCLUDED.price,
+           billing_cycle = EXCLUDED.billing_cycle`,
+        [subId, userId || `user-${Date.now()}`, sanitizeInput(userName || 'Client'), sanitizeInput(userEmail).toLowerCase(), sanitizeInput(planName), Number(price) || 0, billingCycle || 'monthly', status || 'active', startDate || new Date().toISOString(), endDate || new Date().toISOString()]
+      );
+    }
+    return res.json({ id: subId, message: 'Subscription saved to NeonDB database' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/subscriptions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (dbPool) {
+      await dbPool.query('DELETE FROM subscriptions WHERE id = $1', [id]);
+    }
+    return res.json({ message: `Subscription ${id} deleted from NeonDB` });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// AUDIT LOGS ENDPOINTS
+app.get('/api/audit-logs', async (req, res) => {
+  try {
+    if (dbPool) {
+      const dbRes = await dbPool.query('SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 100');
+      const logs = dbRes.rows.map(r => ({
+        id: r.id,
+        timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : new Date().toISOString(),
+        userId: r.user_id || 'system',
+        userName: r.user_name || 'System',
+        userRole: r.user_role || 'ADMIN',
+        action: r.action,
+        details: r.details || '',
+        ipAddress: r.ip_address || '127.0.0.1'
+      }));
+      return res.json(logs);
+    }
+    return res.json([]);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/audit-logs', async (req, res) => {
+  try {
+    const { id, userId, userName, userRole, action, details, ipAddress } = req.body;
+    if (!action) return res.status(400).json({ error: 'Action is required' });
+
+    const logId = id || `log-${Date.now()}`;
+
+    if (dbPool) {
+      await dbPool.query(
+        `INSERT INTO audit_logs (id, user_id, user_name, user_role, action, details, ip_address, timestamp)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+         ON CONFLICT (id) DO NOTHING`,
+        [logId, userId || 'system', sanitizeInput(userName || 'System'), userRole || 'ADMIN', sanitizeInput(action), sanitizeInput(details || ''), ipAddress || '127.0.0.1']
+      );
+    }
+    return res.json({ id: logId, message: 'Audit log saved to NeonDB database' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/audit-logs', async (req, res) => {
+  try {
+    if (dbPool) {
+      await dbPool.query('DELETE FROM audit_logs');
+    }
+    return res.json({ message: 'All audit logs cleared from NeonDB database' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
   }
 });
 

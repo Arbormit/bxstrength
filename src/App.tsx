@@ -21,6 +21,7 @@ import { BlogView } from './components/BlogView';
 import { ContactView } from './components/ContactView';
 import { TermsView } from './components/TermsView';
 import { PrivacyView } from './components/PrivacyView';
+import { OnboardingTermsView } from './components/OnboardingTermsView';
 import { SearchModal } from './components/SearchModal';
 import { ClientDashboard } from './components/dashboard/ClientDashboard';
 import { AdminCRM } from './components/admin/AdminCRM';
@@ -28,6 +29,7 @@ import { SupportDashboardView } from './components/support/SupportDashboardView'
 import { LoginModal } from './components/auth/LoginModal';
 import { RegisterModal } from './components/auth/RegisterModal';
 import { ForgotPasswordModal } from './components/auth/ForgotPasswordModal';
+import { OtpVerificationModal } from './components/auth/OtpVerificationModal';
 import { SeoHead } from './components/SeoHead';
 import { FloatingActionWidget } from './components/ui/FloatingActionWidget';
 import { Lock } from 'lucide-react';
@@ -48,6 +50,8 @@ function AppContent() {
   const [loginModalOpen, setLoginModalOpen] = useState<boolean>(false);
   const [registerModalOpen, setRegisterModalOpen] = useState<boolean>(false);
   const [forgotPassModalOpen, setForgotPassModalOpen] = useState<boolean>(false);
+  const [otpModalOpen, setOtpModalOpen] = useState<boolean>(false);
+  const [otpEmail, setOtpEmail] = useState<string>('');
   const [selectedClassForBooking, setSelectedClassForBooking] = useState<string | undefined>(undefined);
   const [selectedTrainerForBooking, setSelectedTrainerForBooking] = useState<string | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -83,7 +87,7 @@ function AppContent() {
       }
 
       const roleClean = (user.role || '').toLowerCase();
-      const isSupportStaff = ['customer_support', 'cs_agent', 'support', 'admin', 'coach'].includes(roleClean);
+      const isSupportStaff = ['customer_support', 'support', 'admin', 'headcoach', 'coach'].includes(roleClean);
 
       if (!isSupportStaff) {
         // Regular client/user -> Redirect to client dashboard
@@ -123,10 +127,10 @@ function AppContent() {
 
   const handleAuthSuccessNavigate = (role: UserRole) => {
     const roleClean = (role || '').toLowerCase();
-    if (roleClean === 'customer_support' || roleClean === 'cs_agent' || roleClean === 'support') {
+    if (roleClean === 'customer_support' || roleClean === 'support') {
       setCurrentPage('support_dashboard');
       showToast('Welcome to BxStrength Customer Support Workspace');
-    } else if (roleClean === 'admin' || roleClean === 'coach') {
+    } else if (roleClean === 'admin' || roleClean === 'headcoach' || roleClean === 'coach') {
       setCurrentPage('admin');
       showToast(`Welcome to BxStrength Admin CRM (${role.toUpperCase()} Session)`);
     } else {
@@ -163,7 +167,7 @@ function AppContent() {
   // If viewing Dashboard or Admin CRM full-screen portal views
   if (currentPage === 'dashboard' && user) {
     const userRoleClean = (user.role || '').toLowerCase();
-    if (['customer_support', 'cs_agent', 'support'].includes(userRoleClean)) {
+    if (['customer_support', 'support'].includes(userRoleClean)) {
       return (
         <SupportDashboardView
           onShowToast={showToast}
@@ -176,7 +180,7 @@ function AppContent() {
         />
       );
     }
-    if (userRoleClean === 'admin' || userRoleClean === 'coach') {
+    if (userRoleClean === 'admin' || userRoleClean === 'headcoach' || userRoleClean === 'coach') {
       return (
         <AdminCRM
           user={user}
@@ -382,8 +386,10 @@ function AppContent() {
 
         {currentPage === 'privacy' && <PrivacyView />}
 
+        {currentPage === 'onboarding_terms' && <OnboardingTermsView />}
+
         {currentPage === 'support_dashboard' && (
-          isAuthenticated && user && ['customer_support', 'cs_agent', 'support', 'admin', 'coach'].includes((user.role || '').toLowerCase()) ? (
+          isAuthenticated && user && ['customer_support', 'support', 'admin', 'headcoach', 'coach'].includes((user.role || '').toLowerCase()) ? (
             <SupportDashboardView
               onShowToast={showToast}
               onNavigateHome={() => setCurrentPage('home')}
@@ -480,6 +486,11 @@ function AppContent() {
           setLoginModalOpen(false);
           setForgotPassModalOpen(true);
         }}
+        onRequireOtp={(emailToVerify) => {
+          setLoginModalOpen(false);
+          setOtpEmail(emailToVerify);
+          setOtpModalOpen(true);
+        }}
         onSuccessNavigate={handleAuthSuccessNavigate}
       />
 
@@ -488,6 +499,22 @@ function AppContent() {
         onClose={() => setRegisterModalOpen(false)}
         onOpenLogin={() => {
           setRegisterModalOpen(false);
+          setLoginModalOpen(true);
+        }}
+        onRequireOtp={(emailToVerify) => {
+          setRegisterModalOpen(false);
+          setOtpEmail(emailToVerify);
+          setOtpModalOpen(true);
+        }}
+        onSuccessNavigate={handleAuthSuccessNavigate}
+      />
+
+      <OtpVerificationModal
+        isOpen={otpModalOpen}
+        email={otpEmail}
+        onClose={() => setOtpModalOpen(false)}
+        onOpenLogin={() => {
+          setOtpModalOpen(false);
           setLoginModalOpen(true);
         }}
         onSuccessNavigate={handleAuthSuccessNavigate}

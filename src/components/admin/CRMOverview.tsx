@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { User, ClassSchedule, Subscription, AuditLog, Enquiry, LeadPipelineStage } from '../../types';
 import { VelocityAPI, getApiUrl } from '../../services/api';
 import { ConfirmModal } from '../ui/ConfirmModal';
+import { AssignedTasksSection } from './AssignedTasksSection';
 import { 
   Users, DollarSign, Dumbbell, ShieldCheck, Activity, TrendingUp, 
   ChevronRight, AlertCircle, BarChart3, Filter, PieChart, CheckCircle2, 
-  ArrowRight, Plus, Trash2, X, Zap, Phone, Mail, Clock, UserCheck, Calendar 
+  ArrowRight, Plus, Trash2, X, Zap, Phone, Mail, Clock, UserCheck, Calendar, Utensils
 } from 'lucide-react';
 
 export interface CRMLead {
@@ -41,6 +42,15 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
   isCoach = false,
   onNavigateTab
 }) => {
+  const currentUser = VelocityAPI.getCurrentUser();
+  const isHeadCoach = currentUser?.role === 'headcoach' || (currentUser?.role === 'coach' && Boolean(
+    currentUser.coachPosition && (
+      currentUser.coachPosition.toLowerCase() === 'head coach' ||
+      currentUser.coachPosition.toLowerCase() === 'headcoach' ||
+      currentUser.coachPosition.toLowerCase() === 'chief athletic officer'
+    )
+  ));
+
   const [selectedFilterCoach, setSelectedFilterCoach] = useState<string>('All');
   const [selectedFilterStage, setSelectedFilterStage] = useState<string>('All');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -145,19 +155,50 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
       const data = await res.json();
       setIsAssigning(false);
 
+      // Sync lead stage and assigned coach in CRM state
+      setLeads((prev) =>
+        prev.map((l) => {
+          if (l.email.toLowerCase() === (assigningBooking.userEmail || '').toLowerCase()) {
+            return {
+              ...l,
+              assignedCoach: assignCoachName,
+              stage: 'Coach Assigned'
+            };
+          }
+          return l;
+        })
+      );
+
+      // Create or update subscription record
+      try {
+        VelocityAPI.createSubscription({
+          userId: assigningBooking.userId || `user-${Date.now()}`,
+          userName: assigningBooking.userName || 'Client Athlete',
+          userEmail: assigningBooking.userEmail,
+          planName: assigningBooking.serviceTitle || 'Coaching Service',
+          price: assigningBooking.amountGbp || 0,
+          billingCycle: 'monthly',
+          status: 'active'
+        });
+      } catch (e) {}
+
+      // Trigger real-time sync event across all tabs
+      window.dispatchEvent(new Event('storage'));
+
       if (res.ok && data.success) {
         setToastMessage(`✓ Coach ${assignCoachName} assigned & schedule email sent to ${assigningBooking.userEmail}!`);
         setAssigningBooking(null);
         fetchJourneyBookings();
       } else {
-        setToastMessage(`✓ Schedule confirmed & email sent to ${assigningBooking.userEmail}!`);
+        setToastMessage(`✓ Coach ${assignCoachName} assigned & schedule confirmed for ${assigningBooking.userEmail}!`);
         setAssigningBooking(null);
         fetchJourneyBookings();
       }
     } catch (err: any) {
       setIsAssigning(false);
-      setToastMessage(`✓ Schedule confirmed & email sent to ${assigningBooking.userEmail}!`);
+      setToastMessage(`✓ Coach ${assignCoachName} assigned for ${assigningBooking.userEmail}!`);
       setAssigningBooking(null);
+      fetchJourneyBookings();
     }
   };
 
@@ -208,8 +249,20 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
     }
   });
 
+  const isCoachOnly = isCoach && !isHeadCoach;
+
   // Filtered Leads
   const filteredLeads = leads.filter((l) => {
+    // Only reflect leads assigned to this coach by Head Coach or Admin
+    if (isCoachOnly && currentUser?.name) {
+      const isAssignedToMe = l.assignedCoach && (
+        l.assignedCoach.toLowerCase().includes(currentUser.name.toLowerCase()) ||
+        currentUser.name.toLowerCase().includes(l.assignedCoach.toLowerCase()) ||
+        (currentUser.email && l.assignedCoach.toLowerCase().includes(currentUser.email.toLowerCase()))
+      );
+      if (!isAssignedToMe) return false;
+    }
+
     const matchCoach = selectedFilterCoach === 'All' || l.assignedCoach === selectedFilterCoach;
     const matchStage = selectedFilterStage === 'All' || l.stage === selectedFilterStage;
     return matchCoach && matchStage;
@@ -290,18 +343,17 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-zinc-800 text-zinc-300 rounded border border-zinc-700">
-                {isCoach ? `COACH PORTAL • ${VelocityAPI.getCurrentUser()?.coachPosition || 'Head Coach'}` : 'BxStrength CRM EXECUTIVE'}
-              </span>
-              <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live Lead Sync
+                {isHeadCoach ? 'BxStrength Head Coach' : (isCoach ? 'BxStrength Coach' : 'BxStrength Admin')}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mt-2">
-              {isCoach ? 'FITNESS COACH CONTROL CENTER' : 'CLIENT PIPELINE & BUSINESS ANALYTICS'}
+              {isHeadCoach ? 'HEAD COACH DASHBOARD' : (isCoach ? 'COACH DASHBOARD' : 'CLIENT PIPELINE & ANALYTICS')}
             </h1>
             <p className="text-xs text-zinc-400 max-w-xl mt-1">
-              {isCoach
-                ? 'Manage your assigned client roster, 15-min strategy call sessions, workout programs, and nutrition plans.'
+              {isHeadCoach
+                ? 'Head Coach Operations: Manage coach roster, assign client leads, review transferred enquiries, and direct coaching operations.'
+                : isCoach
+                ? 'Coach Operations: View your assigned client leads, enquiries assigned by Head Coach or Customer Support, workout programs, and diet plans.'
                 : 'Track real lead progress from digital assessment to consultation, coach assignment, active retention, and client renewals.'}
             </p>
           </div>
@@ -316,156 +368,19 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                 Clear Leads
               </button>
             )}
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest px-5 py-3 rounded-lg uppercase transition-all shadow-lg cursor-pointer flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{isCoach ? 'ADD ATHLETE / CLIENT' : 'NEW LEAD ENTRY'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 🚨 STEP 4: PAID CLIENTS AWAITING COACH ALIGNMENT CARD */}
-      <div className="bg-[#121214] border border-[#CCFF00]/40 p-5 rounded-xl space-y-4 shadow-xl relative overflow-hidden">
-        <div className="h-1 w-full bg-[#CCFF00] absolute top-0 left-0"></div>
-        <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] font-black uppercase text-[#CCFF00] bg-zinc-900 border border-zinc-700 px-2.5 py-0.5 rounded">
-                JOURNEY STEP 4 NOTIFICATION
-              </span>
-              <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live Client Queue
-              </span>
-            </div>
-            <h3 className="text-base font-black text-white uppercase mt-1 flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-[#CCFF00]" />
-              PAID CLIENTS AWAITING COACH ALIGNMENT &amp; SCHEDULING
-            </h3>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Clients below have completed cryptographically verified payment and are waiting on Step 4 for an assigned UK Coach and confirmed session slot.
-            </p>
-          </div>
-          <span className="text-xs font-mono font-bold bg-[#CCFF00]/10 border border-[#CCFF00]/30 text-[#CCFF00] px-3 py-1 rounded-full">
-            {pendingJourneyBookings.filter(b => b.journeyState === 'SCHEDULING_PENDING' || b.paymentStatus === 'Paid').length} Pending
-          </span>
-        </div>
-
-        {pendingJourneyBookings.filter(b => b.journeyState === 'SCHEDULING_PENDING' || b.paymentStatus === 'Paid').length === 0 ? (
-          <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-lg p-5 text-center text-xs text-zinc-400 space-y-1">
-            <CheckCircle2 className="w-5 h-5 text-[#CCFF00] mx-auto mb-1" />
-            <p className="font-bold text-white uppercase">All Paid Customers Have Been Assigned Coaches</p>
-            <p className="text-[11px] text-zinc-500">When a customer completes payment at Step 3, their booking will appear here for coach assignment.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {pendingJourneyBookings
-              .filter(b => b.journeyState === 'SCHEDULING_PENDING' || b.paymentStatus === 'Paid')
-              .map((bk) => (
-                <div key={bk.id} className="bg-[#18181b] border border-zinc-800 p-4 rounded-xl space-y-3 relative">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-[9px] font-black uppercase text-black bg-[#CCFF00] px-2 py-0.5 rounded">
-                        STEP 4: AWAITING COACH
-                      </span>
-                      <h4 className="text-sm font-black text-white uppercase mt-1.5">{bk.userName || 'Client Athlete'}</h4>
-                      <p className="text-xs text-zinc-400">{bk.userEmail}</p>
-                      {bk.userPhone && <p className="text-xs text-zinc-400">📞 {bk.userPhone}</p>}
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-black text-[#CCFF00] font-mono">£{bk.amountGbp || 80}.00</span>
-                      <span className="text-[10px] text-emerald-400 block font-bold">Paid ({bk.paymentDate || 'Today'})</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-zinc-900 p-2.5 rounded-lg border border-zinc-800 text-xs">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase block">Purchased Service:</span>
-                    <span className="font-bold text-white block mt-0.5">{bk.serviceTitle} ({bk.serviceType?.toUpperCase()})</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setAssigningBooking(bk)}
-                    className="w-full bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs uppercase tracking-wider py-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
-                  >
-                    <UserCheck className="w-4 h-4 text-black" />
-                    <span>Assign Coach &amp; Send Schedule Email</span>
-                  </button>
-                </div>
-              ))}
-          </div>
-        )}
-      </div>
-
-      {/* ASSIGN COACH & SEND SCHEDULE EMAIL MODAL */}
-      {assigningBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-md bg-[#121214] text-white border border-zinc-800 rounded-xl p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <div>
-                <span className="text-[9px] font-black uppercase text-[#CCFF00] bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded">
-                  COACH ASSIGNMENT &amp; SCHEDULING
-                </span>
-                <h3 className="text-base font-black text-white uppercase mt-1">Assign Coach for {assigningBooking.userName}</h3>
-              </div>
-              <button onClick={() => setAssigningBooking(null)} className="text-zinc-400 hover:text-white p-1">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleAssignCoachConfirm} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-[11px] font-bold uppercase text-zinc-300 mb-1">Select Coach / Specialist</label>
-                <select
-                  value={assignCoachName}
-                  onChange={(e) => setAssignCoachName(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-white font-bold"
-                >
-                  <option value="Head Coach & Team">Head Coach & Team (Head Performance Coach)</option>
-                  <option value="Jordan Ellis">Jordan Ellis (Strength &amp; Conditioning Specialist)</option>
-                  <option value="Marcus Vance">Marcus Vance (Boxing &amp; Combat Coach)</option>
-                  <option value="Elena Rostova">Elena Rostova (Mobility &amp; Recovery Lead)</option>
-                  <option value="Moheeb Khan">Moheeb Khan (Senior Strength Coach)</option>
-                  <option value="Sadeem">Sadeem (Nutrition &amp; Recomp Specialist)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold uppercase text-zinc-300 mb-1">Scheduled Date</label>
-                <input
-                  type="text"
-                  value={assignScheduledDate}
-                  onChange={(e) => setAssignScheduledDate(e.target.value)}
-                  placeholder="e.g. Mon, 27 Jan 2026"
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-white font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold uppercase text-zinc-300 mb-1">Scheduled Time Slot</label>
-                <input
-                  type="text"
-                  value={assignScheduledTime}
-                  onChange={(e) => setAssignScheduledTime(e.target.value)}
-                  placeholder="e.g. 7:00 PM (GMT)"
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-white font-bold"
-                />
-              </div>
-
+            {(!isCoach || isHeadCoach) && (
               <button
-                type="submit"
-                disabled={isAssigning}
-                className="w-full bg-[#CCFF00] hover:bg-[#b8e600] text-black font-black text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer mt-2"
+                onClick={() => setShowAddModal(true)}
+                className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest px-5 py-3 rounded-lg uppercase transition-all shadow-lg cursor-pointer flex items-center gap-2"
               >
-                <UserCheck className="w-4 h-4 text-black" />
-                <span>{isAssigning ? 'Confirming &amp; Dispatching Email...' : 'Confirm Schedule &amp; Send Email to Customer'}</span>
+                <Plus className="w-4 h-4" />
+                <span>NEW LEAD ENTRY</span>
               </button>
-            </form>
+            )}
           </div>
         </div>
-      )}
+      </div>
+
 
       {/* Filter Bar */}
       <div className="bg-[#121214] border border-zinc-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 text-xs">
@@ -484,7 +399,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                 className="bg-[#18181b] border border-zinc-800 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600"
               >
                 <option value="All">All UK Coaches</option>
-                <option value="Head Coach & Team">Head Coach & Team</option>
+                <option value="Head Coach & Team">Shaban Faridi</option>
                 <option value="Sadeem">Sadeem</option>
                 <option value="Moheeb Khan">Moheeb Khan</option>
               </select>
@@ -641,8 +556,16 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         )}
       </div>
 
-      {/* Coach Quick Actions Bar */}
-      {isCoach && (
+      {/* UNIFIED ASSIGNED TASKS & COACHING ACTIVITIES SECTION */}
+      <AssignedTasksSection
+        currentUser={currentUser}
+        onShowToast={(msg) => {
+          setToastMessage(msg);
+          setTimeout(() => setToastMessage(null), 4000);
+        }}
+        onNavigateTab={onNavigateTab}
+      />
+      {isCoachOnly && (
         <div className="bg-[#141416] border border-zinc-800 p-5 rounded-xl">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-black uppercase tracking-widest text-[#CCFF00] flex items-center gap-2">
@@ -706,7 +629,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
           <div>
             <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
               <Users className="w-4 h-4 text-white" />
-              {isCoach ? 'MY ASSIGNED ATHLETE LEADS & DIAGNOSTIC REQUESTS' : 'LIVE CRM LEADS & ASSIGNED UK COACHES'}
+              {isCoach ? 'MY ASSIGNED LEADS & REQUESTS' : 'LIVE CRM LEADS & ASSIGNED COACHES'}
             </h3>
             <p className="text-xs text-zinc-400 mt-0.5">
               {isCoach
@@ -715,12 +638,14 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
             </p>
           </div>
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest px-4 py-2 rounded uppercase transition-colors flex items-center gap-1.5 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> {isCoach ? 'ADD ATHLETE' : 'ADD LEAD'}
-          </button>
+          {(!isCoach || isHeadCoach) && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest px-4 py-2 rounded uppercase transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> ADD LEAD
+            </button>
+          )}
         </div>
 
         {/* Empty State vs Real Leads List */}
@@ -736,15 +661,6 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                   ? `No leads currently match the stage filter "${selectedFilterStage}". Reset filters or add a new lead entry.`
                   : 'No CRM leads or client diagnostic entries recorded yet. Add your first lead to begin tracking client conversions.'}
               </p>
-            </div>
-            <div className="pt-2">
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest px-6 py-3 rounded-lg uppercase transition-all shadow-md inline-flex items-center gap-2 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>ADD FIRST LEAD</span>
-              </button>
             </div>
           </div>
         ) : (
@@ -792,13 +708,45 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                       </select>
                     </td>
                     <td className="py-3 px-3 text-right">
-                      <button
-                        onClick={() => setDeletingLead({ id: lead.id, name: lead.name })}
-                        className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-950/30 rounded transition-colors cursor-pointer"
-                        title="Delete lead entry"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {isCoach && (
+                          <>
+                            <button
+                              onClick={() => onNavigateTab('programs')}
+                              className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-[#CCFF00] rounded transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold"
+                              title="Create / Assign Workout Program for this Client"
+                            >
+                              <Dumbbell className="w-3.5 h-3.5" />
+                              <span>WORKOUT</span>
+                            </button>
+                            <button
+                              onClick={() => onNavigateTab('nutrition')}
+                              className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 rounded transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold"
+                              title="Create / Assign Diet & Nutrition Plan for this Client"
+                            >
+                              <Utensils className="w-3.5 h-3.5" />
+                              <span>DIET</span>
+                            </button>
+                            <button
+                              onClick={() => onNavigateTab('schedule')}
+                              className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-blue-400 rounded transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold"
+                              title="Manage Class & Session Schedule for this Client"
+                            >
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span>SCHEDULE</span>
+                            </button>
+                          </>
+                        )}
+                        {(!isCoach || isHeadCoach) && (
+                          <button
+                            onClick={() => setDeletingLead({ id: lead.id, name: lead.name })}
+                            className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-950/30 rounded transition-colors cursor-pointer"
+                            title="Delete lead entry"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -896,7 +844,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                     onChange={(e) => setCoachInput(e.target.value)}
                     className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-zinc-600"
                   >
-                    <option value="Head Coach & Team">Head Coach & Team</option>
+                    <option value="Shaban Faridi">Shaban Faridi (Head Coach)</option>
                     <option value="Sadeem">Sadeem (Senior Strength Lead)</option>
                     <option value="Moheeb Khan">Moheeb Khan (Tactical Lead)</option>
                   </select>

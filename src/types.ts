@@ -1,4 +1,4 @@
-export type ViewPage = 'home' | 'about' | 'services' | 'pricing' | 'schedule' | 'trainers' | 'blog' | 'contact' | 'dashboard' | 'admin' | 'terms' | 'privacy' | 'support_dashboard';
+export type ViewPage = 'home' | 'about' | 'services' | 'pricing' | 'schedule' | 'trainers' | 'blog' | 'contact' | 'dashboard' | 'admin' | 'terms' | 'privacy' | 'onboarding_terms' | 'support_dashboard';
 
 export type MarketCountry = 'GB' | 'IN'; 
 export type CurrencyCode = 'GBP' | 'INR';
@@ -12,7 +12,7 @@ export interface MarketConfig {
   flagEmoji: string;
 }
 
-export type UserRole = 'admin' | 'coach' | 'customer_support' | 'cs_agent' | 'client' | 'user';
+export type UserRole = 'admin' | 'headcoach' | 'coach' | 'customer_support' | 'client';
 
 export type CoachPosition = 'Head Coach' | 'Super Senior Coach' | 'Senior Coach' | 'Junior Coach' | 'Lead Specialist';
 
@@ -69,7 +69,7 @@ export interface User {
   billingStatements?: BillingStatement[];
   signupMethod?: 'Google SSO' | 'Email / Password' | string;
   isVerified: boolean;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending_verification';
   createdAt: string;
   lastLoginAt?: string;
 }
@@ -99,6 +99,55 @@ export interface ExerciseItem {
   isCompleted?: boolean;
 }
 
+export type AssignmentStatus =
+  | 'assigned'
+  | 'coach_accepted'
+  | 'coach_rejected'
+  | 'rejected'
+  | 'change_requested'
+  | 'in_progress'
+  | 'submitted_for_approval'
+  | 'headcoach_review'
+  | 'approved'
+  | 'published_to_client'
+  | 'completed';
+
+export interface ApprovalLogEntry {
+  id: string;
+  timestamp: string;
+  actorName: string;
+  actorRole: string;
+  action: 'ASSIGN' | 'COACH_ACCEPT' | 'COACH_REJECT' | 'REQUEST_CHANGE' | 'SUBMIT_FOR_APPROVAL' | 'HEADCOACH_APPROVE' | 'HEADCOACH_REJECT' | 'PUBLISH_TO_CLIENT' | string;
+  notes?: string;
+}
+
+export interface InAppNotification {
+  id: string;
+  userId?: string;
+  userEmail: string;
+  title: string;
+  message: string;
+  contentType: 'workout' | 'nutrition' | 'class' | 'consultation' | 'ticket' | 'general' | string;
+  coachName: string;
+  linkTab?: string;
+  isRead: boolean;
+  createdAt: string;
+  timestamp?: string;
+}
+
+export interface EmailNotificationLog {
+  id: string;
+  toEmail: string;
+  toName: string;
+  subject: string;
+  contentType: string;
+  coachName: string;
+  publicationDate: string;
+  viewLink: string;
+  status: 'Sent' | 'Delivered' | string;
+  sentAt: string;
+}
+
 export interface WorkoutProgram {
   id: string;
   title: string;
@@ -107,6 +156,19 @@ export interface WorkoutProgram {
   durationWeeks: number;
   assignedToUserId?: string;
   assignedToUserName?: string;
+  assignedCoachName?: string;
+  assignedBy?: string;
+  assignedByRole?: string;
+  assignedAt?: string;
+  status?: AssignmentStatus;
+  coachApprovalStatus?: 'pending' | 'accepted' | 'rejected' | 'change_requested';
+  coachApprovalNotes?: string;
+  headCoachApprovalStatus?: 'pending' | 'approved' | 'rejected' | 'change_requested';
+  headCoachApprovalNotes?: string;
+  version?: number;
+  approvalLogs?: ApprovalLogEntry[];
+  isPublishedToClient?: boolean;
+  publishedToClientAt?: string;
   createdBy: string;
   createdAt: string;
   exercises: ExerciseItem[];
@@ -128,6 +190,19 @@ export interface NutritionPlan {
   title: string;
   assignedToUserId?: string;
   assignedToUserName?: string;
+  assignedCoachName?: string;
+  assignedBy?: string;
+  assignedByRole?: string;
+  assignedAt?: string;
+  status?: AssignmentStatus;
+  coachApprovalStatus?: 'pending' | 'accepted' | 'rejected' | 'change_requested';
+  coachApprovalNotes?: string;
+  headCoachApprovalStatus?: 'pending' | 'approved' | 'rejected' | 'change_requested';
+  headCoachApprovalNotes?: string;
+  version?: number;
+  approvalLogs?: ApprovalLogEntry[];
+  isPublishedToClient?: boolean;
+  publishedToClientAt?: string;
   dailyCalories: number;
   targetProteinG: number;
   targetCarbsG: number;
@@ -137,12 +212,66 @@ export interface NutritionPlan {
   updatedAt: string;
 }
 
+export type CoachAssignmentType = 'workout_program' | 'class_schedule' | 'nutrition_plan' | 'consultation' | 'task' | 'other';
+export type CoachAssignmentPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface CoachAssignment {
+  id: string;
+  assignmentType: CoachAssignmentType;
+  referenceId?: string;
+  title: string;
+  description?: string;
+  instructions?: string;
+  
+  // Coach linkage
+  assignedCoachId?: string;
+  assignedCoachName: string;
+
+  // Client linkage
+  clientId?: string;
+  clientName?: string;
+  clientEmail?: string;
+
+  // Service / Package linkage
+  serviceId?: string;
+  serviceName?: string;
+
+  // Head Coach / Assigner linkage
+  assignedById?: string;
+  assignedByName: string;
+  assignedByRole: string;
+  assignedAt: string;
+
+  // Dates & Status
+  dueDate?: string;
+  scheduleTime?: string;
+  priority: CoachAssignmentPriority;
+  status: AssignmentStatus;
+
+  // Versioning & Publishing
+  isPublishedToClient?: boolean;
+  publishedToClientAt?: string;
+  version?: number;
+  approvalLogs?: ApprovalLogEntry[];
+  
+  details?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ClassSchedule {
   id: string;
   title: string;
   category: 'cycling' | 'strength' | 'mindbody' | 'boxing' | 'cardio';
-  trainerId: string;
+  trainerId?: string;
   trainerName: string;
+  assignedToUserId?: string;
+  assignedToUserName?: string;
+  assignedBy?: string;
+  assignedByRole?: string;
+  assignedAt?: string;
+  isPublishedToClient?: boolean;
+  publishedToClientAt?: string;
   dayOfWeek: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
   startTime: string;
   endTime: string;
@@ -150,6 +279,8 @@ export interface ClassSchedule {
   maxCapacity: number;
   bookedCount: number;
   price: number;
+  instructions?: string;
+  status?: AssignmentStatus;
 }
 
 export interface Booking {
@@ -194,6 +325,15 @@ export interface Subscription {
   customExercises?: string[];
 }
 
+export interface EnquiryActivityLog {
+  id: string;
+  timestamp: string;
+  actorName: string;
+  actorRole: string;
+  action: string;
+  notes?: string;
+}
+
 export interface Enquiry {
   id: string;
   name: string;
@@ -201,10 +341,17 @@ export interface Enquiry {
   phone?: string;
   subject: string;
   message: string;
+  category?: string;
+  priority?: 'urgent' | 'high' | 'normal' | 'low';
+  weightage?: string;
   createdAt: string;
-  status: 'new' | 'in_progress' | 'resolved';
+  status: 'new' | 'transferred_to_headcoach' | 'assigned_to_coach' | 'in_progress' | 'resolved';
   assignedNotes?: string;
   assignedCoach?: string;
+  transferredToHeadCoach?: boolean;
+  transferredBy?: string;
+  transferredAt?: string;
+  activityLog?: EnquiryActivityLog[];
 }
 
 export interface AuditLog {
@@ -453,7 +600,7 @@ export interface SupportTicket {
   source?: TicketSource;
   serviceOrProduct?: string;
   assignedAgent?: string;
-  assignedAgentRole?: 'cs_agent' | 'company_agent' | 'admin';
+  assignedAgentRole?: 'customer_support' | 'headcoach' | 'coach' | 'admin';
   relatedBookingId?: string;
   relatedTransactionId?: string;
   adminResponse?: string;

@@ -35,18 +35,42 @@ export const ClassScheduleManager: React.FC<ClassScheduleManagerProps> = ({
   const [room, setRoom] = useState('Studio A - Main Arena');
   const [maxCapacity, setMaxCapacity] = useState(20);
   const [price, setPrice] = useState(25);
+  const [instructions, setInstructions] = useState('');
+  const [assignedToUserId, setAssignedToUserId] = useState('');
+
+  // Dynamic resolution of available coaches
+  const availableCoachOptions = React.useMemo(() => {
+    const list: string[] = [];
+    if (coaches && coaches.length > 0) {
+      list.push(...coaches.map((c) => c.name));
+    }
+    try {
+      const allUsers = VelocityAPI.getUsers();
+      if (Array.isArray(allUsers)) {
+        const coachUsers = allUsers.filter((u) => u.role === 'coach' || u.role === 'headcoach');
+        list.push(...coachUsers.map((c) => c.name));
+      }
+    } catch { }
+
+    const defaults = ['Shaban Faridi', 'Moheeb Khan', 'Sadeem'];
+    list.push(...defaults);
+
+    return Array.from(new Set(list.map((n) => String(n).trim()).filter(Boolean)));
+  }, [coaches]);
 
   const handleOpenCreate = () => {
     setEditingClass(null);
     setTitle('');
     setCategory('strength');
-    setTrainerName(coaches.length > 0 ? coaches[0].name : 'Alex Rivera');
+    setTrainerName(availableCoachOptions[0] || (coaches.length > 0 ? coaches[0].name : 'Shaban Faridi'));
     setDayOfWeek('Monday');
     setStartTime('07:00 AM');
     setEndTime('08:00 AM');
     setRoom('Studio A - Main Arena');
     setMaxCapacity(20);
     setPrice(25);
+    setInstructions('');
+    setAssignedToUserId('');
     setShowModal(true);
   };
 
@@ -61,6 +85,8 @@ export const ClassScheduleManager: React.FC<ClassScheduleManagerProps> = ({
     setRoom(cls.room);
     setMaxCapacity(cls.maxCapacity);
     setPrice(cls.price);
+    setInstructions(cls.instructions || '');
+    setAssignedToUserId(cls.assignedToUserId || '');
     setShowModal(true);
   };
 
@@ -72,7 +98,9 @@ export const ClassScheduleManager: React.FC<ClassScheduleManagerProps> = ({
     }
 
     try {
-      VelocityAPI.saveClass({
+      const assignedUser = clients.find(c => c.id === assignedToUserId);
+
+      const savedClass = VelocityAPI.saveClass({
         id: editingClass ? editingClass.id : undefined,
         title,
         category,
@@ -82,10 +110,34 @@ export const ClassScheduleManager: React.FC<ClassScheduleManagerProps> = ({
         endTime,
         room,
         maxCapacity: Number(maxCapacity),
-        price: Number(price)
+        price: Number(price),
+        instructions: instructions.trim(),
+        assignedToUserId: assignedUser ? assignedUser.id : undefined,
+        assignedToUserName: assignedUser ? assignedUser.name : undefined
       });
 
-      onShowToast(editingClass ? `Updated class "${title}"` : `Created new class "${title}"`);
+      // Automatically sync CoachAssignment
+      VelocityAPI.saveCoachAssignment({
+        id: `asgn-cls-${savedClass.id}`,
+        assignmentType: 'class_schedule',
+        referenceId: savedClass.id,
+        title: `${savedClass.title} (${savedClass.category.toUpperCase()})`,
+        description: `${savedClass.dayOfWeek} ${savedClass.startTime} - ${savedClass.endTime}`,
+        instructions: instructions.trim() || `Lead session for registered clients. Verify attendance and studio setup.`,
+        assignedCoachName: savedClass.trainerName,
+        clientId: assignedUser?.id,
+        clientName: assignedUser?.name || 'All Clients',
+        clientEmail: assignedUser?.email,
+        serviceName: `${savedClass.category.toUpperCase()} Class Session`,
+        assignedByName: 'Shaban Faridi',
+        assignedByRole: 'Head Coach',
+        scheduleTime: `${savedClass.dayOfWeek}, ${savedClass.startTime}`,
+        priority: 'medium',
+        status: 'assigned',
+        details: { room: savedClass.room, dayOfWeek: savedClass.dayOfWeek, startTime: savedClass.startTime, endTime: savedClass.endTime }
+      });
+
+      onShowToast(editingClass ? `Updated class "${title}"` : `Created & assigned class "${title}"`);
       setShowModal(false);
       onClassesUpdated();
     } catch (err: any) {
@@ -163,7 +215,6 @@ export const ClassScheduleManager: React.FC<ClassScheduleManagerProps> = ({
                 <span className="text-[10px] font-black uppercase tracking-widest bg-[#8C532B] text-white px-2 py-0.5">
                   {cls.category}
                 </span>
-                <span className="text-xs font-mono font-bold text-emerald-400">£{cls.price}</span>
               </div>
 
               <h3 className="text-lg font-black uppercase text-white mb-1">{cls.title}</h3>
@@ -183,18 +234,6 @@ export const ClassScheduleManager: React.FC<ClassScheduleManagerProps> = ({
                   <UserCheck className="w-3.5 h-3.5 text-gray-400" />
                   <span>Coach: <strong className="text-gray-200">{cls.trainerName}</strong></span>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-gray-500" />
-                  <span>Room: <strong className="text-gray-200">{cls.room}</strong></span>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between text-xs">
-                <span className="text-gray-400">Booked Seats:</span>
-                <span className="font-mono font-bold text-white bg-black px-2 py-0.5 border border-gray-800">
-                  {cls.bookedCount} / {cls.maxCapacity} Max
-                </span>
               </div>
             </div>
 
@@ -284,14 +323,16 @@ export const ClassScheduleManager: React.FC<ClassScheduleManagerProps> = ({
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
                     Assigned Coach
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={trainerName}
                     onChange={(e) => setTrainerName(e.target.value)}
-                    placeholder="Coach Name"
-                    className="w-full bg-gray-900 border border-gray-800 text-white px-3 py-2 text-xs outline-none"
+                    className="w-full bg-gray-900 border border-gray-800 text-white px-3 py-2 text-xs outline-none cursor-pointer font-bold"
                     required
-                  />
+                  >
+                    {availableCoachOptions.map((cName) => (
+                      <option key={cName} value={cName}>{cName}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -336,44 +377,6 @@ export const ClassScheduleManager: React.FC<ClassScheduleManagerProps> = ({
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
                     className="w-full bg-gray-900 border border-gray-800 text-white px-2 py-2 text-xs outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                    Room Zone
-                  </label>
-                  <input
-                    type="text"
-                    value={room}
-                    onChange={(e) => setRoom(e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-800 text-white px-2 py-2 text-xs outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                    Max Capacity
-                  </label>
-                  <input
-                    type="number"
-                    value={maxCapacity}
-                    onChange={(e) => setMaxCapacity(Number(e.target.value))}
-                    className="w-full bg-gray-900 border border-gray-800 text-white px-2 py-2 text-xs outline-none font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
-                    Price (£)
-                  </label>
-                  <input
-                    type="number"
-                    value={price}
-                    onChange={(e) => setPrice(Number(e.target.value))}
-                    className="w-full bg-gray-900 border border-gray-800 text-white px-2 py-2 text-xs outline-none font-mono"
                   />
                 </div>
               </div>

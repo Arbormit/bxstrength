@@ -27,8 +27,8 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
   const { user } = useAuth();
 
   // Role Simulator state for testing RBAC
-  const [activeRoleView, setActiveRoleView] = useState<'cs_agent' | 'company_agent' | 'admin'>(
-    user?.role === 'admin' ? 'admin' : (user?.role === 'coach' ? 'company_agent' : 'cs_agent')
+  const [activeRoleView, setActiveRoleView] = useState<'customer_support' | 'headcoach' | 'coach' | 'admin'>(
+    user?.role === 'admin' ? 'admin' : ((user?.role === 'headcoach' || user?.role === 'coach') ? user.role : 'customer_support')
   );
 
   const [activeTab, setActiveTab] = useState<'inbox' | 'analytics' | 'audit_logs' | 'account_settings'>(initialTab);
@@ -71,8 +71,8 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
   // Delete Confirm Modal State
   const [deletingTicket, setDeletingTicket] = useState<SupportTicket | null>(null);
 
-  const fetchTickets = () => {
-    setIsLoading(true);
+  const fetchTickets = (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     const loaded = VelocityAPI.getTickets();
     setTickets(loaded);
     if (loaded.length > 0 && !selectedTicket) {
@@ -81,13 +81,25 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
       const updated = loaded.find(t => t.id === selectedTicket.id);
       if (updated) setSelectedTicket(updated);
     }
-    setIsLoading(false);
+    if (isInitial) setIsLoading(false);
   };
 
   useEffect(() => {
-    fetchTickets();
-    const interval = setInterval(fetchTickets, 3000); // 3 sec real-time sync
-    return () => clearInterval(interval);
+    fetchTickets(true);
+    const interval = setInterval(() => fetchTickets(false), 5000); // 5 sec real-time sync
+
+    const handleTicketsUpdated = () => {
+      fetchTickets(false);
+    };
+
+    window.addEventListener('bxstrength_tickets_updated', handleTicketsUpdated);
+    window.addEventListener('storage', handleTicketsUpdated);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('bxstrength_tickets_updated', handleTicketsUpdated);
+      window.removeEventListener('storage', handleTicketsUpdated);
+    };
   }, []);
 
   const analytics = VelocityAPI.getSupportAnalytics();
@@ -95,19 +107,22 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
   // Filtered & Sorted Tickets
   const filteredTickets = tickets.filter(t => {
     // RBAC Filter: CS Agent can only view relevant/assigned tickets unless they are Company Agent or Admin
-    if (activeRoleView === 'cs_agent') {
+    if (activeRoleView === 'customer_support') {
       const isAssigned = t.assignedAgent?.toLowerCase().includes('cs') || t.assignedAgent === 'Unassigned' || !t.assignedAgent;
       if (!isAssigned && t.assignedAgentRole === 'admin') return false;
     }
 
-    const matchesSearch = 
-      t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (t.userPhone && t.userPhone.includes(searchTerm)) ||
-      t.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (t.relatedBookingId && t.relatedBookingId.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (t.relatedTransactionId && t.relatedTransactionId.toLowerCase().includes(searchTerm.toLowerCase()));
+    const cleanTerm = searchTerm.toLowerCase().trim().replace(/^#/, '');
+    const matchesSearch = !cleanTerm ||
+      t.id.toLowerCase().includes(cleanTerm) ||
+      t.userName.toLowerCase().includes(cleanTerm) ||
+      t.userEmail.toLowerCase().includes(cleanTerm) ||
+      (t.userPhone && t.userPhone.toLowerCase().includes(cleanTerm)) ||
+      t.subject.toLowerCase().includes(cleanTerm) ||
+      t.description.toLowerCase().includes(cleanTerm) ||
+      (t.assignedAgent && t.assignedAgent.toLowerCase().includes(cleanTerm)) ||
+      (t.relatedBookingId && t.relatedBookingId.toLowerCase().includes(cleanTerm)) ||
+      (t.relatedTransactionId && t.relatedTransactionId.toLowerCase().includes(cleanTerm));
 
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || t.priority === priorityFilter;
@@ -137,7 +152,7 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
     }
   };
 
-  const handleAssignAgent = (agentName: string, agentRole: 'cs_agent' | 'company_agent' | 'admin') => {
+  const handleAssignAgent = (agentName: string, agentRole: 'customer_support' | 'headcoach' | 'coach' | 'admin') => {
     if (!selectedTicket) return;
     const updated = VelocityAPI.assignTicket(selectedTicket.id, agentName, agentRole);
     if (updated) {
@@ -153,7 +168,7 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
       selectedTicket.id,
       responseInput.trim(),
       communicationTab === 'chat' ? 'chat' : 'email',
-      activeRoleView === 'admin' ? 'Admin Support Desk' : (activeRoleView === 'company_agent' ? 'Company Agent' : 'CS Team Agent'),
+      activeRoleView === 'admin' ? 'Admin Support Desk' : (activeRoleView === 'headcoach' ? 'Head Coach Desk' : (activeRoleView === 'coach' ? 'Coach Support Desk' : 'CS Team Agent')),
       'agent'
     );
     if (updated) {
@@ -312,16 +327,6 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-            {onNavigateHome && (
-              <button
-                onClick={onNavigateHome}
-                className="bg-[#18181b] hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 px-3.5 py-2 rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <Home className="w-3.5 h-3.5 text-zinc-400" />
-                <span>WEBSITE HOME</span>
-              </button>
-            )}
-
             {onLogout && (
               <button
                 onClick={onLogout}
@@ -400,24 +405,6 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
               <BarChart2 className="w-4 h-4 text-blue-400" />
               <span>📊 PERFORMANCE ANALYTICS</span>
             </button>
-            <button
-              onClick={() => setActiveTab('audit_logs')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
-                activeTab === 'audit_logs' ? 'bg-[#CCFF00] text-black shadow-lg scale-102' : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
-              }`}
-            >
-              <Lock className="w-4 h-4 text-purple-400" />
-              <span>🛡️ SECURITY &amp; AUDIT LOGS</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('account_settings')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
-                activeTab === 'account_settings' ? 'bg-[#CCFF00] text-black shadow-lg scale-102' : 'bg-[#18181b] text-zinc-400 hover:text-white border border-zinc-800'
-              }`}
-            >
-              <UserCheck className="w-4 h-4 text-amber-400" />
-              <span>👤 MY SUPPORT PROFILE</span>
-            </button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -429,7 +416,7 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
               <span>LOG NEW INQUIRY</span>
             </button>
             <button
-              onClick={fetchTickets}
+              onClick={() => fetchTickets(false)}
               className="text-xs font-bold text-zinc-300 hover:text-white flex items-center gap-1.5 bg-[#18181b] hover:bg-zinc-800 px-3.5 py-2 rounded-xl border border-zinc-800 cursor-pointer transition-all active:scale-95"
             >
               <RefreshCw className="w-3.5 h-3.5 text-[#CCFF00]" />
@@ -681,8 +668,8 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
                         </div>
                       </div>
 
-                      {/* QUICK STATUS TRANSITION BUTTONS */}
-                      <div className="flex items-center gap-1.5 pt-2">
+                      {/* QUICK STATUS TRANSITION & HEAD COACH TRANSFER BUTTONS */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-2">
                         <span className="text-[10px] font-bold uppercase text-zinc-400 mr-1">Update Status:</span>
                         <button onClick={() => handleUpdateStatus('in_progress')} className="bg-zinc-900 hover:bg-yellow-500/20 hover:text-yellow-400 text-zinc-400 text-[10px] font-bold uppercase px-2.5 py-1 rounded border border-zinc-800 transition-all cursor-pointer">
                           In Progress
@@ -696,6 +683,30 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
                         <button onClick={() => handleUpdateStatus('closed')} className="bg-zinc-900 hover:bg-zinc-800 text-zinc-400 text-[10px] font-bold uppercase px-2.5 py-1 rounded border border-zinc-800 transition-all cursor-pointer">
                           Closed
                         </button>
+
+                        <button
+                          onClick={() => {
+                            if (!selectedTicket) return;
+                            try {
+                              VelocityAPI.transferEnquiryToHeadCoach(
+                                selectedTicket.id,
+                                user ? user.name : 'Customer Support Desk',
+                                `Support Ticket #${selectedTicket.id}: ${selectedTicket.description}`,
+                                selectedTicket.category,
+                                selectedTicket.priority === 'medium' ? 'normal' : selectedTicket.priority
+                              );
+                              onShowToast(`Enquiry for "${selectedTicket.userName}" transferred directly to Head Coach Enquiries Tab!`);
+                              fetchTickets();
+                            } catch (err: any) {
+                              onShowToast(err.message || 'Failed to transfer to Head Coach');
+                            }
+                          }}
+                          className="bg-amber-950/80 hover:bg-amber-900 text-amber-300 text-[10px] font-black uppercase px-3 py-1 rounded border border-amber-700/80 transition-all cursor-pointer flex items-center gap-1 ml-auto shadow-sm"
+                          title="Directly transfer this coaching/training enquiry to Head Coach Dashboard Enquiries tab"
+                        >
+                          <CornerUpRight className="w-3 h-3 text-amber-400" />
+                          <span>TRANSFER TO HEAD COACH</span>
+                        </button>
                       </div>
                     </div>
 
@@ -706,9 +717,6 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
                           <UserCheck className="w-4 h-4 text-[#CCFF00]" />
                           360° CLIENT PROFILE &amp; SYSTEM DATA
                         </span>
-                        <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
-                          <ShieldCheck className="w-3.5 h-3.5" /> PCI-DSS Safe (No Card Credentials)
-                        </span>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -718,7 +726,6 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
                           <p className="text-zinc-400 text-[11px]">Phone: <strong className="text-white">{selectedTicket.userPhone || '+44 (UK) / +91 (IN)'}</strong></p>
                         </div>
                         <div>
-                          <p className="text-zinc-400 text-[11px]">Region/Country: <strong className="text-white">{selectedTicket.userCountry || 'GB (United Kingdom)'}</strong></p>
                           <p className="text-zinc-400 text-[11px]">Linked Service: <strong className="text-white">{selectedTicket.serviceOrProduct || '1-to-1 Digital Coaching'}</strong></p>
                           {selectedTicket.relatedBookingId && (
                             <p className="text-zinc-400 text-[11px]">Booking Code: <span className="text-[#CCFF00] font-mono font-bold">{selectedTicket.relatedBookingId}</span></p>
@@ -810,105 +817,7 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
                             ))}
                           </div>
                         )}
-                      </div>
-                    </div>
-
-                    {/* MULTICHANNEL RESPONSE & NOTE INPUT PANEL */}
-                    <div className="bg-[#18181b] border border-zinc-800 p-4 rounded-xl space-y-3">
-                      <div className="flex items-center gap-2 border-b border-zinc-800 pb-2">
-                        <button
-                          onClick={() => setCommunicationTab('email')}
-                          className={`px-3 py-1.5 rounded text-xs font-bold uppercase transition-all cursor-pointer ${
-                            communicationTab === 'email' ? 'bg-[#CCFF00] text-black' : 'text-zinc-400 hover:text-white'
-                          }`}
-                        >
-                          Email Response
-                        </button>
-                        <button
-                          onClick={() => setCommunicationTab('chat')}
-                          className={`px-3 py-1.5 rounded text-xs font-bold uppercase transition-all cursor-pointer ${
-                            communicationTab === 'chat' ? 'bg-[#CCFF00] text-black' : 'text-zinc-400 hover:text-white'
-                          }`}
-                        >
-                          Live Chat
-                        </button>
-                        <button
-                          onClick={() => setCommunicationTab('callback')}
-                          className={`px-3 py-1.5 rounded text-xs font-bold uppercase transition-all cursor-pointer ${
-                            communicationTab === 'callback' ? 'bg-[#CCFF00] text-black' : 'text-zinc-400 hover:text-white'
-                          }`}
-                        >
-                          Phone Callback
-                        </button>
-                        <button
-                          onClick={() => setCommunicationTab('internal_note')}
-                          className={`px-3 py-1.5 rounded text-xs font-bold uppercase transition-all cursor-pointer ${
-                            communicationTab === 'internal_note' ? 'bg-amber-400 text-black font-black' : 'text-zinc-400 hover:text-white'
-                          }`}
-                        >
-                          Internal Note (Private)
-                        </button>
-                      </div>
-
-                      {communicationTab === 'email' || communicationTab === 'chat' ? (
-                        <div className="space-y-2">
-                          <textarea
-                            value={responseInput}
-                            onChange={(e) => setResponseInput(e.target.value)}
-                            placeholder={`Type official ${communicationTab.toUpperCase()} response to ${selectedTicket.userName}...`}
-                            rows={3}
-                            className="w-full bg-[#121214] border border-zinc-800 rounded-xl p-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#CCFF00]"
-                          />
-                          <div className="flex justify-end">
-                            <button
-                              onClick={handleSendResponse}
-                              className="bg-[#CCFF00] hover:bg-[#b8e600] text-black text-xs font-black uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow"
-                            >
-                              <Send className="w-3.5 h-3.5 text-black" />
-                              <span>SEND {communicationTab.toUpperCase()}</span>
-                            </button>
-                          </div>
-                        </div>
-                      ) : communicationTab === 'callback' ? (
-                        <div className="space-y-2">
-                          <textarea
-                            value={callbackNotes}
-                            onChange={(e) => setCallbackNotes(e.target.value)}
-                            placeholder={`Log summary of phone conversation with ${selectedTicket.userName} (${selectedTicket.userPhone || 'Client Phone'})...`}
-                            rows={3}
-                            className="w-full bg-[#121214] border border-zinc-800 rounded-xl p-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#CCFF00]"
-                          />
-                          <div className="flex justify-end">
-                            <button
-                              onClick={handleLogCallback}
-                              className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-black uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow"
-                            >
-                              <Phone className="w-3.5 h-3.5" />
-                              <span>LOG CALLBACK RECORD</span>
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <textarea
-                            value={internalNoteInput}
-                            onChange={(e) => setInternalNoteInput(e.target.value)}
-                            placeholder="Add confidential internal note for CS team / Admin (never exposed to client)..."
-                            rows={3}
-                            className="w-full bg-amber-950/20 border border-amber-800/50 rounded-xl p-3 text-xs text-amber-100 placeholder-amber-500/50 focus:outline-none focus:border-amber-400"
-                          />
-                          <div className="flex justify-end">
-                            <button
-                              onClick={handleAddInternalNote}
-                              className="bg-amber-400 hover:bg-amber-300 text-black text-xs font-black uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow"
-                            >
-                              <Lock className="w-3.5 h-3.5 text-black" />
-                              <span>SAVE INTERNAL PRIVATE NOTE</span>
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                                   </div>       </div>
 
                   </div>
                 ) : (
@@ -1076,7 +985,7 @@ export const SupportDashboardView: React.FC<SupportDashboardViewProps> = ({
                 >
                   <option value="Company Agent">Senior Company Agent</option>
                   <option value="Admin">Executive Admin Team</option>
-                  <option value="Head Coach & Team">Head Coach & Team</option>
+                  <option value="Shaban Faridi">Shaban Faridi (Head Coach)</option>
                 </select>
               </div>
 

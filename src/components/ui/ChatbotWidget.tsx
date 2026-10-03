@@ -173,6 +173,12 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
       }
     });
 
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('bxstrength_tickets_updated'));
+      window.dispatchEvent(new CustomEvent('bxstrength_enquiries_updated'));
+    }
+
     // Send real email alert to Admin
     sendBrevoTicketEmail({
       ticketId: ticketRef,
