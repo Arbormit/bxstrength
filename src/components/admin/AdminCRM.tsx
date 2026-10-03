@@ -15,7 +15,7 @@ import { SupportDashboardView } from '../support/SupportDashboardView';
 import { CoachesManager } from './CoachesManager';
 import {
   LayoutDashboard, Users, Calendar, Dumbbell, Utensils,
-  CreditCard, Mail, ShieldAlert, ShieldCheck, LogOut, CheckCircle2, X, LifeBuoy, UserCheck, Headphones, FileText
+  CreditCard, Mail, ShieldAlert, ShieldCheck, LogOut, CheckCircle2, X, LifeBuoy, UserCheck, Headphones, FileText, Menu
 } from 'lucide-react';
 
 import { SkeletonLoader } from '../ui/SkeletonLoader';
@@ -30,6 +30,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [mobileNavOpen, setMobileNavOpen] = useState<boolean>(false);
 
   // Loaded data state
   const [users, setUsers] = useState<User[]>([]);
@@ -205,11 +206,34 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
         </div>
       )}
 
+      {/* Mobile Navigation Header (< md) */}
+      <div className="md:hidden bg-[#121214] border-b border-zinc-800 p-4 flex items-center justify-between sticky top-0 z-40 shadow-lg">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-bold">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xs font-black uppercase text-white truncate max-w-[160px]">{user.name}</h2>
+            <span className="text-[9px] font-bold text-zinc-400 uppercase block">
+              {isAdmin ? 'BxStrength Admin' : (isHeadCoach ? 'Head Coach' : 'Coach')}
+            </span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setMobileNavOpen(!mobileNavOpen)}
+          className="p-2 bg-zinc-900 border border-zinc-800 text-white rounded-lg flex items-center gap-1.5 text-xs font-bold uppercase cursor-pointer"
+        >
+          {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <span>{mobileNavOpen ? 'CLOSE' : 'MENU'}</span>
+        </button>
+      </div>
+
       {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-[#121214] border-b md:border-b-0 md:border-r border-zinc-800 flex flex-col justify-between flex-shrink-0">
+      <aside className={`w-full md:w-64 bg-[#121214] border-b md:border-b-0 md:border-r border-zinc-800 flex-col justify-between flex-shrink-0 ${mobileNavOpen ? 'flex' : 'hidden md:flex'}`}>
         <div>
           {/* Header Info */}
-          <div className="p-6 border-b border-zinc-800">
+          <div className="hidden md:block p-6 border-b border-zinc-800">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-white text-black flex items-center justify-center font-bold shadow-md">
                 <ShieldCheck className="w-6 h-6" />
@@ -224,7 +248,7 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
           </div>
 
           {/* Grouped Nav Items */}
-          <nav className="p-3 space-y-4">
+          <nav className="p-3 space-y-4 max-h-[60vh] md:max-h-none overflow-y-auto">
             {groupedNavSections.map((group) => {
               const visibleItems = group.items.filter((item) => navItems.some((n) => n.id === item.id));
               if (visibleItems.length === 0) return null;
@@ -242,8 +266,11 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
                     return (
                       <button
                         key={item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all text-left rounded-lg ${
+                        onClick={() => {
+                          setActiveTab(item.id);
+                          setMobileNavOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all text-left rounded-lg cursor-pointer ${
                           isActive
                             ? 'bg-white text-black shadow-md font-extrabold ring-1 ring-white/50'
                             : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
@@ -264,14 +291,14 @@ export const AdminCRM: React.FC<AdminCRMProps> = ({ user, onLogout, onNavigateHo
         <div className="p-4 border-t border-zinc-800 space-y-2">
           <button
             onClick={onNavigateHome}
-            className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-bold tracking-wider py-2.5 px-4 uppercase text-center transition-colors block rounded-lg border border-zinc-800"
+            className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-bold tracking-wider py-2.5 px-4 uppercase text-center transition-colors block rounded-lg border border-zinc-800 cursor-pointer"
           >
             ← BACK TO PUBLIC SITE
           </button>
 
           <button
             onClick={onLogout}
-            className="w-full bg-red-950/40 hover:bg-red-900 text-red-300 text-xs font-bold tracking-wider py-2.5 px-4 uppercase text-center transition-colors flex items-center justify-center gap-2 border border-red-900/40 rounded-lg"
+            className="w-full bg-red-950/40 hover:bg-red-900 text-red-300 text-xs font-bold tracking-wider py-2.5 px-4 uppercase text-center transition-colors flex items-center justify-center gap-2 border border-red-900/40 rounded-lg cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             <span>EXIT SESSION</span>

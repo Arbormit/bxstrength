@@ -11,7 +11,7 @@ import { SubscriptionView } from './SubscriptionView';
 import { SupportTicketsView } from './SupportTicketsView';
 import {
   LayoutDashboard, UserCheck, Scale, Dumbbell, Utensils,
-  Calendar, Award, CreditCard, LogOut, CheckCircle2, X, LifeBuoy, Bell, ExternalLink, ShieldCheck
+  Calendar, Award, CreditCard, LogOut, CheckCircle2, X, LifeBuoy, Bell, ExternalLink, ShieldCheck, Menu
 } from 'lucide-react';
 
 import { SkeletonLoader } from '../ui/SkeletonLoader';
@@ -30,6 +30,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [mobileNavOpen, setMobileNavOpen] = useState<boolean>(false);
 
   // Loaded data state
   const [bodyStats, setBodyStats] = useState<BodyStat[]>([]);
@@ -168,11 +169,34 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
         </div>
       )}
 
+      {/* Mobile Navigation Header (< md) */}
+      <div className="md:hidden bg-[#121214] border-b border-zinc-800 p-4 flex items-center justify-between sticky top-0 z-40 shadow-lg">
+        <div className="flex items-center gap-3">
+          <img
+            src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`}
+            alt={user.name}
+            className="w-9 h-9 rounded-full object-cover border border-zinc-700"
+          />
+          <div>
+            <h2 className="text-xs font-black uppercase text-white truncate max-w-[150px]">{user.name}</h2>
+            <span className="text-[9px] font-bold text-zinc-400 uppercase block">Client Portal</span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setMobileNavOpen(!mobileNavOpen)}
+          className="p-2 bg-zinc-900 border border-zinc-800 text-white rounded-lg flex items-center gap-1.5 text-xs font-bold uppercase cursor-pointer"
+        >
+          {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <span>{mobileNavOpen ? 'CLOSE' : 'MENU'}</span>
+        </button>
+      </div>
+
       {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-[#121214] border-b md:border-b-0 md:border-r border-zinc-800 flex flex-col justify-between flex-shrink-0">
+      <aside className={`w-full md:w-64 bg-[#121214] border-b md:border-b-0 md:border-r border-zinc-800 flex-col justify-between flex-shrink-0 ${mobileNavOpen ? 'flex' : 'hidden md:flex'}`}>
         <div>
           {/* Sidebar Top User Card */}
-          <div className="p-6 border-b border-zinc-800">
+          <div className="hidden md:block p-6 border-b border-zinc-800">
             <div className="flex items-center gap-3">
               <img
                 src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`}
@@ -189,15 +213,18 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-3 space-y-1">
+          <nav className="p-3 space-y-1 max-h-[60vh] md:max-h-none overflow-y-auto">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-colors text-left rounded-lg ${
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setMobileNavOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-colors text-left rounded-lg cursor-pointer ${
                     isActive
                       ? 'bg-white text-black shadow-md'
                       : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
@@ -215,14 +242,14 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({
         <div className="p-4 border-t border-zinc-800 space-y-2">
           <button
             onClick={onNavigateHome}
-            className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-bold tracking-wider py-2.5 px-4 uppercase text-center transition-colors block rounded-lg border border-zinc-800"
+            className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-bold tracking-wider py-2.5 px-4 uppercase text-center transition-colors block rounded-lg border border-zinc-800 cursor-pointer"
           >
             ← BACK TO PUBLIC SITE
           </button>
 
           <button
             onClick={onLogout}
-            className="w-full bg-red-950/40 hover:bg-red-900 text-red-300 text-xs font-bold tracking-wider py-2.5 px-4 uppercase text-center transition-colors flex items-center justify-center gap-2 border border-red-900/40 rounded-lg"
+            className="w-full bg-red-950/40 hover:bg-red-900 text-red-300 text-xs font-bold tracking-wider py-2.5 px-4 uppercase text-center transition-colors flex items-center justify-center gap-2 border border-red-900/40 rounded-lg cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             <span>SIGN OUT</span>

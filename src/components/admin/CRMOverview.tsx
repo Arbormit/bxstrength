@@ -6,7 +6,7 @@ import { AssignedTasksSection } from './AssignedTasksSection';
 import { 
   Users, DollarSign, Dumbbell, ShieldCheck, Activity, TrendingUp, 
   ChevronRight, AlertCircle, BarChart3, Filter, PieChart, CheckCircle2, 
-  ArrowRight, Plus, Trash2, X, Zap, Phone, Mail, Clock, UserCheck, Calendar, Utensils
+  ArrowRight, Plus, Edit2, Trash2, X, Zap, Phone, Mail, Clock, UserCheck, Calendar, Utensils
 } from 'lucide-react';
 
 export interface CRMLead {
@@ -54,6 +54,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
   const [selectedFilterCoach, setSelectedFilterCoach] = useState<string>('All');
   const [selectedFilterStage, setSelectedFilterStage] = useState<string>('All');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [editingLead, setEditingLead] = useState<CRMLead | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Dynamic Coach List (includes Head Coaches, Coaches, Admins, and defaults)
@@ -91,9 +92,9 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         id: `lead-user-${u.id}`,
         name: u.name,
         email: u.email,
-        phone: u.phone || '+44 20 7946 0921',
-        goal: u.fitnessGoals || 'Strength & Recomp',
-        assignedCoach: idx % 2 === 0 ? 'Head Coach & Team' : 'Sadeem',
+        phone: u.phone,
+        goal: u.fitnessGoals,
+        assignedCoach: idx % 2 === 0 ? 'Shaban Faridi' : 'Sadeem',
         stage: idx === 0 ? 'Active Client' : 'Coach Assigned',
         source: 'Self Assessment Diagnostic',
         createdAt: u.createdAt || new Date().toISOString()
@@ -106,8 +107,8 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         id: `lead-enq-${e.id}`,
         name: e.name,
         email: e.email,
-        phone: e.phone || '+44 7700 900077',
-        goal: e.subject || 'VIP Coaching Consultation',
+        phone: e.phone,
+        goal: e.subject,
         assignedCoach: 'Moheeb Khan',
         stage: 'Lead',
         source: 'Website Contact Form',
@@ -218,12 +219,12 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
     localStorage.setItem(STORAGE_LEADS_KEY, JSON.stringify(leads));
   }, [leads]);
 
-  // Form State for Add Lead
+  // Form State for Add/Edit Lead
   const [nameInput, setNameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
   const [phoneInput, setPhoneInput] = useState('');
   const [goalInput, setGoalInput] = useState('Body Reconstitution & Strength');
-  const [coachInput, setCoachInput] = useState('Head Coach & Team');
+  const [coachInput, setCoachInput] = useState('Shaban Faridi');
   const [stageInput, setStageInput] = useState<LeadPipelineStage>('Lead');
   const [sourceInput, setSourceInput] = useState('Manual Admin Entry');
 
@@ -279,35 +280,74 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
     return matchCoach && matchStage;
   });
 
-  const handleAddLead = (e: React.FormEvent) => {
+  const handleOpenAddModal = () => {
+    setEditingLead(null);
+    setNameInput('');
+    setEmailInput('');
+    setPhoneInput('');
+    setGoalInput('Body Reconstitution & Strength');
+    setCoachInput('Shaban Faridi');
+    setStageInput('Lead');
+    setSourceInput('Manual Admin Entry');
+    setShowAddModal(true);
+  };
+
+  const handleOpenEditModal = (lead: CRMLead) => {
+    setEditingLead(lead);
+    setNameInput(lead.name);
+    setEmailInput(lead.email);
+    setPhoneInput(lead.phone || '');
+    setGoalInput(lead.goal || '');
+    setCoachInput(lead.assignedCoach || 'Shaban Faridi');
+    setStageInput(lead.stage || 'Lead');
+    setSourceInput(lead.source || 'Manual Admin Entry');
+    setShowAddModal(true);
+  };
+
+  const handleSaveLead = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nameInput.trim() || !emailInput.trim()) {
       alert('Please provide lead name and email address.');
       return;
     }
 
-    const newLead: CRMLead = {
-      id: `lead-${Date.now()}`,
-      name: nameInput.trim(),
-      email: emailInput.trim(),
-      phone: phoneInput.trim() || '+44 20 7946 0921',
-      goal: goalInput,
-      assignedCoach: coachInput,
-      stage: stageInput,
-      source: sourceInput,
-      createdAt: new Date().toISOString()
-    };
+    if (editingLead) {
+      setLeads(prev => prev.map(l => l.id === editingLead.id ? {
+        ...l,
+        name: nameInput.trim(),
+        email: emailInput.trim(),
+        phone: phoneInput.trim(),
+        goal: goalInput.trim(),
+        assignedCoach: coachInput,
+        stage: stageInput,
+        source: sourceInput
+      } : l));
+      setToastMessage(`Client "${nameInput.trim()}" updated successfully.`);
+    } else {
+      const newLead: CRMLead = {
+        id: `lead-${Date.now()}`,
+        name: nameInput.trim(),
+        email: emailInput.trim(),
+        phone: phoneInput.trim(),
+        goal: goalInput.trim(),
+        assignedCoach: coachInput,
+        stage: stageInput,
+        source: sourceInput,
+        createdAt: new Date().toISOString()
+      };
 
-    setLeads(prev => [newLead, ...prev]);
+      setLeads(prev => [newLead, ...prev]);
+      setToastMessage(`Lead "${newLead.name}" added successfully to ${newLead.stage} stage.`);
+    }
+
     setShowAddModal(false);
+    setEditingLead(null);
 
     // Reset Form
     setNameInput('');
     setEmailInput('');
     setPhoneInput('');
 
-    // Trigger toast alert
-    setToastMessage(`Lead "${newLead.name}" added successfully to ${newLead.stage} stage.`);
     setTimeout(() => setToastMessage(null), 4000);
   };
 
@@ -381,7 +421,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
             )}
             {(!isCoach || isHeadCoach) && (
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={handleOpenAddModal}
                 className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest px-5 py-3 rounded-lg uppercase transition-all shadow-lg cursor-pointer flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
@@ -504,7 +544,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
 
           {(!isCoach || isHeadCoach) && (
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={handleOpenAddModal}
               className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-widest px-4 py-2 rounded uppercase transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" /> ADD LEAD
@@ -532,11 +572,11 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="bg-[#18181b] border-b border-zinc-800 text-zinc-400 uppercase font-bold">
-                  <th className="py-3 px-3">Lead Contact</th>
-                  <th className="py-3 px-3">Fitness Goal</th>
+                  <th className="py-3 px-3">Client Details</th>
+                  <th className="py-3 px-3">Client Goal</th>
                   <th className="py-3 px-3">Assigned Coach</th>
-                  <th className="py-3 px-3">Lead Source</th>
-                  <th className="py-3 px-3">Pipeline Stage</th>
+                  <th className="py-3 px-3">Client Source</th>
+                  <th className="py-3 px-3">Status</th>
                   <th className="py-3 px-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -602,13 +642,22 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                           </>
                         )}
                         {(!isCoach || isHeadCoach) && (
-                          <button
-                            onClick={() => setDeletingLead({ id: lead.id, name: lead.name })}
-                            className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-950/30 rounded transition-colors cursor-pointer"
-                            title="Delete lead entry"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleOpenEditModal(lead)}
+                              className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+                              title="Edit client details"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setDeletingLead({ id: lead.id, name: lead.name })}
+                              className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-950/30 rounded transition-colors cursor-pointer"
+                              title="Delete client"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -620,28 +669,32 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         )}
       </div>
 
-      {/* ADD LEAD MODAL */}
+      {/* ADD / EDIT LEAD MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#121214] border border-zinc-800 rounded-xl p-6 sm:p-8 max-w-lg w-full space-y-6 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
               <div>
                 <h3 className="text-lg font-black uppercase text-white flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-emerald-400" /> ADD NEW CRM LEAD ENTRY
+                  {editingLead ? <Edit2 className="w-5 h-5 text-emerald-400" /> : <Plus className="w-5 h-5 text-emerald-400" />}
+                  {editingLead ? 'EDIT CLIENT / CRM LEAD' : 'ADD NEW CRM LEAD ENTRY'}
                 </h3>
                 <p className="text-xs text-zinc-400 mt-1">
-                  Create a new lead entry and assign a UK specialist coach.
+                  {editingLead ? 'Update client details and assigned coach.' : 'Create a new lead entry and assign a UK specialist coach.'}
                 </p>
               </div>
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  setShowAddModal(false);
+                  setEditingLead(null);
+                }}
                 className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAddLead} className="space-y-4">
+            <form onSubmit={handleSaveLead} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase text-zinc-300 mb-1">
                   Lead Full Name *
@@ -701,7 +754,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase text-zinc-300 mb-1">
-                    Assigned UK Coach
+                    Assigned Coach
                   </label>
                   <select
                     value={coachInput}
@@ -716,7 +769,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-zinc-300 mb-1">
-                    Initial Pipeline Stage
+                    Initial Status
                   </label>
                   <select
                     value={stageInput}
@@ -732,7 +785,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
 
               <div>
                 <label className="block text-xs font-bold uppercase text-zinc-300 mb-1">
-                  Lead Channel / Source
+                  Client Source
                 </label>
                 <select
                   value={sourceInput}
@@ -750,7 +803,10 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
               <div className="pt-4 flex items-center justify-end gap-3 border-t border-zinc-800">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingLead(null);
+                  }}
                   className="px-4 py-2.5 border border-zinc-700 text-zinc-300 hover:text-white text-xs font-bold uppercase rounded-lg cursor-pointer"
                 >
                   Cancel
@@ -759,7 +815,8 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                   type="submit"
                   className="px-6 py-2.5 bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-wider uppercase rounded-lg transition-all shadow-md cursor-pointer flex items-center gap-1.5"
                 >
-                  <Plus className="w-4 h-4" /> Save Lead
+                  {editingLead ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                  {editingLead ? 'Save Changes' : 'Save Lead'}
                 </button>
               </div>
             </form>
@@ -791,3 +848,4 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
     </div>
   );
 };
+

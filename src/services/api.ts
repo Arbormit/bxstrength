@@ -2671,7 +2671,20 @@ export const VelocityAPI = {
     return this.getAuditLogs();
   },
 
-  addAuditLog(userId: string, userName: string, userRole: UserRole, action: string, details: string): void {
+  addAuditLog(
+    userId: string,
+    userName: string,
+    userRole: UserRole,
+    action: string,
+    details: string,
+    meta?: {
+      targetUserId?: string;
+      targetName?: string;
+      prevValue?: string;
+      newValue?: string;
+      entityId?: string;
+    }
+  ): void {
     initStore();
     const logs = getItem<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, SEED_AUDIT_LOGS);
     const newLog: AuditLog = {
@@ -2682,16 +2695,75 @@ export const VelocityAPI = {
       userRole,
       action,
       details,
+      targetUserId: meta?.targetUserId,
+      targetName: meta?.targetName,
+      prevValue: meta?.prevValue,
+      newValue: meta?.newValue,
+      entityId: meta?.entityId,
       ipAddress: '127.0.0.1 (Verified SSL Session)'
     };
     logs.unshift(newLog);
-    setItem(STORAGE_KEYS.AUDIT_LOGS, logs.slice(0, 100)); // retain last 100 logs
+    setItem(STORAGE_KEYS.AUDIT_LOGS, logs.slice(0, 200)); // retain last 200 logs
 
     fetch(getApiUrl('/api/audit-logs'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newLog)
     }).catch(() => {});
+  },
+
+  async setUserStatus(id: string, status: 'active' | 'inactive' | 'deactivated'): Promise<User> {
+    const user = await this.updateUser(id, { status });
+    try {
+      const token = getItem<string>(STORAGE_KEYS.TOKEN, '');
+      await fetch(getApiUrl(`/api/admin/users/${id}/status`), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ status })
+      });
+    } catch (e) {}
+    const current = this.getCurrentUser();
+    if (current) {
+      this.addAuditLog(current.id, current.name, current.role, 'CHANGE_USER_STATUS', `Set account status of ${user.name} to ${status.toUpperCase()}`, {
+        targetUserId: user.id,
+        targetName: user.name,
+        newValue: status,
+        entityId: user.id
+      });
+    }
+    return user;
+  },
+
+  async adminResetUserPassword(id: string, newPassword: string): Promise<boolean> {
+    const users = this.getUsers();
+    const idx = users.findIndex((u) => u.id === id);
+    if (idx !== -1) {
+      users[idx].password_or_hash = newPassword;
+      setItem(STORAGE_KEYS.USERS, users);
+    }
+    try {
+      const token = getItem<string>(STORAGE_KEYS.TOKEN, '');
+      await fetch(getApiUrl(`/api/admin/users/${id}/password`), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ password: newPassword })
+      });
+    } catch (e) {}
+    const current = this.getCurrentUser();
+    if (current && idx !== -1) {
+      this.addAuditLog(current.id, current.name, current.role, 'ADMIN_RESET_USER_PASSWORD', `Admin reset password for user ${users[idx].name} (${users[idx].email})`, {
+        targetUserId: users[idx].id,
+        targetName: users[idx].name,
+        entityId: users[idx].id
+      });
+    }
+    return true;
   },
 
   clearAuditLogs(): void {

@@ -1611,6 +1611,15 @@ if (dbPool) {
           ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(100) DEFAULT 'Normal User';
           ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_statements TEXT DEFAULT '[]';
           ALTER TABLE users ADD COLUMN IF NOT EXISTS signup_method VARCHAR(50) DEFAULT 'Email / Password';
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'active';
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_coach VARCHAR(255);
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_head_coach VARCHAR(255);
+
+          ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS target_user_id VARCHAR(64);
+          ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS target_name VARCHAR(255);
+          ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS prev_value TEXT;
+          ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS new_value TEXT;
+          ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS entity_id VARCHAR(64);
 
           ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT '1-on-1 Coaching';
           ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS priority VARCHAR(50) DEFAULT 'normal';
@@ -2247,6 +2256,13 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         }
 
         const user = result.rows[0];
+        if (user.status === 'inactive' || user.status === 'deactivated') {
+          return res.status(403).json({
+            error: 'Account Deactivated: Your access has been deactivated by Admin. Please contact customer support.',
+            code: 'ACCOUNT_DEACTIVATED'
+          });
+        }
+
         const valid = await bcrypt.compare(rawPassword, user.password_hash);
         if (!valid) {
           return res.status(401).json({
@@ -2882,6 +2898,8 @@ app.get('/api/users', async (req, res) => {
           signupMethod: r.signup_method || (r.password_hash && r.password_hash.includes('GoogleAuthPass') ? 'Google SSO' : 'Email / Password'),
           isVerified: r.is_verified ?? true,
           status: r.status || 'active',
+          assignedCoach: r.assigned_coach || '',
+          assignedHeadCoach: r.assigned_head_coach || '',
           createdAt: r.created_at || new Date().toISOString()
         }));
         return res.json(formatted);
@@ -2898,7 +2916,7 @@ app.get('/api/users', async (req, res) => {
 
 app.post('/api/users', authenticateToken, async (req: any, res: any) => {
   try {
-    const { name, email, phone, role, coachPosition, heightCm, age, gender, fitnessGoals } = req.body;
+    const { name, email, phone, role, coachPosition, heightCm, age, gender, fitnessGoals, password, assignedCoach, assignedHeadCoach, status } = req.body;
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and email are required' });
     }
@@ -2906,23 +2924,28 @@ app.post('/api/users', authenticateToken, async (req: any, res: any) => {
     const cleanName = sanitizeInput(name);
     const cleanEmail = sanitizeInput(email).toLowerCase();
     const cleanPhone = sanitizeInput(phone || '');
-    const cleanRole = req.user.role === 'admin' ? sanitizeInput(role || 'client') : 'client';
+    const cleanRole = (req.user.role === 'admin' || req.user.role === 'headcoach') ? sanitizeInput(role || 'client') : 'client';
     const cleanPos = sanitizeInput(coachPosition || 'Senior Coach');
     const height = Number(heightCm) || 175;
+    const cleanStatus = status ? sanitizeInput(status) : 'active';
+    const cleanAssignedCoach = assignedCoach ? sanitizeInput(assignedCoach) : '';
+    const cleanAssignedHeadCoach = assignedHeadCoach ? sanitizeInput(assignedHeadCoach) : '';
+    const rawPass = password || 'BxStrength2026!';
+    const passwordHash = await bcrypt.hash(rawPass, 10);
 
     if (dbPool) {
       try {
         await dbPool.query(
-          `INSERT INTO users (id, name, email, password_hash, role, coach_position, phone, height_cm, age, gender, fitness_goals, is_verified, created_at)
-           VALUES ($1, $2, $3, 'HASHED_PASS', $4, $5, $6, $7, $8, $9, $10, true, NOW())`,
-          [userId, cleanName, cleanEmail, cleanRole, cleanPos, cleanPhone, height, Number(age) || 25, sanitizeInput(gender || 'Other'), sanitizeInput(fitnessGoals || '')]
+          `INSERT INTO users (id, name, email, password_hash, role, coach_position, phone, height_cm, age, gender, fitness_goals, is_verified, status, assigned_coach, assigned_head_coach, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true, $12, $13, $14, NOW())`,
+          [userId, cleanName, cleanEmail, passwordHash, cleanRole, cleanPos, cleanPhone, height, Number(age) || 25, sanitizeInput(gender || 'Other'), sanitizeInput(fitnessGoals || ''), cleanStatus, cleanAssignedCoach, cleanAssignedHeadCoach]
         );
       } catch (e: any) {
         console.error('NeonDB POST /api/users Error:', e.message);
       }
     }
 
-    res.status(201).json({ message: `User/Coach ${cleanName} created successfully in database`, id: userId });
+    res.status(201).json({ message: `User/Account ${cleanName} created successfully in database`, id: userId });
   } catch (err: any) {
     console.error('Create user error:', err.message);
     res.status(500).json({ error: 'Failed to create user' });
@@ -2932,15 +2955,18 @@ app.post('/api/users', authenticateToken, async (req: any, res: any) => {
 app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, role, coachPosition, heightCm, age, gender, fitnessGoals, subscriptionTier, billingStatements, isVerified } = req.body;
+    const { name, email, phone, role, coachPosition, heightCm, age, gender, fitnessGoals, subscriptionTier, billingStatements, isVerified, status, assignedCoach, assignedHeadCoach } = req.body;
 
     // Authorization check: User can update their own profile OR must be admin/coach
-    if (req.user.id !== id && req.user.role !== 'admin' && req.user.role !== 'coach') {
+    if (req.user.id !== id && req.user.role !== 'admin' && req.user.role !== 'coach' && req.user.role !== 'headcoach') {
       return res.status(403).json({ error: 'Forbidden: You can only update your own profile.' });
     }
 
-    const cleanRole = req.user.role === 'admin' && role !== undefined ? sanitizeInput(role) : null;
-    const parsedIsVerified = req.user.role === 'admin' && isVerified !== undefined ? Boolean(isVerified) : null;
+    const cleanRole = (req.user.role === 'admin' || req.user.role === 'headcoach') && role !== undefined ? sanitizeInput(role) : null;
+    const parsedIsVerified = (req.user.role === 'admin' || req.user.role === 'headcoach') && isVerified !== undefined ? Boolean(isVerified) : null;
+    const cleanStatus = (req.user.role === 'admin' || req.user.role === 'headcoach') && status !== undefined ? sanitizeInput(status) : null;
+    const cleanAssignedCoach = assignedCoach !== undefined ? sanitizeInput(assignedCoach) : null;
+    const cleanAssignedHeadCoach = assignedHeadCoach !== undefined ? sanitizeInput(assignedHeadCoach) : null;
     const parsedHeight = heightCm !== undefined && heightCm !== null && !isNaN(Number(heightCm)) ? Number(heightCm) : null;
     const statementsJson = billingStatements !== undefined ? JSON.stringify(billingStatements) : null;
 
@@ -2959,8 +2985,11 @@ app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
             fitness_goals = COALESCE($9, fitness_goals),
             subscription_tier = COALESCE($10, subscription_tier),
             billing_statements = COALESCE($11, billing_statements),
-            is_verified = CASE WHEN $12::boolean IS NOT NULL THEN $12::boolean ELSE is_verified END
-           WHERE id = $13`,
+            is_verified = CASE WHEN $12::boolean IS NOT NULL THEN $12::boolean ELSE is_verified END,
+            status = CASE WHEN $13::text IS NOT NULL THEN $13::text ELSE status END,
+            assigned_coach = CASE WHEN $14::text IS NOT NULL THEN $14::text ELSE assigned_coach END,
+            assigned_head_coach = CASE WHEN $15::text IS NOT NULL THEN $15::text ELSE assigned_head_coach END
+           WHERE id = $16`,
           [
             name ? sanitizeInput(name) : null,
             email ? sanitizeInput(email).toLowerCase() : null,
@@ -2974,6 +3003,9 @@ app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
             subscriptionTier ? sanitizeInput(subscriptionTier) : null,
             statementsJson,
             parsedIsVerified,
+            cleanStatus,
+            cleanAssignedCoach,
+            cleanAssignedHeadCoach,
             id
           ]
         );
@@ -2989,7 +3021,7 @@ app.patch('/api/users/:id', authenticateToken, async (req: any, res: any) => {
   }
 });
 
-app.put('/api/admin/users/:id/role', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
+app.put('/api/admin/users/:id/role', authenticateToken, authorizeRoles('admin', 'headcoach'), async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
@@ -3012,7 +3044,53 @@ app.put('/api/admin/users/:id/role', authenticateToken, authorizeRoles('admin'),
   }
 });
 
-app.put('/api/admin/users/:id/verify', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
+app.put('/api/admin/users/:id/status', authenticateToken, authorizeRoles('admin', 'headcoach'), async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required.' });
+    }
+    const cleanStatus = sanitizeInput(status);
+
+    if (dbPool) {
+      try {
+        await dbPool.query('UPDATE users SET status = $1 WHERE id = $2', [cleanStatus, id]);
+      } catch (e: any) {
+        console.error('NeonDB update status error:', e.message);
+      }
+    }
+
+    res.json({ message: `User ${id} status set to ${cleanStatus} live!` });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update user status' });
+  }
+});
+
+app.put('/api/admin/users/:id/password', authenticateToken, authorizeRoles('admin'), async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+    if (!password || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    if (dbPool) {
+      try {
+        await dbPool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, id]);
+      } catch (e: any) {
+        console.error('NeonDB reset password error:', e.message);
+      }
+    }
+
+    res.json({ message: `User ${id} password updated successfully in database!` });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to reset user password' });
+  }
+});
+
+app.put('/api/admin/users/:id/verify', authenticateToken, authorizeRoles('admin', 'headcoach'), async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const { isVerified } = req.body;
@@ -4464,7 +4542,7 @@ app.delete('/api/subscriptions/:id', async (req, res) => {
 app.get('/api/audit-logs', async (req, res) => {
   try {
     if (dbPool) {
-      const dbRes = await dbPool.query('SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 100');
+      const dbRes = await dbPool.query('SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 200');
       const logs = dbRes.rows.map(r => ({
         id: r.id,
         timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : new Date().toISOString(),
@@ -4473,6 +4551,11 @@ app.get('/api/audit-logs', async (req, res) => {
         userRole: r.user_role || 'ADMIN',
         action: r.action,
         details: r.details || '',
+        targetUserId: r.target_user_id || '',
+        targetName: r.target_name || '',
+        prevValue: r.prev_value || '',
+        newValue: r.new_value || '',
+        entityId: r.entity_id || '',
         ipAddress: r.ip_address || '127.0.0.1'
       }));
       return res.json(logs);
@@ -4485,17 +4568,30 @@ app.get('/api/audit-logs', async (req, res) => {
 
 app.post('/api/audit-logs', async (req, res) => {
   try {
-    const { id, userId, userName, userRole, action, details, ipAddress } = req.body;
+    const { id, userId, userName, userRole, action, details, targetUserId, targetName, prevValue, newValue, entityId, ipAddress } = req.body;
     if (!action) return res.status(400).json({ error: 'Action is required' });
 
     const logId = id || `log-${Date.now()}`;
 
     if (dbPool) {
       await dbPool.query(
-        `INSERT INTO audit_logs (id, user_id, user_name, user_role, action, details, ip_address, timestamp)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        `INSERT INTO audit_logs (id, user_id, user_name, user_role, action, details, target_user_id, target_name, prev_value, new_value, entity_id, ip_address, timestamp)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
          ON CONFLICT (id) DO NOTHING`,
-        [logId, userId || 'system', sanitizeInput(userName || 'System'), userRole || 'ADMIN', sanitizeInput(action), sanitizeInput(details || ''), ipAddress || '127.0.0.1']
+        [
+          logId,
+          userId || 'system',
+          sanitizeInput(userName || 'System'),
+          userRole || 'ADMIN',
+          sanitizeInput(action),
+          sanitizeInput(details || ''),
+          targetUserId ? sanitizeInput(targetUserId) : null,
+          targetName ? sanitizeInput(targetName) : null,
+          prevValue ? sanitizeInput(prevValue) : null,
+          newValue ? sanitizeInput(newValue) : null,
+          entityId ? sanitizeInput(entityId) : null,
+          ipAddress || '127.0.0.1'
+        ]
       );
     }
     return res.json({ id: logId, message: 'Audit log saved to NeonDB database' });

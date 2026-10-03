@@ -69,7 +69,9 @@ export interface User {
   billingStatements?: BillingStatement[];
   signupMethod?: 'Google SSO' | 'Email / Password' | string;
   isVerified: boolean;
-  status: 'active' | 'inactive' | 'pending_verification';
+  status: 'active' | 'inactive' | 'pending_verification' | 'deactivated';
+  assignedCoach?: string;
+  assignedHeadCoach?: string;
   createdAt: string;
   lastLoginAt?: string;
 }
@@ -362,6 +364,11 @@ export interface AuditLog {
   userRole: UserRole;
   action: string;
   details: string;
+  targetUserId?: string;
+  targetName?: string;
+  prevValue?: string;
+  newValue?: string;
+  entityId?: string;
   ipAddress: string;
 }
 

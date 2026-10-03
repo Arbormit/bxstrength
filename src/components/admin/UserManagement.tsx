@@ -3,7 +3,10 @@ import { User, UserRole, SubscriptionTier, BillingStatement } from '../../types'
 import { VelocityAPI, getApiUrl } from '../../services/api';
 import { isValidUkMobile, UK_PHONE_ERROR_MSG } from '../../utils/phoneValidation';
 import { PhoneInput } from '../PhoneInput';
-import { Users, Search, Plus, Edit2, Trash2, CheckCircle2, Filter, X, ShieldCheck, UserCheck } from 'lucide-react';
+import { 
+  Users, Search, Plus, Edit2, Trash2, CheckCircle2, Filter, X, 
+  ShieldCheck, UserCheck, Key, Eye, Power, Lock, Shield, Award, Calendar, DollarSign
+} from 'lucide-react';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface UserManagementProps {
@@ -30,6 +33,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('BxStrength2026!');
   const [heightCm, setHeightCm] = useState<number | ''>(175);
   const [role, setRole] = useState<UserRole>('client');
   const [isVerified, setIsVerified] = useState<boolean>(true);
@@ -37,11 +41,23 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>('Normal User');
   const [billingStatements, setBillingStatements] = useState<BillingStatement[]>([]);
   const [fitnessGoals, setFitnessGoals] = useState('');
+  const [assignedCoach, setAssignedCoach] = useState<string>('');
+  const [assignedHeadCoach, setAssignedHeadCoach] = useState<string>('');
+
+  // Password Reset Modal State
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+
+  // 360 Client Profile Drawer State
+  const [inspectUser, setInspectUser] = useState<User | null>(null);
 
   const canManageCoaches = !isCoach || isHeadCoach;
   const targetUsers = isHeadCoach
     ? users.filter((u) => u.role === 'client' || u.role === 'coach' || u.role === 'headcoach')
     : (isCoach ? users.filter((u) => u.role === 'client') : users);
+
+  const availableCoaches = users.filter((u) => u.role === 'coach' || u.role === 'headcoach' || u.role === 'admin');
+  const availableHeadCoaches = users.filter((u) => u.role === 'headcoach' || u.role === 'admin');
 
   const filteredUsers = targetUsers.filter((u) => {
     const matchesSearch =
@@ -64,6 +80,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setName('');
     setEmail('');
     setPhone('');
+    setPassword('BxStrength2026!');
     setHeightCm(175);
     setRole('client');
     setIsVerified(true);
@@ -71,6 +88,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setSubscriptionTier('Normal User');
     setBillingStatements([]);
     setFitnessGoals('');
+    setAssignedCoach('');
+    setAssignedHeadCoach('');
     setShowModal(true);
   };
 
@@ -79,6 +98,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setName('');
     setEmail('');
     setPhone('');
+    setPassword('BxStrength2026!');
     setHeightCm(175);
     setRole('coach');
     setIsVerified(true);
@@ -86,6 +106,26 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setSubscriptionTier('Premium Elite User');
     setBillingStatements([]);
     setFitnessGoals('UK Certified Fitness & Strength Master Coach');
+    setAssignedCoach('');
+    setAssignedHeadCoach('');
+    setShowModal(true);
+  };
+
+  const handleOpenCreateSupport = () => {
+    setEditingUser(null);
+    setName('');
+    setEmail('');
+    setPhone('');
+    setPassword('BxStrength2026!');
+    setHeightCm(175);
+    setRole('customer_support');
+    setIsVerified(true);
+    setCoachPosition('Customer Support');
+    setSubscriptionTier('Normal User');
+    setBillingStatements([]);
+    setFitnessGoals('Customer Service & Operations Agent');
+    setAssignedCoach('');
+    setAssignedHeadCoach('');
     setShowModal(true);
   };
 
@@ -94,13 +134,16 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setName(user.name);
     setEmail(user.email);
     setPhone(user.phone || '');
+    setPassword('');
     setHeightCm(user.heightCm || 175);
     setRole(user.role);
     setIsVerified(user.isVerified !== undefined ? Boolean(user.isVerified) : true);
-    setCoachPosition(user.coachPosition || (user.role === 'headcoach' ? 'Head Coach' : 'Coach'));
+    setCoachPosition(user.coachPosition || (user.role === 'headcoach' ? 'Head Coach' : (user.role === 'customer_support' ? 'Customer Support' : 'Coach')));
     setSubscriptionTier(user.subscriptionTier || 'Normal User');
     setBillingStatements(user.billingStatements || []);
     setFitnessGoals(user.fitnessGoals || '');
+    setAssignedCoach(user.assignedCoach || '');
+    setAssignedHeadCoach(user.assignedHeadCoach || '');
     setShowModal(true);
   };
 
@@ -154,7 +197,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     }
 
     const targetRole = isCoach ? 'client' : (role === 'customer_support' ? 'customer_support' : role);
-    const finalCoachPos = targetRole === 'headcoach' ? 'Head Coach' : (targetRole === 'coach' ? 'Coach' : undefined);
+    const finalCoachPos = targetRole === 'headcoach' ? 'Head Coach' : (targetRole === 'coach' ? 'Coach' : (targetRole === 'customer_support' ? 'Customer Support' : undefined));
     const numHeight = Number(heightCm) || 175;
 
     try {
@@ -169,7 +212,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           subscriptionTier,
           billingStatements,
           fitnessGoals,
-          isVerified
+          isVerified,
+          assignedCoach,
+          assignedHeadCoach
         });
 
         onShowToast(`Updated ${targetRole.toUpperCase()} profile for ${name}`);
@@ -178,11 +223,14 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           name,
           email,
           phone,
+          password: password || 'BxStrength2026!',
           heightCm: numHeight,
           role: targetRole,
           coachPosition: finalCoachPos,
           fitnessGoals,
-          isVerified
+          isVerified,
+          assignedCoach,
+          assignedHeadCoach
         });
 
         onShowToast(`Created new ${targetRole.toUpperCase()} account for ${name}`);
@@ -221,6 +269,32 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     }
   };
 
+  const handleToggleAccountStatus = async (user: User) => {
+    const current = user.status || 'active';
+    const nextStatus = (current === 'active' || current === 'pending_verification') ? 'inactive' : 'active';
+    try {
+      await VelocityAPI.setUserStatus(user.id, nextStatus);
+      onShowToast(`Account status for ${user.name} set to ${nextStatus.toUpperCase()}`);
+      onUsersUpdated();
+    } catch (err: any) {
+      onShowToast(err.message || 'Failed to update status');
+    }
+  };
+
+  const handleAdminResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetPasswordUser || !newPasswordInput) return;
+    try {
+      await VelocityAPI.adminResetUserPassword(resetPasswordUser.id, newPasswordInput);
+      onShowToast(`✓ Password successfully reset for "${resetPasswordUser.name}"`);
+      setResetPasswordUser(null);
+      setNewPasswordInput('');
+      onUsersUpdated();
+    } catch (err: any) {
+      onShowToast(err.message || 'Failed to reset password');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -232,22 +306,32 @@ export const UserManagement: React.FC<UserManagementProps> = ({
               ? 'HEAD COACH CONTROL: COACH & ATHLETE DIRECTORY'
               : isCoach
               ? 'MY CLIENT & ATHLETE ROSTER'
-              : 'ALL ACCOUNTS (CRM)'}
+              : 'ALL ACCOUNTS & USER MANAGEMENT (CRM)'}
           </h2>
           <p className="text-xs text-gray-400 mt-1">
             {isHeadCoach
               ? 'Head Coach Master Authority: Onboard new coaches, update, edit, delete, and control coach profiles, assign client packages, and verify coach accounts to approve active dashboard access.'
               : isCoach
               ? 'View client profiles, add new clients, update fitness goals, and manage your athlete roster.'
-              : 'Admin Master Control: Seamlessly assign user roles (Head Coach, Coach, Client, Customer Support, System Admin), control profiles, and verify/approve coach accounts in real-time.'}
+              : 'Admin Master Control: View, create, update, activate/deactivate, reset passwords, and manage Head Coach, Coach, Client, and Customer Support accounts end-to-end.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {!isCoach && (
+            <button
+              onClick={handleOpenCreateSupport}
+              className="bg-purple-700 hover:bg-purple-600 text-white text-xs font-black tracking-widest px-3.5 py-3 uppercase transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+            >
+              <Shield className="w-4 h-4" />
+              <span>ADD SUPPORT AGENT</span>
+            </button>
+          )}
+
           {canManageCoaches && (
             <button
               onClick={handleOpenCreateCoach}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black tracking-widest px-4 py-3 uppercase transition-all shadow-md flex items-center gap-2 cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black tracking-widest px-3.5 py-3 uppercase transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>ADD COACH</span>
@@ -257,7 +341,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           {(!isCoach || isHeadCoach) && (
             <button
               onClick={handleOpenCreateClient}
-              className="bg-[#8C532B] hover:bg-[#70401E] text-white text-xs font-black tracking-widest px-4 py-3 uppercase transition-all shadow-md shadow-amber-950/20 flex items-center gap-2 cursor-pointer"
+              className="bg-[#8C532B] hover:bg-[#70401E] text-white text-xs font-black tracking-widest px-4 py-3 uppercase transition-all shadow-md shadow-amber-950/20 flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>ADD CLIENT / USER</span>
@@ -286,7 +370,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-gray-900 border border-gray-800 text-white text-xs px-3 py-2 rounded-none outline-none cursor-pointer"
+              className="bg-gray-900 border border-gray-800 text-white text-xs px-3 py-2 rounded-none outline-none cursor-pointer font-bold"
             >
               <option value="all">All Roles ({targetUsers.length})</option>
               <option value="client">Client</option>
@@ -306,142 +390,186 @@ export const UserManagement: React.FC<UserManagementProps> = ({
             <thead>
               <tr className="bg-gray-900 border-b border-gray-800 text-gray-400 uppercase font-bold tracking-wider">
                 <th className="py-3.5 px-4">Account Details</th>
-                <th className="py-3.5 px-4">Account Role (Admin Controlled)</th>
-                <th className="py-3.5 px-4">Signup Method</th>
-                <th className="py-3.5 px-4">Verification Authority</th>
-                <th className="py-3.5 px-4">Fitness Goals / Notes</th>
+                <th className="py-3.5 px-4">Role & Status</th>
+                <th className="py-3.5 px-4">Assigned Coach / Head Coach</th>
+                <th className="py-3.5 px-4">Verification</th>
+                <th className="py-3.5 px-4">Tier / Subscription</th>
                 <th className="py-3.5 px-4">Joined Date</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800 text-gray-200">
-              {filteredUsers.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-900/50 transition-colors">
-                  <td className="py-3.5 px-4 flex items-center gap-3">
-                    <img
-                      src={u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name)}`}
-                      alt={u.name}
-                      className="w-9 h-9 rounded-full object-cover border-2 border-[#E52165]"
-                    />
-                    <div>
-                      <span className="font-bold text-white block text-sm">{u.name}</span>
-                      <span className="text-gray-400 text-xs">{u.email}</span>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {u.phone && <span className="text-[10px] text-gray-500 font-mono">{u.phone}</span>}
-                        <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800">
-                          {u.heightCm || 175} cm
+              {filteredUsers.map((u) => {
+                const userStatus = u.status || 'active';
+                const isActive = userStatus === 'active';
+
+                return (
+                  <tr key={u.id} className="hover:bg-gray-900/50 transition-colors">
+                    <td className="py-3.5 px-4 flex items-center gap-3">
+                      <img
+                        src={u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name)}`}
+                        alt={u.name}
+                        className="w-9 h-9 rounded-full object-cover border-2 border-[#E52165]"
+                      />
+                      <div>
+                        <span className="font-bold text-white block text-sm flex items-center gap-1.5">
+                          {u.name}
+                          {!isActive && (
+                            <span className="bg-red-950 text-red-400 border border-red-800 text-[9px] font-mono px-1 py-0.2 rounded uppercase">
+                              INACTIVE
+                            </span>
+                          )}
                         </span>
+                        <span className="text-gray-400 text-xs">{u.email}</span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {u.phone && <span className="text-[10px] text-gray-500 font-mono">{u.phone}</span>}
+                          <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800">
+                            {u.heightCm || 175} cm
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <div className="flex flex-col items-start gap-1">
-                      {canManageCoaches ? (
-                        <select
-                          value={u.role}
-                          onChange={async (e) => {
-                            const newRole = e.target.value as UserRole;
-                            try {
-                              await VelocityAPI.updateUser(u.id, { role: newRole });
-                              onShowToast(`Updated role for "${u.name}" to ${newRole.toUpperCase()} in real-time!`);
-                              onUsersUpdated();
-                            } catch (err: any) {
-                              onShowToast(err.message || 'Failed to update user role');
-                            }
-                          }}
-                          className={`px-2 py-1 font-black uppercase text-[10px] border rounded outline-none cursor-pointer transition-colors ${
-                            u.role === 'admin'
-                              ? 'bg-purple-950/90 text-purple-300 border-purple-800 hover:bg-purple-900'
-                              : u.role === 'headcoach'
-                              ? 'bg-amber-950/90 text-amber-300 border-amber-800 hover:bg-amber-900 font-bold'
-                              : u.role === 'coach'
-                              ? 'bg-pink-950/90 text-pink-300 border-pink-800 hover:bg-pink-900'
-                              : u.role === 'customer_support'
-                              ? 'bg-emerald-950/90 text-emerald-300 border-emerald-800 hover:bg-emerald-900'
-                              : 'bg-blue-950/90 text-blue-300 border-blue-800 hover:bg-blue-900'
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      <div className="flex flex-col items-start gap-1">
+                        {canManageCoaches ? (
+                          <select
+                            value={u.role}
+                            onChange={async (e) => {
+                              const newRole = e.target.value as UserRole;
+                              try {
+                                await VelocityAPI.updateUser(u.id, { role: newRole });
+                                onShowToast(`Updated role for "${u.name}" to ${newRole.toUpperCase()} in real-time!`);
+                                onUsersUpdated();
+                              } catch (err: any) {
+                                onShowToast(err.message || 'Failed to update user role');
+                              }
+                            }}
+                            className={`px-2 py-1 font-black uppercase text-[10px] border rounded outline-none cursor-pointer transition-colors ${
+                              u.role === 'admin'
+                                ? 'bg-purple-950/90 text-purple-300 border-purple-800 hover:bg-purple-900'
+                                : u.role === 'headcoach'
+                                ? 'bg-amber-950/90 text-amber-300 border-amber-800 hover:bg-amber-900 font-bold'
+                                : u.role === 'coach'
+                                ? 'bg-pink-950/90 text-pink-300 border-pink-800 hover:bg-pink-900'
+                                : u.role === 'customer_support'
+                                ? 'bg-emerald-950/90 text-emerald-300 border-emerald-800 hover:bg-emerald-900'
+                                : 'bg-blue-950/90 text-blue-300 border-blue-800 hover:bg-blue-900'
+                            }`}
+                            title="Role Switcher: Change account role in real-time"
+                          >
+                            <option value="client" className="bg-gray-900 text-white font-bold">CLIENT</option>
+                            <option value="headcoach" className="bg-gray-900 text-amber-400 font-bold">HEAD COACH</option>
+                            <option value="coach" className="bg-gray-900 text-white font-bold">COACH</option>
+                            {!isHeadCoach && <option value="customer_support" className="bg-gray-900 text-white font-bold">CUSTOMER SUPPORT</option>}
+                            {!isHeadCoach && <option value="admin" className="bg-gray-900 text-white font-bold">SYSTEM ADMIN</option>}
+                          </select>
+                        ) : (
+                          <span className="px-2.5 py-1 font-black uppercase text-[10px] border bg-gray-800 text-gray-300 border-gray-700">
+                            {u.role}
+                          </span>
+                        )}
+
+                        <button
+                          onClick={() => handleToggleAccountStatus(u)}
+                          className={`mt-1 text-[9px] font-bold px-2 py-0.5 rounded border uppercase flex items-center gap-1 cursor-pointer transition-all ${
+                            isActive
+                              ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800 hover:bg-emerald-900'
+                              : 'bg-red-950/60 text-red-300 border-red-800 hover:bg-red-900'
                           }`}
-                          title="Role Switcher: Change account role in real-time"
+                          title="Click to toggle account access status"
                         >
-                          <option value="client" className="bg-gray-900 text-white font-bold">CLIENT</option>
-                          <option value="headcoach" className="bg-gray-900 text-amber-400 font-bold">HEAD COACH</option>
-                          <option value="coach" className="bg-gray-900 text-white font-bold">COACH</option>
-                          {!isHeadCoach && <option value="customer_support" className="bg-gray-900 text-white font-bold">CUSTOMER SUPPORT</option>}
-                          {!isHeadCoach && <option value="admin" className="bg-gray-900 text-white font-bold">SYSTEM ADMIN</option>}
-                        </select>
-                      ) : (
-                        <span className="px-2.5 py-1 font-black uppercase text-[10px] border bg-gray-800 text-gray-300 border-gray-700">
-                          {u.role}
+                          <Power className="w-3 h-3" />
+                          <span>{isActive ? 'STATUS: ACTIVE' : 'STATUS: INACTIVE'}</span>
+                        </button>
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4 text-gray-300 text-xs space-y-1">
+                      <div>
+                        <span className="text-[10px] text-gray-500 uppercase font-bold block">Assigned Coach:</span>
+                        <span className="font-bold text-white">{u.assignedCoach || 'Unassigned'}</span>
+                      </div>
+                      {u.assignedHeadCoach && (
+                        <div>
+                          <span className="text-[10px] text-amber-500/80 uppercase font-bold block">Head Coach:</span>
+                          <span className="font-bold text-amber-400">{u.assignedHeadCoach}</span>
+                        </div>
+                      )}
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      <button
+                        onClick={() => handleToggleVerify(u.id, u.name, u.isVerified)}
+                        className={`text-[10px] font-black px-2.5 py-1 border uppercase flex items-center gap-1.5 cursor-pointer rounded transition-all ${
+                          u.isVerified
+                            ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800 hover:bg-emerald-900'
+                            : 'bg-amber-950/90 text-amber-400 border-amber-800 hover:bg-amber-900 animate-pulse'
+                        }`}
+                        title={u.isVerified ? "Account verified. Click to revoke verification." : "Pending verification. Click to verify account."}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {u.isVerified ? 'VERIFIED' : 'VERIFY NOW'}
+                      </button>
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      <span className="px-2 py-0.5 bg-gray-900 border border-gray-800 font-mono text-[10px] text-pink-400 font-bold uppercase rounded block">
+                        {u.subscriptionTier || 'Normal User'}
+                      </span>
+                      {u.billingStatements && u.billingStatements.length > 0 && (
+                        <span className="text-[9px] text-gray-400 block mt-1">
+                          {u.billingStatements.length} Invoice(s) Issued
                         </span>
                       )}
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black uppercase border rounded ${
-                        u.signupMethod === 'Google SSO'
-                          ? 'bg-blue-950/80 text-blue-300 border-blue-800'
-                          : 'bg-zinc-900 text-zinc-300 border-zinc-700'
-                      }`}
-                    >
-                      {u.signupMethod === 'Google SSO' ? (
-                        <>
-                          <svg className="w-3 h-3" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                          </svg>
-                          Google SSO
-                        </>
-                      ) : (
-                        <>🔑 Email / Pass</>
-                      )}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <button
-                      onClick={() => handleToggleVerify(u.id, u.name, u.isVerified)}
-                      className={`text-[10px] font-black px-2.5 py-1 border uppercase flex items-center gap-1.5 cursor-pointer rounded transition-all ${
-                        u.isVerified
-                          ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800 hover:bg-emerald-900'
-                          : 'bg-amber-950/90 text-amber-400 border-amber-800 hover:bg-amber-900 animate-pulse'
-                      }`}
-                      title={u.isVerified ? "Coach account verified & dashboard access approved. Click to revoke verification." : "Pending verification. Click Head Coach / Admin 1-Click to verify account & approve dashboard access."}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      {u.isVerified ? 'VERIFIED & APPROVED' : 'VERIFY & APPROVE'}
-                    </button>
-                  </td>
-                  <td className="py-3.5 px-4 max-w-xs truncate text-gray-400">
-                    {u.fitnessGoals || 'No goal stated'}
-                  </td>
-                  <td className="py-3.5 px-4 font-mono text-gray-400">
-                    {new Date(u.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleOpenEdit(u)}
-                        className="p-1.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded transition-colors"
-                        title="Edit Details & Role"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTrigger(u.id, u.name, u.email)}
-                        className="p-1.5 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
-                        title="Delete Client Account"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+
+                    <td className="py-3.5 px-4 font-mono text-gray-400">
+                      {new Date(u.createdAt).toLocaleDateString()}
+                    </td>
+
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setInspectUser(u)}
+                          className="p-1.5 bg-gray-900 hover:bg-gray-800 text-blue-400 rounded transition-colors"
+                          title="View Complete 360 Client Profile"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setResetPasswordUser(u);
+                            setNewPasswordInput('');
+                          }}
+                          className="p-1.5 bg-gray-900 hover:bg-gray-800 text-amber-400 rounded transition-colors"
+                          title="Reset User Password (Admin)"
+                        >
+                          <Key className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenEdit(u)}
+                          className="p-1.5 bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-white rounded transition-colors"
+                          title="Edit Details & Role"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTrigger(u.id, u.name, u.email)}
+                          className="p-1.5 bg-gray-900 hover:bg-gray-800 text-red-400 hover:text-red-300 rounded transition-colors"
+                          title="Delete Account"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {filteredUsers.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-gray-500 font-bold uppercase tracking-wider">
-                    No user accounts found in directory. Real accounts registered will display here live.
+                    No user accounts found matching your filter criteria.
                   </td>
                 </tr>
               )}
@@ -495,6 +623,23 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                   required
                 />
               </div>
+
+              {!editingUser && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-amber-400 mb-1">
+                    Initial Account Password *
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="BxStrength2026!"
+                    className="w-full bg-gray-900 border border-amber-800 text-white px-3.5 py-2 text-sm outline-none font-mono"
+                    required
+                  />
+                  <span className="text-[10px] text-gray-500 block mt-0.5">User will use this password to log in via email/password.</span>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <PhoneInput
@@ -554,6 +699,41 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Central Coach & Head Coach Assignment Selectors */}
+              <div className="space-y-3 p-3 bg-gray-900/60 border border-gray-800 rounded">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-blue-400 mb-1">
+                    Assigned Coach
+                  </label>
+                  <select
+                    value={assignedCoach}
+                    onChange={(e) => setAssignedCoach(e.target.value)}
+                    className="w-full bg-black border border-blue-900 text-white px-3 py-2 text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="">-- Unassigned --</option>
+                    {availableCoaches.map((c) => (
+                      <option key={c.id} value={c.name}>{c.name} ({c.role.toUpperCase()})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-amber-400 mb-1">
+                    Assigned Head Coach Supervisor
+                  </label>
+                  <select
+                    value={assignedHeadCoach}
+                    onChange={(e) => setAssignedHeadCoach(e.target.value)}
+                    className="w-full bg-black border border-amber-900 text-white px-3 py-2 text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="">-- Unassigned --</option>
+                    {availableHeadCoaches.map((hc) => (
+                      <option key={hc.id} value={hc.name}>{hc.name} (Head Coach)</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
               {role !== 'coach' && role !== 'admin' && (
                 <div className="space-y-3 p-3.5 bg-gray-900 border border-gray-800 rounded">
@@ -638,7 +818,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                 </div>
               )}
 
-
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
                   Fitness Goals / Coaching Notes
@@ -653,11 +832,169 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
               <button
                 type="submit"
-                className="w-full bg-[#E52165] hover:bg-[#c41551] text-white text-xs font-black tracking-widest py-3 uppercase shadow-md shadow-pink-500/20"
+                className="w-full bg-[#E52165] hover:bg-[#c41551] text-white text-xs font-black tracking-widest py-3 uppercase shadow-md shadow-pink-500/20 cursor-pointer"
               >
-                {editingUser ? 'SAVE CHANGES' : isCoach ? 'SAVE CLIENT PROFILE' : 'CREATE USER NOW'}
+                {editingUser ? 'SAVE CHANGES' : isCoach ? 'SAVE CLIENT PROFILE' : 'CREATE USER ACCOUNT'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Reset Password Modal */}
+      {resetPasswordUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-sm bg-[#111111] text-white border border-gray-800 p-6 shadow-2xl">
+            <button
+              onClick={() => setResetPasswordUser(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-sm font-black uppercase text-amber-400 mb-2 flex items-center gap-2">
+              <Key className="w-4 h-4" /> RESET USER PASSWORD
+            </h3>
+            <p className="text-xs text-gray-400 mb-4">
+              Enter a new password for <strong className="text-white">{resetPasswordUser.name}</strong> ({resetPasswordUser.email}).
+            </p>
+
+            <form onSubmit={handleAdminResetPasswordSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">
+                  New Password *
+                </label>
+                <input
+                  type="password"
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  placeholder="Enter new password"
+                  required
+                  className="w-full bg-gray-900 border border-amber-800 text-white px-3.5 py-2.5 text-sm font-mono outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setResetPasswordUser(null)}
+                  className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-gray-300 text-xs font-bold uppercase"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-black uppercase cursor-pointer"
+                >
+                  Confirm Reset
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 360 Client Profile Inspection Drawer / Modal */}
+      {inspectUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-end p-4 bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-xl bg-[#111111] text-white border-l border-gray-800 p-6 shadow-2xl h-full overflow-y-auto space-y-6">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+              <div className="flex items-center gap-3">
+                <img
+                  src={inspectUser.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(inspectUser.name)}`}
+                  alt={inspectUser.name}
+                  className="w-12 h-12 rounded-full border-2 border-[#E52165]"
+                />
+                <div>
+                  <h3 className="text-base font-black uppercase text-white">{inspectUser.name}</h3>
+                  <span className="text-xs text-gray-400">{inspectUser.email}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setInspectUser(null)}
+                className="p-1.5 bg-gray-900 text-gray-400 hover:text-white rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Profile Overview */}
+            <div className="grid grid-cols-2 gap-3 text-xs bg-gray-900/60 p-4 border border-gray-800 rounded">
+              <div>
+                <span className="text-gray-500 uppercase font-bold block text-[10px]">Account ID</span>
+                <span className="font-mono text-gray-300">{inspectUser.id}</span>
+              </div>
+              <div>
+                <span className="text-gray-500 uppercase font-bold block text-[10px]">Role</span>
+                <span className="font-bold text-amber-400 uppercase">{inspectUser.role}</span>
+              </div>
+              <div>
+                <span className="text-gray-500 uppercase font-bold block text-[10px]">Account Access Status</span>
+                <span className={`font-bold uppercase ${inspectUser.status === 'inactive' ? 'text-red-400' : 'text-emerald-400'}`}>
+                  {inspectUser.status || 'ACTIVE'}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500 uppercase font-bold block text-[10px]">Verification Status</span>
+                <span className={`font-bold uppercase ${inspectUser.isVerified ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {inspectUser.isVerified ? 'Verified' : 'Unverified'}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500 uppercase font-bold block text-[10px]">Mobile Phone</span>
+                <span className="font-mono text-gray-200">{inspectUser.phone || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-gray-500 uppercase font-bold block text-[10px]">Height</span>
+                <span className="font-mono text-emerald-400">{inspectUser.heightCm || 175} cm</span>
+              </div>
+              <div>
+                <span className="text-gray-500 uppercase font-bold block text-[10px]">Assigned Coach</span>
+                <span className="font-bold text-white">{inspectUser.assignedCoach || 'Unassigned'}</span>
+              </div>
+              <div>
+                <span className="text-gray-500 uppercase font-bold block text-[10px]">Assigned Head Coach</span>
+                <span className="font-bold text-amber-400">{inspectUser.assignedHeadCoach || 'Unassigned'}</span>
+              </div>
+            </div>
+
+            {/* Subscriptions & Invoices */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-black uppercase text-pink-400 flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4" /> Purchased Services & Invoices
+              </h4>
+              <div className="bg-gray-900 p-3 border border-gray-800 rounded space-y-2 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 font-bold uppercase">Membership Tier:</span>
+                  <span className="font-mono text-white font-bold">{inspectUser.subscriptionTier || 'Normal User'}</span>
+                </div>
+                {inspectUser.billingStatements && inspectUser.billingStatements.length > 0 ? (
+                  <div className="space-y-1.5 pt-2 border-t border-gray-800">
+                    {inspectUser.billingStatements.map((inv) => (
+                      <div key={inv.id} className="flex justify-between items-center text-[11px] bg-black p-2 border border-gray-800 rounded">
+                        <div>
+                          <span className="font-mono text-white font-bold block">{inv.invoiceNumber} • £{inv.amount}</span>
+                          <span className="text-gray-400 text-[10px]">{inv.description} • {inv.date}</span>
+                        </div>
+                        <span className="text-emerald-400 font-bold text-[10px]">{inv.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-gray-500 italic">No billing statements recorded.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Fitness Goals */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-black uppercase text-emerald-400 flex items-center gap-1.5">
+                <Award className="w-4 h-4" /> Fitness Goals & Coaching Notes
+              </h4>
+              <div className="bg-gray-900 p-3 border border-gray-800 rounded text-xs text-gray-300 leading-relaxed">
+                {inspectUser.fitnessGoals || 'No fitness goals recorded.'}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -677,3 +1014,4 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     </div>
   );
 };
+
