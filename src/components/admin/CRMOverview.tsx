@@ -485,63 +485,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         }}
         onNavigateTab={onNavigateTab}
       />
-      {isCoachOnly && (
-        <div className="bg-[#141416] border border-zinc-800 p-5 rounded-xl">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-black uppercase tracking-widest text-[#CCFF00] flex items-center gap-2">
-              <Zap className="w-4 h-4" />
-              COACH QUICK WORKSPACE SHORTCUTS
-            </h3>
-            <span className="text-[10px] text-zinc-400 font-bold uppercase">Direct Tab Access</span>
-          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <button
-              onClick={() => onNavigateTab('users')}
-              className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-left transition-all group cursor-pointer"
-            >
-              <div className="flex items-center justify-between text-zinc-300 group-hover:text-white mb-1">
-                <span className="text-xs font-bold uppercase">Athlete Roster</span>
-                <ChevronRight className="w-3.5 h-3.5 text-[#CCFF00]" />
-              </div>
-              <p className="text-[10px] text-zinc-500 line-clamp-1">View &amp; edit assigned client profiles</p>
-            </button>
-
-            <button
-              onClick={() => onNavigateTab('programs')}
-              className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-left transition-all group cursor-pointer"
-            >
-              <div className="flex items-center justify-between text-zinc-300 group-hover:text-white mb-1">
-                <span className="text-xs font-bold uppercase">Workout Plans</span>
-                <ChevronRight className="w-3.5 h-3.5 text-pink-400" />
-              </div>
-              <p className="text-[10px] text-zinc-500 line-clamp-1">Create &amp; assign training routines</p>
-            </button>
-
-            <button
-              onClick={() => onNavigateTab('nutrition')}
-              className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-left transition-all group cursor-pointer"
-            >
-              <div className="flex items-center justify-between text-zinc-300 group-hover:text-white mb-1">
-                <span className="text-xs font-bold uppercase">Nutrition Diets</span>
-                <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
-              </div>
-              <p className="text-[10px] text-zinc-500 line-clamp-1">Build macro &amp; meal plans</p>
-            </button>
-
-            <button
-              onClick={() => onNavigateTab('tickets')}
-              className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-left transition-all group cursor-pointer"
-            >
-              <div className="flex items-center justify-between text-zinc-300 group-hover:text-white mb-1">
-                <span className="text-xs font-bold uppercase">Support Desk</span>
-                <ChevronRight className="w-3.5 h-3.5 text-amber-400" />
-              </div>
-              <p className="text-[10px] text-zinc-500 line-clamp-1">Respond to athlete support tickets</p>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Main Roster & Empty Lead State */}
       <div className="bg-[#121214] border border-zinc-800 p-6 rounded-xl">
