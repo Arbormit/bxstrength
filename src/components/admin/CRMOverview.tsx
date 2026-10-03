@@ -56,6 +56,17 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Dynamic Coach List (includes Head Coaches, Coaches, Admins, and defaults)
+  const availableCoaches = React.useMemo(() => {
+    const list: string[] = ['Shaban Faridi', 'Sadeem', 'Moheeb Khan'];
+    users
+      .filter((u) => u.role === 'coach' || u.role === 'headcoach' || u.role === 'admin')
+      .forEach((u) => {
+        if (u.name) list.push(u.name);
+      });
+    return Array.from(new Set(list.filter(Boolean)));
+  }, [users]);
+
   // Delete confirmation modal state
   const [deletingLead, setDeletingLead] = useState<{ id: string; name: string } | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState<boolean>(false);
@@ -399,9 +410,9 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                 className="bg-[#18181b] border border-zinc-800 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-600"
               >
                 <option value="All">All UK Coaches</option>
-                <option value="Head Coach & Team">Shaban Faridi</option>
-                <option value="Sadeem">Sadeem</option>
-                <option value="Moheeb Khan">Moheeb Khan</option>
+                {availableCoaches.map((cName) => (
+                  <option key={cName} value={cName}>{cName}</option>
+                ))}
               </select>
             </div>
           )}
@@ -463,98 +474,7 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
         </div>
       )}
 
-      {/* Metric Analytics Cards (Tailored for Coach vs Admin) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {isCoach ? (
-          <>
-            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-              <div className="flex items-center justify-between text-zinc-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">My Assigned Clients</span>
-                <Users className="w-5 h-5 text-[#CCFF00]" />
-              </div>
-              <div className="text-3xl font-black text-white tracking-tight">
-                {users.filter(u => u.role === 'client').length}
-              </div>
-              <p className="text-[11px] text-[#CCFF00] mt-1 font-semibold">Active Client Roster</p>
-            </div>
 
-            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-              <div className="flex items-center justify-between text-zinc-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">15-Min Strategy Calls</span>
-                <Phone className="w-5 h-5 text-emerald-400" />
-              </div>
-              <div className="text-3xl font-black text-white tracking-tight">
-                {enquiries.length}
-              </div>
-              <p className="text-[11px] text-emerald-400 mt-1 font-semibold">Client Consultations Received</p>
-            </div>
-
-            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-              <div className="flex items-center justify-between text-zinc-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">Workout & Diet Programs</span>
-                <Dumbbell className="w-5 h-5 text-pink-400" />
-              </div>
-              <div className="text-3xl font-black text-white tracking-tight">
-                {VelocityAPI.getPrograms().length}
-              </div>
-              <p className="text-[11px] text-pink-400 mt-1 font-semibold">Active Training Plans</p>
-            </div>
-
-            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-              <div className="flex items-center justify-between text-zinc-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">Pending Enquiries & Tickets</span>
-                <Mail className="w-5 h-5 text-amber-400" />
-              </div>
-              <div className="text-3xl font-black text-white tracking-tight">
-                {enquiries.filter(e => e.status === 'new').length}
-              </div>
-              <p className="text-[11px] text-amber-400 mt-1 font-semibold">New Client Requests</p>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-              <div className="flex items-center justify-between text-zinc-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">Total CRM Leads</span>
-                <Users className="w-5 h-5 text-emerald-400" />
-              </div>
-              <div className="text-3xl font-black text-white tracking-tight">{leads.length}</div>
-              <p className="text-[11px] text-zinc-400 mt-1 font-semibold">Active in Pipeline</p>
-            </div>
-
-            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-              <div className="flex items-center justify-between text-zinc-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">Monthly Revenue</span>
-                <DollarSign className="w-5 h-5 text-[#CCFF00]" />
-              </div>
-              <div className="text-3xl font-black text-white tracking-tight">£{totalRevenue}</div>
-              <p className="text-[11px] text-zinc-400 mt-1 font-semibold">Active Subscriptions Total</p>
-            </div>
-
-            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-              <div className="flex items-center justify-between text-zinc-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">Active Memberships</span>
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-              </div>
-              <div className="text-3xl font-black text-white tracking-tight">
-                {subscriptions.filter(s => s.status === 'active').length}
-              </div>
-              <p className="text-[11px] text-emerald-400 mt-1 font-semibold">Verified Paid Clients</p>
-            </div>
-
-            <div className="bg-[#121214] border border-zinc-800 p-5 rounded-xl">
-              <div className="flex items-center justify-between text-zinc-400 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider">Total Enquiries &amp; Leads</span>
-                <Mail className="w-5 h-5 text-amber-400" />
-              </div>
-              <div className="text-3xl font-black text-white tracking-tight">
-                {enquiries.length}
-              </div>
-              <p className="text-[11px] text-amber-400 mt-1 font-semibold">Active Inbound Client Leads</p>
-            </div>
-          </>
-        )}
-      </div>
 
       {/* UNIFIED ASSIGNED TASKS & COACHING ACTIVITIES SECTION */}
       <AssignedTasksSection
@@ -844,9 +764,9 @@ export const CRMOverview: React.FC<CRMOverviewProps> = ({
                     onChange={(e) => setCoachInput(e.target.value)}
                     className="w-full bg-[#18181b] border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-zinc-600"
                   >
-                    <option value="Shaban Faridi">Shaban Faridi (Head Coach)</option>
-                    <option value="Sadeem">Sadeem (Senior Strength Lead)</option>
-                    <option value="Moheeb Khan">Moheeb Khan (Tactical Lead)</option>
+                    {availableCoaches.map((cName) => (
+                      <option key={cName} value={cName}>{cName}</option>
+                    ))}
                   </select>
                 </div>
 

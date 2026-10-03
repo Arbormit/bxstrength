@@ -44,6 +44,60 @@ export const AssignedTasksSection: React.FC<AssignedTasksSectionProps> = ({
   } | null>(null);
   const [actionNotes, setActionNotes] = useState('');
 
+  // Create Assignment Modal (for Admin & Head Coach)
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newInstructions, setNewInstructions] = useState('');
+  const [newType, setNewType] = useState<CoachAssignmentType>('task');
+  const [newAssignedCoach, setNewAssignedCoach] = useState('Shaban Faridi');
+  const [newClientName, setNewClientName] = useState('');
+  const [newClientEmail, setNewClientEmail] = useState('');
+  const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+
+  const coachOptions = React.useMemo(() => {
+    const list: string[] = ['Shaban Faridi', 'Sadeem', 'Moheeb Khan'];
+    try {
+      const allUsers = VelocityAPI.getUsers();
+      if (Array.isArray(allUsers)) {
+        allUsers
+          .filter((u) => u.role === 'coach' || u.role === 'headcoach' || u.role === 'admin')
+          .forEach((u) => {
+            if (u.name) list.push(u.name);
+          });
+      }
+    } catch {}
+    return Array.from(new Set(list.filter(Boolean)));
+  }, []);
+
+  const handleCreateAssignment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
+
+    VelocityAPI.saveCoachAssignment({
+      title: newTitle.trim(),
+      description: newDescription.trim(),
+      instructions: newInstructions.trim(),
+      assignmentType: newType,
+      assignedCoachName: newAssignedCoach,
+      clientName: newClientName.trim() || 'Client',
+      clientEmail: newClientEmail.trim() || undefined,
+      priority: newPriority,
+      status: 'assigned',
+      assignedByName: user?.name || 'Admin',
+      assignedByRole: isHeadCoach ? 'Head Coach' : isAdmin ? 'Admin' : 'Coach'
+    });
+
+    onShowToast(`✓ Assigned "${newTitle}" to ${newAssignedCoach}!`);
+    setShowCreateModal(false);
+    setNewTitle('');
+    setNewDescription('');
+    setNewInstructions('');
+    setNewClientName('');
+    setNewClientEmail('');
+    loadAssignments();
+  };
+
   const loadAssignments = async () => {
     try {
       const coachFilter = isHeadCoachOrAdmin ? undefined : user?.name;
@@ -233,8 +287,18 @@ export const AssignedTasksSection: React.FC<AssignedTasksSectionProps> = ({
           </p>
         </div>
 
-        {/* Filter Type Pills */}
+        {/* Filter Type Pills & Assign Button */}
         <div className="flex flex-wrap items-center gap-1.5 self-start sm:self-auto">
+          {isHeadCoachOrAdmin && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-white hover:bg-zinc-200 text-black text-xs font-black tracking-wider px-3.5 py-1.5 rounded uppercase transition-all shadow-md cursor-pointer flex items-center gap-1.5 mr-1"
+            >
+              <Plus className="w-3.5 h-3.5 text-black" />
+              <span>ASSIGN TO COACH</span>
+            </button>
+          )}
+
           {[
             { id: 'ALL', label: 'ALL' },
             { id: 'WORKOUT_PROGRAM', label: 'WORKOUTS' },
@@ -554,6 +618,135 @@ export const AssignedTasksSection: React.FC<AssignedTasksSectionProps> = ({
                 Close Drawer
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Create New Coach Assignment Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-lg bg-[#111114] text-white border border-zinc-800 p-6 shadow-2xl rounded-xl space-y-4 animate-in zoom-in-95 duration-200">
+            <button onClick={() => setShowCreateModal(false)} className="absolute top-4 right-4 text-zinc-400 hover:text-white cursor-pointer">
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="border-b border-zinc-800 pb-3">
+              <h3 className="text-lg font-black uppercase text-white flex items-center gap-2">
+                <Plus className="w-5 h-5 text-[#CCFF00]" /> ASSIGN TO HEAD COACH OR COACH
+              </h3>
+              <p className="text-xs text-zinc-400 mt-1">
+                Assign a workout program, nutrition plan, class schedule, consultation, or custom task to any registered coach or head coach.
+              </p>
+            </div>
+
+            <form onSubmit={handleCreateAssignment} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-zinc-300 mb-1">
+                  Assignment Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. VIP Hypertrophy Protocol & Client Onboarding"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-zinc-600"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-zinc-300 mb-1">
+                    Assignment Type
+                  </label>
+                  <select
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value as CoachAssignmentType)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-zinc-600"
+                  >
+                    <option value="task">General Coaching Task</option>
+                    <option value="workout_program">Workout Program</option>
+                    <option value="nutrition_plan">Nutrition Plan</option>
+                    <option value="class_schedule">Class Schedule</option>
+                    <option value="consultation">Consultation & Strategy Call</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-zinc-300 mb-1">
+                    Assign To Coach *
+                  </label>
+                  <select
+                    value={newAssignedCoach}
+                    onChange={(e) => setNewAssignedCoach(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-zinc-600"
+                  >
+                    {coachOptions.map((cName) => (
+                      <option key={cName} value={cName}>{cName}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-zinc-300 mb-1">
+                    Target Client Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Eleanor Vance"
+                    value={newClientName}
+                    onChange={(e) => setNewClientName(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-zinc-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-zinc-300 mb-1">
+                    Priority Level
+                  </label>
+                  <select
+                    value={newPriority}
+                    onChange={(e) => setNewPriority(e.target.value as any)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-zinc-600"
+                  >
+                    <option value="low">Low Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="high">High Priority</option>
+                    <option value="urgent">URGENT</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-zinc-300 mb-1">
+                  Focus Instructions & Details
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Provide specific directions or guidelines for the assigned coach..."
+                  value={newInstructions}
+                  onChange={(e) => setNewInstructions(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-zinc-600"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 bg-zinc-800 text-zinc-300 text-xs font-bold uppercase rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-white text-black text-xs font-black uppercase rounded-lg shadow cursor-pointer flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4 text-black" /> Save & Assign
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
